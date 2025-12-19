@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "check-alerts": "node src/jobs/priceAlertChecker.js"
+  }
+}

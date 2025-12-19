@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: travelhub-secrets
+  namespace: travelhub
+type: Opaque
+stringData:
+  database-url: "postgresql://travelhub:PASSWORD@postgres:5432/travelhub"
+  redis-url: "redis://:PASSWORD@redis:6379"
+  jwt-secret: "your-jwt-secret-here"
+  db-user: "travelhub"
+  db-password: "your-db-password"
+  redis-password: "your-redis-password"

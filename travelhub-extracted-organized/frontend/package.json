@@ -1,0 +1,91 @@
+travelhub-frontend/
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── manifest.json
+│
+├── src/
+│   ├── assets/              # Статичные ресурсы
+│   │   ├── images/
+│   │   ├── icons/
+│   │   └── fonts/
+│   │
+│   ├── components/          # Переиспользуемые компоненты
+│   │   ├── common/          # Общие UI компоненты
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Button.test.tsx
+│   │   │   │   └── index.ts
+│   │   │   ├── Input/
+│   │   │   ├── Card/
+│   │   │   ├── Modal/
+│   │   │   ├── Loading/
+│   │   │   └── Badge/
+│   │   │
+│   │   ├── layout/          # Layout компоненты
+│   │   │   ├── Header/
+│   │   │   ├── Footer/
+│   │   │   ├── Navigation/
+│   │   │   └── Container/
+│   │   │
+│   │   └── features/        # Feature-specific компоненты
+│   │       ├── SearchWidget/
+│   │       ├── FlightCard/
+│   │       ├── HotelCard/
+│   │       ├── FilterPanel/
+│   │       └── DatePicker/
+│   │
+│   ├── pages/               # Страницы приложения
+│   │   ├── Home/
+│   │   ├── FlightSearch/
+│   │   ├── HotelSearch/
+│   │   ├── CarSearch/
+│   │   └── NotFound/
+│   │
+│   ├── hooks/               # Custom hooks
+│   │   ├── useFlightSearch.ts
+│   │   ├── useHotelSearch.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useLocalStorage.ts
+│   │   └── useMediaQuery.ts
+│   │
+│   ├── services/            # API services
+│   │   ├── api/
+│   │   │   ├── travelhub.service.ts
+│   │   │   ├── axios.config.ts
+│   │   │   └── types.ts
+│   │   └── analytics/
+│   │       └── analytics.service.ts
+│   │
+│   ├── store/               # State management (Context/Redux)
+│   │   ├── SearchContext.tsx
+│   │   ├── UserContext.tsx
+│   │   └── types.ts
+│   │
+│   ├── utils/               # Утилиты
+│   │   ├── formatters.ts
+│   │   ├── validators.ts
+│   │   ├── constants.ts
+│   │   └── helpers.ts
+│   │
+│   ├── styles/              # Глобальные стили
+│   │   ├── globals.css
+│   │   └── tailwind.css
+│   │
+│   ├── types/               # TypeScript types
+│   │   ├── api.types.ts
+│   │   ├── component.types.ts
+│   │   └── index.ts
+│   │
+│   ├── App.tsx              # Главный компонент
+│   ├── index.tsx            # Entry point
+│   └── setupTests.ts        # Test configuration
+│
+├── .env                     # Environment variables
+├── .env.example
+├── .eslintrc.js
+├── .prettierrc
+├── tsconfig.json
+├── tailwind.config.js
+├── package.json
+└── README.md

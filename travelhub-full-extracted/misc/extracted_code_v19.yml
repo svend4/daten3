@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: travelhub-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: always
+
+  # API service (multiple instances for load balancing)
+  api:
+    build: .
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://travelhub:${DB_PASSWORD}@postgres:5432/travelhub
+    depends_on:
+      - redis
+      - postgres
+    restart: always
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: travelhub-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    restart: always
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: travelhub-postgres
+    environment:
+      POSTGRES_DB: travelhub
+      POSTGRES_USER: travelhub
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  redis-data:
+  postgres-data:

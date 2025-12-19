@@ -1,0 +1,11 @@
+1. Создайте простой landing page:
+   - О вашем travel сервисе
+   - Что предлагаете
+   - Контакты
+   
+2. В application укажите:
+   - "Planning to launch travel comparison site"
+   - Expected traffic: "500-1000 visitors/month initially"
+   - Marketing: "SEO, content marketing, social media"
+   
+3. Будьте честны, но профессиональны

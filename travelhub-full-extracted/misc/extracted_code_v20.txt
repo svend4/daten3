@@ -1,0 +1,16 @@
+1. Перейти: https://developers.amadeus.com/
+2. Create Account (простая регистрация)
+3. Login → My Apps
+4. Create New App:
+   - App name
+   - Description
+5. Выбрать APIs:
+   - Flight Offers Search
+   - Hotel Search
+   - Car Rental
+6. Получить credentials:
+   ✅ API Key
+   ✅ API Secret
+7. Выбрать tier:
+   - Test: Free (2K calls/month)
+   - Production: Pay-as-you-go

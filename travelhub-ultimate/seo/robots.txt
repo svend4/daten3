@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and API
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://travelhub.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

@@ -1,0 +1,13 @@
+
+## API Integration
+
+The frontend connects to the TravelHub backend API:
+
+- **Base URL:** Configured in `.env`
+- **Endpoints:**
+  - `GET /api/flights/search` - Search flights
+  - `GET /api/hotels/search` - Search hotels
+  - `GET /api/health` - Health check
+
+## Testing
+

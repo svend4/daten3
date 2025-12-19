@@ -1,0 +1,23 @@
+
+## Caching Strategy
+
+- Flight searches: 1 hour
+- Hotel searches: 2 hours
+- Hotel details: 24 hours
+- Location autocomplete: 7 days
+
+## Rate Limiting
+
+- Strict: 5 req/min (resource-intensive)
+- Moderate: 10 req/min (default API)
+- Lenient: 30 req/min (light operations)
+- Very Lenient: 100 req/min (static data)
+
+## Monitoring
+
+Logs are stored in `logs/` directory:
+- `combined.log` - All logs
+- `error.log` - Errors only
+
+## Docker Deployment
+

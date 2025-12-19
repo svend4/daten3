@@ -1,0 +1,225 @@
+{
+  "common": {
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "viewDetails": "View Details",
+    "bookNow": "Book Now",
+    "learnMore": "Learn More"
+  },
+  "nav": {
+    "home": "Home",
+    "flights": "Flights",
+    "hotels": "Hotels",
+    "cars": "Cars",
+    "profile": "Profile",
+    "favorites": "Favorites",
+    "bookings": "My Bookings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "home": {
+    "hero": {
+      "title": "Discover Your Next",
+      "subtitle": "Adventure",
+      "description": "Compare flights, hotels, and car rentals from hundreds of providers",
+      "startSearching": "Start Searching"
+    },
+    "features": {
+      "title": "Why Choose TravelHub?",
+      "subtitle": "We make travel planning simple, affordable, and stress-free",
+      "bestPrices": {
+        "title": "Best Prices",
+        "description": "Compare prices from multiple providers to get the best deals"
+      },
+      "secureBooking": {
+        "title": "Secure Booking",
+        "description": "Your data is protected with industry-standard encryption"
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Our customer service team is always here to help you"
+      }
+    },
+    "popularDestinations": {
+      "title": "Popular Destinations",
+      "subtitle": "Explore the world's most exciting cities"
+    },
+    "cta": {
+      "title": "Ready to Start Your Journey?",
+      "description": "Search and compare thousands of flights and hotels in seconds"
+    }
+  },
+  "flights": {
+    "searchTitle": "Search Flights",
+    "from": "From",
+    "to": "To",
+    "departure": "Departure",
+    "return": "Return",
+    "passengers": "Passengers",
+    "cabinClass": "Cabin Class",
+    "searchFlights": "Search Flights",
+    "resultsFound": "{{count}} flights found",
+    "noResults": "No flights found",
+    "direct": "Direct",
+    "stops": "{{count}} stop(s)",
+    "duration": "Duration",
+    "airline": "Airline",
+    "price": "Price",
+    "filters": {
+      "title": "Filters",
+      "maxPrice": "Max Price",
+      "maxStops": "Max Stops",
+      "airlines": "Airlines",
+      "departureTime": "Departure Time",
+      "arrivalTime": "Arrival Time",
+      "reset": "Reset Filters",
+      "apply": "Apply Filters"
+    },
+    "sort": {
+      "cheapest": "Cheapest",
+      "fastest": "Fastest",
+      "best": "Best"
+    }
+  },
+  "hotels": {
+    "searchTitle": "Search Hotels",
+    "destination": "Destination",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "rooms": "Rooms",
+    "searchHotels": "Search Hotels",
+    "resultsFound": "{{count}} hotels found",
+    "noResults": "No hotels found",
+    "perNight": "per night",
+    "total": "total",
+    "stars": "{{count}} Star Hotel",
+    "rating": "Rating",
+    "reviews": "{{count}} reviews",
+    "amenities": "Amenities",
+    "filters": {
+      "title": "Filters",
+      "priceRange": "Price Range",
+      "starRating": "Star Rating",
+      "guestRating": "Guest Rating",
+      "amenities": "Amenities",
+      "propertyType": "Property Type"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "forgotPassword": "Forgot Password?",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "facebook": "Facebook",
+    "signInSuccess": "Welcome back!",
+    "signUpSuccess": "Account created successfully!",
+    "signOutSuccess": "Logged out successfully",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailExists": "Email already exists",
+      "passwordMismatch": "Passwords do not match",
+      "requiredFields": "Please fill in all required fields"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "editProfile": "Edit Profile",
+    "saveChanges": "Save Changes",
+    "profileUpdated": "Profile updated successfully",
+    "memberSince": "Member since {{date}}",
+    "account": "Account",
+    "security": "Security",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirm": "Are you sure you want to delete your account? This action cannot be undone."
+  },
+  "favorites": {
+    "title": "My Favorites",
+    "subtitle": "{{count}} saved items",
+    "noFavorites": "No favorites yet",
+    "noFavoritesDescription": "Start adding your favorite flights and hotels to see them here",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "all": "All",
+    "flights": "Flights",
+    "hotels": "Hotels"
+  },
+  "bookings": {
+    "title": "My Bookings",
+    "subtitle": "{{count}} bookings",
+    "noBookings": "No bookings yet",
+    "noBookingsDescription": "Your bookings will appear here once you make a reservation",
+    "bookedOn": "Booked on {{date}}",
+    "travelDate": "Travel Date",
+    "totalPrice": "Total Price",
+    "bookingId": "Booking ID",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "cancelBooking": "Cancel Booking",
+    "cancelConfirm": "Are you sure you want to cancel this booking?",
+    "bookingCancelled": "Booking cancelled successfully"
+  },
+  "priceAlerts": {
+    "title": "Price Alerts",
+    "create": "Create Price Alert",
+    "targetPrice": "Target Price",
+    "currentPrice": "Current Price",
+    "active": "Active",
+    "triggered": "Triggered",
+    "delete": "Delete Alert",
+    "alertCreated": "Price alert created successfully",
+    "alertDeleted": "Price alert deleted successfully",
+    "notifyWhen": "Notify me when price drops below",
+    "noAlerts": "No price alerts set",
+    "priceDropped": "Price dropped! Your target price has been reached."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "notFound": "Page not found",
+    "unauthorized": "You need to be logged in to access this page",
+    "serverError": "Server error. Please try again later."
+  },
+  "footer": {
+    "company": "Company",
+    "aboutUs": "About Us",
+    "careers": "Careers",
+    "press": "Press",
+    "support": "Support",
+    "helpCenter": "Help Center",
+    "contactUs": "Contact Us",
+    "faq": "FAQs",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "copyright": "© {{year}} TravelHub. All rights reserved.",
+    "poweredBy": "Powered by Travelpayouts"
+  }
+}
