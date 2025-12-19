@@ -1,0 +1,19 @@
+# Railway Configuration для TravelHub ULTIMATE
+# Документация: https://docs.railway.app/deploy/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile"
+watchPatterns = ["backend/**"]
+
+[deploy]
+startCommand = "cd backend && npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Переменные окружения (эти значения будут переопределены в Railway UI)
+[[envs]]
+PORT = "3000"
+NODE_ENV = "production"
