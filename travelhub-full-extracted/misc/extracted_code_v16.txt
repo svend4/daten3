@@ -1,0 +1,9 @@
+1. Login в Partner Hub
+2. Dashboard → API Access
+3. Click "Request API Access"
+4. Заполнить форму (техническая информация)
+5. Дождаться одобрения API (дополнительно 1-3 дня)
+6. Получить credentials:
+   ✅ Partner ID: 12345678
+   ✅ API Key: abc123...
+   ✅ API Secret: xyz789...

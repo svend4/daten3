@@ -1,0 +1,130 @@
+{
+  "common": {
+    "search": "Поиск",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "next": "Далее",
+    "previous": "Предыдущий",
+    "viewDetails": "Подробнее",
+    "bookNow": "Забронировать",
+    "learnMore": "Узнать больше"
+  },
+  "nav": {
+    "home": "Главная",
+    "flights": "Авиабилеты",
+    "hotels": "Отели",
+    "cars": "Аренда авто",
+    "profile": "Профиль",
+    "favorites": "Избранное",
+    "bookings": "Мои бронирования",
+    "signIn": "Войти",
+    "signOut": "Выйти"
+  },
+  "home": {
+    "hero": {
+      "title": "Откройте для себя",
+      "subtitle": "Приключение",
+      "description": "Сравнивайте авиабилеты, отели и аренду автомобилей от сотен поставщиков",
+      "startSearching": "Начать поиск"
+    },
+    "features": {
+      "title": "Почему TravelHub?",
+      "subtitle": "Мы делаем планирование путешествий простым, доступным и без стресса",
+      "bestPrices": {
+        "title": "Лучшие цены",
+        "description": "Сравните цены от нескольких поставщиков для лучших предложений"
+      },
+      "secureBooking": {
+        "title": "Безопасное бронирование",
+        "description": "Ваши данные защищены шифрованием промышленного стандарта"
+      },
+      "support": {
+        "title": "Поддержка 24/7",
+        "description": "Наша служба поддержки всегда готова вам помочь"
+      }
+    }
+  },
+  "flights": {
+    "searchTitle": "Поиск авиабилетов",
+    "from": "Откуда",
+    "to": "Куда",
+    "departure": "Вылет",
+    "return": "Возврат",
+    "passengers": "Пассажиры",
+    "cabinClass": "Класс",
+    "searchFlights": "Найти авиабилеты",
+    "resultsFound": "Найдено {{count}} рейсов",
+    "noResults": "Рейсы не найдены",
+    "direct": "Прямой",
+    "stops": "{{count}} пересадок"
+  },
+  "hotels": {
+    "searchTitle": "Поиск отелей",
+    "destination": "Направление",
+    "checkIn": "Заезд",
+    "checkOut": "Выезд",
+    "guests": "Гости",
+    "rooms": "Номера",
+    "searchHotels": "Найти отели",
+    "resultsFound": "Найдено {{count}} отелей",
+    "noResults": "Отели не найдены",
+    "perNight": "за ночь",
+    "total": "всего",
+    "stars": "Отель {{count}} звезд",
+    "rating": "Рейтинг",
+    "reviews": "{{count}} отзывов"
+  },
+  "auth": {
+    "signIn": "Войти",
+    "signUp": "Регистрация",
+    "welcomeBack": "С возвращением",
+    "createAccount": "Создать аккаунт",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "fullName": "Полное имя",
+    "forgotPassword": "Забыли пароль?",
+    "dontHaveAccount": "Нет аккаунта?",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "orContinueWith": "Или продолжить с"
+  },
+  "profile": {
+    "title": "Мой профиль",
+    "editProfile": "Редактировать профиль",
+    "saveChanges": "Сохранить изменения",
+    "profileUpdated": "Профиль успешно обновлён",
+    "memberSince": "Участник с {{date}}"
+  },
+  "favorites": {
+    "title": "Избранное",
+    "subtitle": "{{count}} сохранённых",
+    "noFavorites": "Пока нет избранного",
+    "noFavoritesDescription": "Добавьте любимые рейсы и отели",
+    "addedToFavorites": "Добавлено в избранное",
+    "removedFromFavorites": "Удалено из избранного"
+  },
+  "bookings": {
+    "title": "Мои бронирования",
+    "subtitle": "{{count}} бронирований",
+    "noBookings": "Пока нет бронирований",
+    "noBookingsDescription": "Ваши бронирования появятся здесь",
+    "bookedOn": "Забронировано {{date}}",
+    "travelDate": "Дата поездки",
+    "totalPrice": "Общая стоимость",
+    "bookingId": "ID бронирования",
+    "status": {
+      "pending": "В ожидании",
+      "confirmed": "Подтверждено",
+      "cancelled": "Отменено"
+    },
+    "cancelBooking": "Отменить бронирование"
+  }
+}

@@ -1,0 +1,18 @@
+
+## Production Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Configure proper `REDIS_URL`
+- [ ] Set strong `JWT_SECRET`
+- [ ] Configure `CORS_ORIGIN`
+- [ ] Enable HTTPS
+- [ ] Set up monitoring (PM2, New Relic, etc.)
+- [ ] Configure log rotation
+- [ ] Set up backup for Redis
+- [ ] Configure firewall rules
+- [ ] Set up rate limiting per IP
+- [ ] Enable API key authentication
+
+## License
+
+MIT

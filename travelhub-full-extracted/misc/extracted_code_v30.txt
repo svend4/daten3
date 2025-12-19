@@ -1,0 +1,13 @@
+
+## Environment Variables
+
+See `.env.example` for all available options.
+
+Key variables:
+- `TRAVELPAYOUTS_TOKEN` - Your Travelpayouts API token
+- `TRAVELPAYOUTS_MARKER` - Your affiliate marker
+- `REDIS_URL` - Redis connection URL
+- `PORT` - Server port (default: 3000)
+
+## Project Structure
+

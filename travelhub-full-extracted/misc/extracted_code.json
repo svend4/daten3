@@ -1,0 +1,27 @@
+{
+  "searchId": "abc123def456",
+  "hotels": [
+    {
+      "id": 123456,
+      "name": "Grand Hotel Paris",
+      "stars": 4,
+      "rating": 8.7,
+      "address": "123 Champs-Élysées",
+      "location": {
+        "lat": 48.8566,
+        "lon": 2.3522
+      },
+      "main_photo_url": "https://...",
+      "amenities": ["wifi", "parking", "restaurant"],
+      "rates": [
+        {
+          "daily_prices": [150, 150, 150, 150],
+          "total_price": 600,
+          "payment_options": {
+            "payment_types": [{"type": "now"}]
+          }
+        }
+      ]
+    }
+  ]
+}

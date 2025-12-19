@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "data": [
+    {
+      "origin": "MOW",
+      "destination": "LON",
+      "origin_airport": "SVO",
+      "destination_airport": "LHR",
+      "price": 250,
+      "airline": "BA",
+      "flight_number": "BA235",
+      "departure_at": "2025-12-01T10:30:00+03:00",
+      "return_at": "2025-12-10T15:45:00+00:00",
+      "transfers": 0,
+      "duration": 240,
+      "link": "https://www.aviasales.com/search/..."
+    }
+  ]
+}

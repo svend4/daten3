@@ -1,0 +1,7 @@
+1. Dashboard → API
+2. Найти раздел "Your API credentials"
+3. Скопировать:
+   ✅ API Token: abc123def456ghi789...
+   ✅ Marker: 123456
+   
+Marker = ваш реферальный ID для трекинга

@@ -1,0 +1,11 @@
+1. Перейти: https://www.travelpayouts.com/
+2. Click "Sign Up" (правый верхний угол)
+3. Заполнить форму:
+   - Email
+   - Password
+   - First Name, Last Name
+   - Country
+   - Phone (опционально)
+4. Согласиться с Terms
+5. Click "Create Account"
+6. Проверить email и подтвердить

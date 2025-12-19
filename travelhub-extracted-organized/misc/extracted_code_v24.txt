@@ -1,0 +1,2 @@
+
+4. Start Redis (using Docker):

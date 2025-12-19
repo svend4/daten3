@@ -1,0 +1,6 @@
+1. Dashboard → Products
+2. Активировать:
+   ✅ Aviasales (flights)
+   ✅ Hotellook (hotels)
+   ✅ Economybookings (cars)
+3. Дождаться одобрения (обычно автоматически, 1-24 часа)

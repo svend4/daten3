@@ -1,0 +1,130 @@
+{
+  "common": {
+    "search": "Suchen",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "viewDetails": "Details ansehen",
+    "bookNow": "Jetzt buchen",
+    "learnMore": "Mehr erfahren"
+  },
+  "nav": {
+    "home": "Startseite",
+    "flights": "Flüge",
+    "hotels": "Hotels",
+    "cars": "Mietwagen",
+    "profile": "Profil",
+    "favorites": "Favoriten",
+    "bookings": "Meine Buchungen",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden"
+  },
+  "home": {
+    "hero": {
+      "title": "Entdecken Sie Ihr nächstes",
+      "subtitle": "Abenteuer",
+      "description": "Vergleichen Sie Flüge, Hotels und Mietwagen von Hunderten von Anbietern",
+      "startSearching": "Suche starten"
+    },
+    "features": {
+      "title": "Warum TravelHub wählen?",
+      "subtitle": "Wir machen Reiseplanung einfach, erschwinglich und stressfrei",
+      "bestPrices": {
+        "title": "Beste Preise",
+        "description": "Vergleichen Sie Preise von mehreren Anbietern für die besten Angebote"
+      },
+      "secureBooking": {
+        "title": "Sichere Buchung",
+        "description": "Ihre Daten sind mit branchenüblicher Verschlüsselung geschützt"
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Unser Kundenservice-Team ist immer für Sie da"
+      }
+    }
+  },
+  "flights": {
+    "searchTitle": "Flüge suchen",
+    "from": "Von",
+    "to": "Nach",
+    "departure": "Abflug",
+    "return": "Rückflug",
+    "passengers": "Passagiere",
+    "cabinClass": "Kabinenklasse",
+    "searchFlights": "Flüge suchen",
+    "resultsFound": "{{count}} Flüge gefunden",
+    "noResults": "Keine Flüge gefunden",
+    "direct": "Direkt",
+    "stops": "{{count}} Zwischenstopp(s)"
+  },
+  "hotels": {
+    "searchTitle": "Hotels suchen",
+    "destination": "Reiseziel",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Gäste",
+    "rooms": "Zimmer",
+    "searchHotels": "Hotels suchen",
+    "resultsFound": "{{count}} Hotels gefunden",
+    "noResults": "Keine Hotels gefunden",
+    "perNight": "pro Nacht",
+    "total": "gesamt",
+    "stars": "{{count}}-Sterne-Hotel",
+    "rating": "Bewertung",
+    "reviews": "{{count}} Bewertungen"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "welcomeBack": "Willkommen zurück",
+    "createAccount": "Konto erstellen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "fullName": "Vollständiger Name",
+    "forgotPassword": "Passwort vergessen?",
+    "dontHaveAccount": "Noch kein Konto?",
+    "alreadyHaveAccount": "Bereits ein Konto?",
+    "orContinueWith": "Oder fortfahren mit"
+  },
+  "profile": {
+    "title": "Mein Profil",
+    "editProfile": "Profil bearbeiten",
+    "saveChanges": "Änderungen speichern",
+    "profileUpdated": "Profil erfolgreich aktualisiert",
+    "memberSince": "Mitglied seit {{date}}"
+  },
+  "favorites": {
+    "title": "Meine Favoriten",
+    "subtitle": "{{count}} gespeicherte Artikel",
+    "noFavorites": "Noch keine Favoriten",
+    "noFavoritesDescription": "Fügen Sie Ihre Lieblingsflüge und Hotels hinzu",
+    "addedToFavorites": "Zu Favoriten hinzugefügt",
+    "removedFromFavorites": "Aus Favoriten entfernt"
+  },
+  "bookings": {
+    "title": "Meine Buchungen",
+    "subtitle": "{{count}} Buchungen",
+    "noBookings": "Noch keine Buchungen",
+    "noBookingsDescription": "Ihre Buchungen werden hier angezeigt",
+    "bookedOn": "Gebucht am {{date}}",
+    "travelDate": "Reisedatum",
+    "totalPrice": "Gesamtpreis",
+    "bookingId": "Buchungs-ID",
+    "status": {
+      "pending": "Ausstehend",
+      "confirmed": "Bestätigt",
+      "cancelled": "Storniert"
+    },
+    "cancelBooking": "Buchung stornieren"
+  }
+}

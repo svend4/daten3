@@ -1,0 +1,53 @@
+travelhub-backend/
+├── src/
+│   ├── controllers/          # Обработка HTTP запросов
+│   │   ├── flights.controller.js
+│   │   ├── hotels.controller.js
+│   │   ├── cars.controller.js
+│   │   └── search.controller.js
+│   │
+│   ├── services/             # Бизнес-логика
+│   │   ├── api/              # API провайдеры
+│   │   │   ├── travelpayouts.service.js
+│   │   │   ├── aviasales.service.js
+│   │   │   ├── hotellook.service.js
+│   │   │   ├── booking.service.js
+│   │   │   └── skyscanner.service.js
+│   │   ├── cache.service.js
+│   │   └── affiliate.service.js
+│   │
+│   ├── middleware/           # Промежуточная обработка
+│   │   ├── rateLimit.middleware.js
+│   │   ├── auth.middleware.js
+│   │   ├── cors.middleware.js
+│   │   ├── errorHandler.middleware.js
+│   │   └── logger.middleware.js
+│   │
+│   ├── utils/                # Вспомогательные функции
+│   │   ├── logger.js
+│   │   ├── validators.js
+│   │   └── formatters.js
+│   │
+│   ├── config/               # Конфигурация
+│   │   ├── api.config.js
+│   │   ├── redis.config.js
+│   │   └── database.config.js
+│   │
+│   ├── routes/               # Маршруты
+│   │   ├── index.js
+│   │   ├── flights.routes.js
+│   │   ├── hotels.routes.js
+│   │   └── cars.routes.js
+│   │
+│   └── app.js                # Главный файл приложения
+│
+├── tests/                    # Тесты
+│   ├── unit/
+│   └── integration/
+│
+├── .env                      # Environment variables
+├── .env.example             # Пример конфигурации
+├── .gitignore
+├── package.json
+├── README.md
+└── docker-compose.yml       # Для Redis, PostgreSQL
