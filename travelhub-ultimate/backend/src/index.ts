@@ -12,8 +12,21 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoints (Railway checks /api/health)
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 app.get('/api/hotels/search', (req, res) => {
