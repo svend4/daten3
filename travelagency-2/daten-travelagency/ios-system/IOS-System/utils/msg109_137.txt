@@ -1,7 +1,0 @@
----
-
-## 🔔 ALERTMANAGER CONFIGURATION
-
-### 1. Alert Routing
-
-**File:** `monitoring/alertmanager/config.yml`

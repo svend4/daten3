@@ -1,6 +1,0 @@
-## Resources
-
-- **Hugging Face**: https://huggingface.co/deepset/gbert-large
-- **Qdrant Docs**: https://qdrant.tech/documentation/
-- **BERT Paper**: https://arxiv.org/abs/1810.04805
-- **Transformers Library**: https://huggingface.co/docs/transformers/

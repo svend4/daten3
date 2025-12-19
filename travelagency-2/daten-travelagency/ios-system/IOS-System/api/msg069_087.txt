@@ -1,3 +1,0 @@
-### Response Headers
-
-Every API response includes rate limit headers:

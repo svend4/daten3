@@ -1,6 +1,0 @@
-Отсутствует:
-- Time-series анализ
-- Predictive analytics
-- Anomaly detection
-- Trend analysis
-- Custom reports builder

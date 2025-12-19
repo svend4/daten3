@@ -1,5 +1,0 @@
----
-
-## 📊 ROLLBACK METRICS
-
-### Track Rollback Performance

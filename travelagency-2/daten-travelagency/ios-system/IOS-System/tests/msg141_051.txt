@@ -1,5 +1,0 @@
----
-
-## 🐘 PostgreSQL Optimization
-
-### Database Configuration

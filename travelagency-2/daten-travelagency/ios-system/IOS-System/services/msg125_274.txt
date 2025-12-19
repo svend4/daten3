@@ -1,5 +1,0 @@
----
-
-## 🔧 Hybrid Search Implementation
-
-### Main Search Orchestrator

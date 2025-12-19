@@ -1,3 +1,0 @@
----
-
-## 📊 Performance Monitoring Script

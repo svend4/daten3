@@ -1,3 +1,0 @@
-### 3. Event-Driven Architecture
-
-Decoupled components via event bus:

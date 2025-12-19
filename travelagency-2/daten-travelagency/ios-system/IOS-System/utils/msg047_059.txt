@@ -1,3 +1,0 @@
-### Viewing Your Activity
-
-Any user can view their own audit trail:

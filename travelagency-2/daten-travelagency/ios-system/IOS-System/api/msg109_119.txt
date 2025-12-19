@@ -1,7 +1,0 @@
----
-
-## 📈 GRAFANA DASHBOARDS
-
-### 1. API Overview Dashboard
-
-**File:** `monitoring/grafana/dashboards/api-overview.json`

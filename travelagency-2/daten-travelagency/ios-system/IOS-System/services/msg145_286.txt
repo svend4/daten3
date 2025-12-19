@@ -1,5 +1,0 @@
----
-
-## 🔍 Elasticsearch Cost Optimization
-
-### Storage Optimization

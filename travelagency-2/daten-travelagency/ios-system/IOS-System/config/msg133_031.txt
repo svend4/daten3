@@ -1,5 +1,0 @@
----
-
-## 🚨 Alert Rules
-
-### Prometheus Alert Rules

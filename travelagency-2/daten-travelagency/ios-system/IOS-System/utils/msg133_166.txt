@@ -1,5 +1,0 @@
----
-
-## 🔧 Metrics Collection
-
-### Prometheus Metrics Exporter

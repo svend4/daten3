@@ -1,5 +1,0 @@
----
-
-## 🔍 Search Request Flow
-
-### 1. Query Processing Pipeline

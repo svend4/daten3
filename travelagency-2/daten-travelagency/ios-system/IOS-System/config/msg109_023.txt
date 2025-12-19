@@ -1,3 +1,0 @@
-### 2. Alerting Rules
-
-**File:** `monitoring/prometheus/rules/alerts.yml`

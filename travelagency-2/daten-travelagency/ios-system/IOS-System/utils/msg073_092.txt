@@ -1,5 +1,0 @@
----
-
-## Implementation Examples
-
-### Node.js (Express)

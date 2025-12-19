@@ -1,5 +1,0 @@
----
-
-## 💾 Database Cost Optimization
-
-### PostgreSQL Optimization

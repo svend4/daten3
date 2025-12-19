@@ -1,3 +1,0 @@
-### Custom Analyzers Explained
-
-**1. IOS Analyzer (Indexing):**

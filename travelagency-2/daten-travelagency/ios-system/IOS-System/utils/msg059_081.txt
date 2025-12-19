@@ -1,9 +1,0 @@
-Returns:
-- Total input tokens
-- Total output tokens
-- Total cost (USD)
-- Cost per model
-
-### Limits
-
-Configure in `.env`:

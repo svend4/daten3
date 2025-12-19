@@ -1,1 +1,0 @@
-**Step 6: Kubernetes Access (4:00 PM)**

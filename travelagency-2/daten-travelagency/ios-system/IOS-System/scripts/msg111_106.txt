@@ -1,3 +1,0 @@
-### Resolution Procedures
-
-**Scenario A: Database Connection Errors**

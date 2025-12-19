@@ -1,5 +1,0 @@
----
-
-## 🔧 NGINX Configuration
-
-### Load Balancer & SSL Setup

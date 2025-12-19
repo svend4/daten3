@@ -1,7 +1,0 @@
----
-
-## 📈 Monitoring
-
-### Grafana Dashboards
-
-**Access dashboards:**

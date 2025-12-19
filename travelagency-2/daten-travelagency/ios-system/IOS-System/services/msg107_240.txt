@@ -1,3 +1,0 @@
-### Rollback Scenario 4: Complete System Failure
-
-**When:** Multiple services down, need full restore

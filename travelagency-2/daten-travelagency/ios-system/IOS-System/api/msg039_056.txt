@@ -1,6 +1,0 @@
-Отсутствует:
-- Slack integration
-- Google Drive sync
-- Microsoft 365 integration
-- Email integration
-- Zapier/Make.com connectors

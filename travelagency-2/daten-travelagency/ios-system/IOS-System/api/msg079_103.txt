@@ -1,8 +1,0 @@
----
-
-## Support
-
-- API Documentation: https://api.ios-system.com/docs
-- GitHub Issues: https://github.com/ios-system/issues
-- Email: support@ios-system.com
-- Slack: https://ios-system.slack.com

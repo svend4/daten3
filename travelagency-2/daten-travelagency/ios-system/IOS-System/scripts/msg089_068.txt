@@ -1,4 +1,0 @@
-**URL:** http://localhost:3000  
-**Default credentials:** admin / (from GRAFANA_ADMIN_PASSWORD)
-
-### Access Prometheus

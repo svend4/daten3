@@ -1,9 +1,0 @@
-## Contributing
-
-### Code Style
-
-We use:
-- **Black** for code formatting
-- **isort** for import sorting
-- **mypy** for type checking
-- **ruff** for linting

@@ -1,5 +1,0 @@
----
-
-## 🔧 Index Management
-
-### Index Creation Script

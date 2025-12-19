@@ -1,3 +1,0 @@
-### Step 4: Rollback Database (if needed)
-
-**Check if database rollback needed:**

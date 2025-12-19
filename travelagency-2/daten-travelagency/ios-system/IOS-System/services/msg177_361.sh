@@ -1,1 +1,0 @@
-# Скопировать из ФАЙЛА 6, секция "HybridSearchService"

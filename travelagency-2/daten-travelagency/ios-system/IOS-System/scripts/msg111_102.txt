@@ -1,1 +1,0 @@
-**Scenario B: Pods Running but Unhealthy**

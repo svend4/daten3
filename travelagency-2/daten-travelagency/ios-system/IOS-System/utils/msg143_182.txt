@@ -1,5 +1,0 @@
----
-
-## 🔄 Connection Pooling
-
-### Database Connection Pool

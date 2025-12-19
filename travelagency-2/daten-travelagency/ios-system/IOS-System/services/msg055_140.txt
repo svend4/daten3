@@ -1,5 +1,0 @@
-## Advanced Features
-
-### Cross-lingual Search
-
-Search in one language, find results in another:

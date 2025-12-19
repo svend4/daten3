@@ -1,5 +1,0 @@
----
-
-## 🔒 Security Checklist
-
-### Comprehensive Security Audit
