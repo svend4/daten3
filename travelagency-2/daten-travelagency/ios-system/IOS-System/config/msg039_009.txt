@@ -1,5 +1,0 @@
-- AI/ML enhancement с трансформерами
-- 5+ major integrations (Slack, Drive, etc.)
-- Collaborative features
-- Advanced analytics
-- Mobile apps (MVP)

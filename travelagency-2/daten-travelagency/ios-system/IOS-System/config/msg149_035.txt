@@ -1,5 +1,0 @@
----
-
-## 📊 Performance Checklist
-
-### Load Testing Validation

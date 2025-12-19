@@ -1,3 +1,0 @@
-### Wednesday: Production Access
-
-**Production Access (Read-Only at First):**

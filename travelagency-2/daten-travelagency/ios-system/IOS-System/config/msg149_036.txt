@@ -1,5 +1,0 @@
----
-
-## 📡 Monitoring & Alerting
-
-### Monitoring Stack Checklist

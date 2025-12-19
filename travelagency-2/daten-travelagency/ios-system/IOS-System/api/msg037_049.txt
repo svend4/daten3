@@ -1,3 +1,0 @@
-### Documents API
-
-#### Upload Document

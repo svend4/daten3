@@ -1,7 +1,0 @@
----
-
-## 📝 LOGGING CONFIGURATION
-
-### 1. ELK Stack Configuration
-
-**File:** `monitoring/elk/logstash.conf`

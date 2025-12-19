@@ -1,5 +1,0 @@
----
-
-## 📈 Scaling
-
-### Manual Scaling

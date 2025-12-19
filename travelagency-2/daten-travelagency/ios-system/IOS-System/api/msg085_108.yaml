@@ -1,8 +1,0 @@
-# Kubernetes Namespace for IOS System
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ios-system
-  labels:
-    name: ios-system
-    environment: production

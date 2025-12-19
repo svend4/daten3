@@ -1,5 +1,0 @@
----
-
-## 🎯 Qdrant Cost Optimization
-
-### Vector Storage Optimization

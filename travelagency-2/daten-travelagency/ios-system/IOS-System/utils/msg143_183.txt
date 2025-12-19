@@ -1,5 +1,0 @@
----
-
-## 📊 Monitoring & Profiling
-
-### Performance Monitoring

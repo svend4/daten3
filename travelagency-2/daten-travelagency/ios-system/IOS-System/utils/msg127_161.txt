@@ -1,5 +1,0 @@
----
-
-## 📈 Metrics Calculation
-
-### Key Performance Indicators (KPIs)

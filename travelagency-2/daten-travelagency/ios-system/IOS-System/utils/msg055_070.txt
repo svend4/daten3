@@ -1,3 +1,0 @@
-Specific, includes legal reference, clear intent.
-
-**Bad:**

@@ -1,5 +1,0 @@
----
-
-## 📊 Dashboard & Visualization
-
-### Grafana Dashboard Configuration

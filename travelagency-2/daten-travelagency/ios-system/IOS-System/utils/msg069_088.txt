@@ -1,3 +1,0 @@
-### Health Checks
-
-Automatic health monitoring:

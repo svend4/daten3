@@ -1,3 +1,0 @@
-### Custom Ranking
-
-Override default weights programmatically:

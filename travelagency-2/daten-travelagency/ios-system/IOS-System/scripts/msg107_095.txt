@@ -1,3 +1,0 @@
-### Rollback Scenario 2: Database Migration Failed
-
-**When:** Migration errors during deployment

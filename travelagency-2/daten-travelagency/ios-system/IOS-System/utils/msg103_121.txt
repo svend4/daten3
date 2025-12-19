@@ -1,7 +1,0 @@
----
-
-## 🛠️ INCIDENT RESPONSE TOOLS
-
-### Essential Tools
-
-**Detection & Monitoring:**

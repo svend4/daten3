@@ -1,5 +1,0 @@
----
-
-## 🔧 Troubleshooting
-
-### Pods Not Starting

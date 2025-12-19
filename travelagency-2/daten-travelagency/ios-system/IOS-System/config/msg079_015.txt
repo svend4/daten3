@@ -1,5 +1,0 @@
----
-
-## Event Bus Integration
-
-### Subscribe to Events

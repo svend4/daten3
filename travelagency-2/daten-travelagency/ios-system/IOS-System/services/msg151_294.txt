@@ -1,6 +1,0 @@
-**Deliverables:**
-- ✅ Hybrid search working
-- ✅ Configurable fusion algorithm
-- ✅ Performance benchmarks
-
-**Code Example:**

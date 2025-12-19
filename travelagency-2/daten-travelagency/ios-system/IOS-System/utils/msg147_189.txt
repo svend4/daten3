@@ -1,5 +1,0 @@
----
-
-## 💾 Backup Strategy
-
-### Comprehensive Backup Plan

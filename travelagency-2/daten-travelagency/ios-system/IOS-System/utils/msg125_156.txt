@@ -1,5 +1,0 @@
----
-
-## 📊 Fusion Algorithm Comparison
-
-### RRF vs Weighted Combination

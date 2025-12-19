@@ -1,3 +1,0 @@
-## Embedding Pipeline
-
-### 1. Document Indexing

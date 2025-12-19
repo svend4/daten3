@@ -1,5 +1,0 @@
----
-
-## Slack Integration
-
-### Send Notifications

@@ -1,8 +1,0 @@
-**Report includes:**
-- Processing activities summary
-- Purposes of processing
-- Data recipients
-- Retention periods
-- Security measures
-
-**Export for DPA:**

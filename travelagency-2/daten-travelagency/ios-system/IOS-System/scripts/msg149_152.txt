@@ -1,5 +1,0 @@
----
-
-## 🎯 Final Go/No-Go Checklist
-
-### Launch Decision Matrix

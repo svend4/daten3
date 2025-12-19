@@ -1,3 +1,0 @@
-### 2. Application Logging Configuration
-
-**File:** `ios_core/logging.py`

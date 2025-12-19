@@ -1,5 +1,0 @@
----
-
-## 🌪️ Chaos Engineering
-
-### Fault Injection Tests

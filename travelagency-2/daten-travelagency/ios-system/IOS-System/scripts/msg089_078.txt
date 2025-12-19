@@ -1,5 +1,0 @@
----
-
-## 🔐 Security Operations
-
-### Rotate Secrets

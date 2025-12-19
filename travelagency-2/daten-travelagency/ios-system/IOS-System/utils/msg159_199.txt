@@ -1,6 +1,0 @@
----
-
-#### Task 3.4: Management Commands for Indexing
-**Assignee:** Backend Developer
-**Time:** 1 day
-**Priority:** High

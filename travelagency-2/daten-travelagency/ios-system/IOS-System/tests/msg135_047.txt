@@ -1,5 +1,0 @@
----
-
-## 🚀 Deployment Scripts
-
-### Initial Setup Script

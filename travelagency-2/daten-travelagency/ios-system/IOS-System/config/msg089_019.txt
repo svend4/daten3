@@ -1,3 +1,0 @@
-**CronJob Schedule:** Daily at 2 AM UTC
-
-### Manual Backup

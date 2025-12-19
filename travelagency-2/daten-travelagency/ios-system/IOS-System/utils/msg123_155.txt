@@ -1,5 +1,0 @@
----
-
-## 🚀 Performance Optimization
-
-### HNSW Algorithm Explained

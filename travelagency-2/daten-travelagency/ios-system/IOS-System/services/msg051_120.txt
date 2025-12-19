@@ -1,3 +1,0 @@
-### Hybrid Search
-
-Combine semantic search with keyword search:

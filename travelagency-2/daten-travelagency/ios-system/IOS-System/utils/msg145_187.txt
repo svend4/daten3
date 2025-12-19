@@ -1,5 +1,0 @@
----
-
-## 📊 Cost Monitoring Dashboard
-
-### Cost Tracking Script

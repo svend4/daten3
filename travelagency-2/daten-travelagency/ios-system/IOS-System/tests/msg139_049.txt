@@ -1,5 +1,0 @@
----
-
-## 🔧 Load Testing Tools
-
-### Locust Configuration

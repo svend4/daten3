@@ -1,3 +1,0 @@
-### 2. Database Dashboard
-
-**File:** `monitoring/grafana/dashboards/database.json`

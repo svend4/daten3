@@ -1,5 +1,0 @@
----
-
-## 🎯 Qdrant Optimization
-
-### Vector Search Tuning

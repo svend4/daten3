@@ -1,7 +1,0 @@
-❌ Критические проблемы:
-- Нет authentication
-- Нет authorization
-- SQL injection уязвимости
-- XSS уязвимости
-- Нет rate limiting
-- Hardcoded secrets

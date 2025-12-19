@@ -1,5 +1,0 @@
----
-
-## 🎯 Code Optimization Tips
-
-### Python Best Practices

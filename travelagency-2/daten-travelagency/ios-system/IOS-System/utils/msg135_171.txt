@@ -1,5 +1,0 @@
----
-
-## 🐳 Dockerfile
-
-### Multi-stage Production Build

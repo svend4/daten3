@@ -1,5 +1,0 @@
----
-
-## 🎯 Query Examples & Performance
-
-**Example 1: Simple Keyword Search**

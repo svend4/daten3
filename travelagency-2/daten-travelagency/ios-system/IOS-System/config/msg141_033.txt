@@ -1,5 +1,0 @@
----
-
-## 🗄️ Redis Optimization
-
-### Cache Configuration

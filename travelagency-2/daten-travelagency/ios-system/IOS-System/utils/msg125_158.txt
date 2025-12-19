@@ -1,1 +1,0 @@
-### Query-Document Relevance Features

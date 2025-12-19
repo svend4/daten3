@@ -1,3 +1,0 @@
-### 2. Alert Templates
-
-**File:** `monitoring/alertmanager/templates/slack.tmpl`
