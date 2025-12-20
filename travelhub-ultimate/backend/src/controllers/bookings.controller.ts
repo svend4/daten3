@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
+import prisma from '../lib/prisma.js';
 
 /**
  * Bookings Controller
  * Handles booking operations (create, read, update, cancel)
+ * Now using Prisma ORM with PostgreSQL
  */
 
 /**
@@ -19,46 +21,64 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const { status, type, page = 1, limit = 10 } = req.query;
+    const { status, type, page = '1', limit = '10' } = req.query;
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
 
-    // TODO: Fetch from database with filters
-    // const bookings = await prisma.booking.findMany({
-    //   where: {
-    //     userId: req.user.id,
-    //     ...(status && { status }),
-    //     ...(type && { type })
-    //   },
-    //   skip: (Number(page) - 1) * Number(limit),
-    //   take: Number(limit),
-    //   orderBy: { createdAt: 'desc' }
-    // });
+    // Build filter conditions
+    const where: any = {
+      userId: req.user.id
+    };
 
-    // Mock data
-    const mockBookings = [
-      {
-        id: 'booking_1',
-        userId: req.user.id,
-        type: 'hotel',
-        status: 'confirmed',
-        details: {
-          hotelName: 'Grand Hotel',
-          checkIn: '2025-01-15',
-          checkOut: '2025-01-20',
-          guests: 2
-        },
-        totalAmount: 500.00,
-        currency: 'USD',
-        createdAt: '2024-12-15T10:00:00Z'
-      }
-    ];
+    if (status) {
+      where.status = status;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    // Fetch bookings from database with pagination
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          userId: true,
+          type: true,
+          status: true,
+          itemId: true,
+          itemName: true,
+          itemImage: true,
+          checkIn: true,
+          checkOut: true,
+          departDate: true,
+          returnDate: true,
+          guests: true,
+          rooms: true,
+          totalPrice: true,
+          currency: true,
+          paymentId: true,
+          paymentStatus: true,
+          specialRequests: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      prisma.booking.count({ where })
+    ]);
 
     res.json({
       success: true,
-      data: mockBookings,
+      data: bookings,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total: mockBookings.length
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
       }
     });
   } catch (error: any) {
@@ -87,39 +107,44 @@ export const getBooking = async (req: Request, res: Response): Promise<void> => 
 
     const { id } = req.params;
 
-    // TODO: Fetch from database
-    // const booking = await prisma.booking.findUnique({
-    //   where: { id },
-    //   include: { hotel: true, user: true }
-    // });
+    // Fetch booking from database
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true
+          }
+        }
+      }
+    });
 
-    // TODO: Check if booking belongs to user
-    // if (booking.userId !== req.user.id && req.user.role !== 'admin') {
-    //   throw new Error('Access denied');
-    // }
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Booking not found.'
+      });
+      return;
+    }
 
-    // Mock data
-    const mockBooking = {
-      id,
-      userId: req.user.id,
-      type: 'hotel',
-      status: 'confirmed',
-      details: {
-        hotelName: 'Grand Hotel',
-        checkIn: '2025-01-15',
-        checkOut: '2025-01-20',
-        guests: 2,
-        rooms: 1
-      },
-      totalAmount: 500.00,
-      currency: 'USD',
-      createdAt: '2024-12-15T10:00:00Z',
-      confirmationNumber: 'TH' + Math.random().toString(36).substr(2, 9).toUpperCase()
-    };
+    // Check if booking belongs to user (unless admin)
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to view this booking.'
+      });
+      return;
+    }
 
     res.json({
       success: true,
-      data: mockBooking
+      data: booking
     });
   } catch (error: any) {
     console.error('❌ Get booking error:', error);
@@ -148,73 +173,117 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     const {
       type,
       itemId,
+      itemName,
+      itemImage,
       checkIn,
       checkOut,
+      departDate,
+      returnDate,
       guests,
       rooms,
-      totalAmount,
-      currency = 'USD',
+      totalPrice,
+      currency = 'RUB',
       paymentMethod,
-      referralCode
+      specialRequests,
+      metadata
     } = req.body;
 
     // Validation
-    if (!type || !itemId || !totalAmount) {
+    if (!type || !itemId || !itemName || !totalPrice) {
       res.status(400).json({
         success: false,
         error: 'Validation failed',
-        message: 'Type, item ID, and total amount are required.'
+        message: 'Type, item ID, item name, and total price are required.'
       });
       return;
     }
 
-    // TODO: Create booking in database
-    // const booking = await prisma.booking.create({
-    //   data: {
-    //     userId: req.user.id,
-    //     type,
-    //     itemId,
-    //     checkIn,
-    //     checkOut,
-    //     guests,
-    //     rooms,
-    //     totalAmount,
-    //     currency,
-    //     paymentMethod,
-    //     status: 'pending',
-    //     referralCode
-    //   }
-    // });
+    // Validate booking type
+    const validTypes = ['hotel', 'flight', 'package'];
+    if (!validTypes.includes(type)) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: `Type must be one of: ${validTypes.join(', ')}`
+      });
+      return;
+    }
+
+    // Type-specific validation
+    if (type === 'hotel' && (!checkIn || !checkOut)) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Check-in and check-out dates are required for hotel bookings.'
+      });
+      return;
+    }
+
+    if (type === 'flight' && (!departDate)) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Departure date is required for flight bookings.'
+      });
+      return;
+    }
+
+    // Create booking in database
+    const booking = await prisma.booking.create({
+      data: {
+        userId: req.user.id,
+        type,
+        itemId,
+        itemName,
+        itemImage: itemImage || null,
+        checkIn: checkIn ? new Date(checkIn) : null,
+        checkOut: checkOut ? new Date(checkOut) : null,
+        departDate: departDate ? new Date(departDate) : null,
+        returnDate: returnDate ? new Date(returnDate) : null,
+        guests: guests || 1,
+        rooms: rooms || null,
+        totalPrice,
+        currency,
+        paymentId: paymentMethod || null,
+        specialRequests: specialRequests || null,
+        metadata: metadata || null,
+        status: 'pending'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
 
     // TODO: Process payment
     // const payment = await processPayment({ ... });
-
-    // TODO: Track affiliate conversion if referralCode exists
-    // if (referralCode) {
-    //   await trackConversion({ bookingId: booking.id, referralCode, amount: totalAmount });
+    // if (payment.success) {
+    //   await prisma.booking.update({
+    //     where: { id: booking.id },
+    //     data: { status: 'confirmed', paymentId: payment.id, paymentStatus: 'paid' }
+    //   });
     // }
 
-    // Mock response
-    const mockBooking = {
-      id: 'booking_' + Date.now(),
-      userId: req.user.id,
-      type,
-      itemId,
-      status: 'confirmed',
-      checkIn,
-      checkOut,
-      guests,
-      rooms,
-      totalAmount,
-      currency,
-      confirmationNumber: 'TH' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      createdAt: new Date().toISOString()
-    };
+    // TODO: Track affiliate conversion if referralCode exists
+    // This would be in the metadata or separate field
+    // if (metadata?.referralCode) {
+    //   await trackConversion({
+    //     bookingId: booking.id,
+    //     referralCode: metadata.referralCode,
+    //     amount: totalPrice
+    //   });
+    // }
 
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
-      data: mockBooking
+      data: booking
     });
   } catch (error: any) {
     console.error('❌ Create booking error:', error);
@@ -243,7 +312,7 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'refunded'];
 
     if (!status || !validStatuses.includes(status)) {
       res.status(400).json({
@@ -254,19 +323,42 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
       return;
     }
 
-    // TODO: Update in database
-    // const booking = await prisma.booking.update({
-    //   where: { id },
-    //   data: { status }
-    // });
+    // Check if booking exists and belongs to user
+    const existingBooking = await prisma.booking.findUnique({
+      where: { id }
+    });
+
+    if (!existingBooking) {
+      res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Booking not found.'
+      });
+      return;
+    }
+
+    if (existingBooking.userId !== req.user.id && req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to update this booking.'
+      });
+      return;
+    }
+
+    // Update booking status in database
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: { status }
+    });
 
     res.json({
       success: true,
       message: 'Booking status updated successfully',
       data: {
-        id,
-        status,
-        updatedAt: new Date().toISOString()
+        id: updatedBooking.id,
+        status: updatedBooking.status,
+        updatedAt: updatedBooking.updatedAt
       }
     });
   } catch (error: any) {
@@ -295,25 +387,69 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
 
     const { id } = req.params;
 
-    // TODO: Check if booking can be cancelled (e.g., not already completed)
-    // const booking = await prisma.booking.findUnique({ where: { id } });
+    // Check if booking exists and belongs to user
+    const booking = await prisma.booking.findUnique({
+      where: { id }
+    });
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Booking not found.'
+      });
+      return;
+    }
+
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to cancel this booking.'
+      });
+      return;
+    }
+
+    // Check if booking can be cancelled
+    if (booking.status === 'completed') {
+      res.status(400).json({
+        success: false,
+        error: 'Cannot cancel',
+        message: 'Completed bookings cannot be cancelled.'
+      });
+      return;
+    }
+
+    if (booking.status === 'cancelled') {
+      res.status(400).json({
+        success: false,
+        error: 'Already cancelled',
+        message: 'This booking is already cancelled.'
+      });
+      return;
+    }
 
     // TODO: Process refund if applicable
-    // await processRefund({ bookingId: id });
+    // const refundEligible = checkRefundEligibility(booking);
+    // if (refundEligible && booking.paymentId) {
+    //   await processRefund({ paymentId: booking.paymentId, amount: booking.totalPrice });
+    // }
 
-    // TODO: Update booking status to cancelled
-    // await prisma.booking.update({
-    //   where: { id },
-    //   data: { status: 'cancelled', cancelledAt: new Date() }
-    // });
+    // Update booking status to cancelled
+    const cancelledBooking = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: 'cancelled'
+      }
+    });
 
     res.json({
       success: true,
       message: 'Booking cancelled successfully',
       data: {
-        id,
-        status: 'cancelled',
-        cancelledAt: new Date().toISOString()
+        id: cancelledBooking.id,
+        status: cancelledBooking.status,
+        updatedAt: cancelledBooking.updatedAt
       }
     });
   } catch (error: any) {
