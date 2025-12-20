@@ -241,7 +241,7 @@ export const checkFavorite = async (req: Request, res: Response): Promise<void> 
     const favorite = await prisma.favorite.findFirst({
       where: {
         userId: req.user.id,
-        type,
+        type: type as any,
         itemId
       }
     });
