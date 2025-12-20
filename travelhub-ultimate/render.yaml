@@ -1,0 +1,31 @@
+services:
+  # Backend API
+  - type: web
+    name: travelhub-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: oregon
+    plan: free
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: travelhub-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://travelhub-frontend.onrender.com
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: travelhub-db
+    databaseName: travelhub
+    plan: free
+    region: oregon
