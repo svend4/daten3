@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import affiliateRoutes from './routes/affiliate.routes';
 
 dotenv.config();
 
@@ -100,6 +101,10 @@ app.get('/api/flights/search', (req, res) => {
   res.json({ message: 'Flights search endpoint (use POST with params)' });
 });
 
+// Affiliate routes
+app.use('/api/affiliate', affiliateRoutes);
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Affiliate API: http://localhost:${PORT}/api/affiliate`);
 });
