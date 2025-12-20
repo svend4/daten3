@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📱 TravelHub Mobile Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .info {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .info h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .info p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .info a {
+      color: #3b82f6;
+      text-decoration: none;
+      word-break: break-all;
+      font-size: 12px;
+    }
+
+    button {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 18px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 12px;
+      width: 100%;
+      margin: 10px 0;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .test {
+      background: white;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 4px solid #eab308;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .test.success {
+      border-left-color: #22c55e;
+    }
+
+    .test.error {
+      border-left-color: #ef4444;
+    }
+
+    .test.pending {
+      border-left-color: #eab308;
+    }
+
+    .test h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .test p {
+      color: #666;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .test code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .summary {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .summary.success {
+      border: 3px solid #22c55e;
+    }
+
+    .summary.error {
+      border: 3px solid #ef4444;
+    }
+
+    .summary h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .summary p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .urls {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .urls h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .urls a {
+      display: block;
+      padding: 12px;
+      margin: 8px 0;
+      background: #f1f5f9;
+      border-radius: 8px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-size: 13px;
+      word-break: break-all;
+      border: 1px solid #e2e8f0;
+    }
+
+    .urls a:active {
+      background: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 TravelHub Mobile Test</h1>
+
+    <div class="info">
+      <h2>ℹ️ О тесте</h2>
+      <p>Эта страница проверит работу Frontend и Backend вашего TravelHub приложения.</p>
+    </div>
+
+    <button onclick="runTests()" id="testBtn">🧪 Запустить тесты</button>
+
+    <div id="results"></div>
+
+    <div class="urls">
+      <h3>🔗 Быстрые ссылки для ручной проверки:</h3>
+      <a href="https://daten3-travel.up.railway.app" target="_blank">
+        🏠 Frontend (главная страница)
+      </a>
+      <a href="https://daten3-travelbackend.up.railway.app/health" target="_blank">
+        ❤️ Backend Health
+      </a>
+      <a href="https://daten3-travelbackend.up.railway.app/api/health" target="_blank">
+        🔌 API Health
+      </a>
+      <a href="https://daten3-travelbackend.up.railway.app/api/hotels/search" target="_blank">
+        🏨 Hotels API
+      </a>
+      <a href="https://daten3-travelbackend.up.railway.app/api/flights/search" target="_blank">
+        ✈️ Flights API
+      </a>
+    </div>
+  </div>
+
+  <script>
+    async function runTests() {
+      const results = document.getElementById('results');
+      const btn = document.getElementById('testBtn');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Тестирование...';
+
+      results.innerHTML = '<div class="spinner"></div>';
+
+      const tests = [];
+      const apiUrl = 'https://daten3-travelbackend.up.railway.app';
+
+      // Test 1: Frontend availability
+      try {
+        const frontendUrl = 'https://daten3-travel.up.railway.app';
+        const r = await fetch(frontendUrl);
+        if (r.ok) {
+          tests.push({
+            name: 'Frontend доступность',
+            status: 'success',
+            message: 'Сайт загружается',
+            detail: `HTTP ${r.status}`
+          });
+        } else {
+          tests.push({
+            name: 'Frontend доступность',
+            status: 'error',
+            message: `HTTP ${r.status} ${r.statusText}`,
+            detail: frontendUrl
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Frontend доступность',
+          status: 'error',
+          message: 'Не удалось подключиться',
+          detail: e.message
+        });
+      }
+
+      // Test 2: Backend Health
+      try {
+        const r = await fetch(apiUrl + '/health');
+        const data = await r.json();
+        if (data.status === 'ok') {
+          tests.push({
+            name: 'Backend Health',
+            status: 'success',
+            message: `Uptime: ${Math.floor(data.uptime)}s`,
+            detail: data.timestamp
+          });
+        } else {
+          tests.push({
+            name: 'Backend Health',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Backend Health',
+          status: 'error',
+          message: 'Ошибка подключения',
+          detail: e.message
+        });
+      }
+
+      // Test 3: API Health
+      try {
+        const r = await fetch(apiUrl + '/api/health');
+        const data = await r.json();
+        if (data.status === 'ok') {
+          tests.push({
+            name: 'API Health',
+            status: 'success',
+            message: 'API работает',
+            detail: 'CORS настроен'
+          });
+        } else {
+          tests.push({
+            name: 'API Health',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'API Health',
+          status: 'error',
+          message: 'CORS ошибка или нет подключения',
+          detail: e.message
+        });
+      }
+
+      // Test 4: Hotels API
+      try {
+        const r = await fetch(apiUrl + '/api/hotels/search');
+        const data = await r.json();
+        if (data.message) {
+          tests.push({
+            name: 'Hotels API',
+            status: 'success',
+            message: data.message,
+            detail: 'Endpoint работает'
+          });
+        } else {
+          tests.push({
+            name: 'Hotels API',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Hotels API',
+          status: 'error',
+          message: 'Ошибка запроса',
+          detail: e.message
+        });
+      }
+
+      // Test 5: Flights API
+      try {
+        const r = await fetch(apiUrl + '/api/flights/search');
+        const data = await r.json();
+        if (data.message) {
+          tests.push({
+            name: 'Flights API',
+            status: 'success',
+            message: data.message,
+            detail: 'Endpoint работает'
+          });
+        } else {
+          tests.push({
+            name: 'Flights API',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Flights API',
+          status: 'error',
+          message: 'Ошибка запроса',
+          detail: e.message
+        });
+      }
+
+      // Display results
+      results.innerHTML = tests.map(t => `
+        <div class="test ${t.status}">
+          <h3>
+            ${t.status === 'success' ? '✅' : '❌'}
+            ${t.name}
+          </h3>
+          <p><strong>${t.message}</strong></p>
+          <p><code>${t.detail}</code></p>
+        </div>
+      `).join('');
+
+      // Summary
+      const successCount = tests.filter(t => t.status === 'success').length;
+      const totalCount = tests.length;
+      const allSuccess = successCount === totalCount;
+
+      results.innerHTML += `
+        <div class="summary ${allSuccess ? 'success' : 'error'}">
+          <h2>${allSuccess ? '🎉' : '⚠️'} Результат</h2>
+          <p><strong>${successCount} из ${totalCount} тестов пройдено</strong></p>
+          <p>${allSuccess
+            ? 'Все компоненты работают корректно!'
+            : 'Некоторые компоненты требуют настройки'
+          }</p>
+        </div>
+      `;
+
+      btn.disabled = false;
+      btn.textContent = '🔄 Запустить тесты снова';
+    }
+  </script>
+</body>
+</html>
