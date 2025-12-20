@@ -1,8 +1,8 @@
 import express from 'express';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
-import * as authController from '../controllers/auth.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validation.middleware';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
+import * as authController from '../controllers/auth.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validation.middleware.js';
 import {
   registerValidator,
   loginValidator,
@@ -11,7 +11,7 @@ import {
   resetPasswordValidator,
   updateProfileValidator,
   changePasswordValidator,
-} from '../validators/auth.validators';
+} from '../validators/auth.validators.js';
 
 const router = express.Router();
 

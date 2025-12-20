@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
-import { authenticate } from '../middleware/auth.middleware';
-import { requireAdmin } from '../middleware/admin.middleware';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/admin.middleware.js';
 
 const router = express.Router();
 
