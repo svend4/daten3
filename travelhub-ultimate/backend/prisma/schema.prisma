@@ -335,6 +335,7 @@ model Commission {
   // Details
   description     String?
   reason          String?           // For rejection
+  notes           String?           // Additional notes
 
   // Dates
   createdAt       DateTime          @default(now())
@@ -397,6 +398,7 @@ model Payout {
 
   // Dates
   requestedAt     DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   processedAt     DateTime?
   completedAt     DateTime?
   rejectedAt      DateTime?
