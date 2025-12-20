@@ -1,3 +1,0 @@
-[deploy]
-healthcheckPath = "/health.html"
-healthcheckTimeout = 300
