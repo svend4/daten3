@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.middleware';
+import { generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.middleware.js';
 
 /**
  * Auth Controller

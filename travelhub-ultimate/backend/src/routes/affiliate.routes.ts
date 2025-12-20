@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 

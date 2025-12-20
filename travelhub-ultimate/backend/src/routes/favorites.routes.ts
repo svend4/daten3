@@ -1,13 +1,13 @@
 import express from 'express';
-import * as favoritesController from '../controllers/favorites.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validation.middleware';
+import * as favoritesController from '../controllers/favorites.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validation.middleware.js';
 import {
   getFavoritesValidator,
   addFavoriteValidator,
   removeFavoriteValidator,
   checkFavoriteValidator,
-} from '../validators/favorite.validators';
+} from '../validators/favorite.validators.js';
 
 const router = express.Router();
 

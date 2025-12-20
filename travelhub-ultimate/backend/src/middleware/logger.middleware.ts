@@ -1,5 +1,5 @@
 import morgan from 'morgan';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 // Create a stream object with 'write' function for morgan
 const stream = {

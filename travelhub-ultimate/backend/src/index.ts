@@ -5,25 +5,25 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Routes
-import affiliateRoutes from './routes/affiliate.routes';
-import authRoutes from './routes/auth.routes';
-import bookingsRoutes from './routes/bookings.routes';
-import favoritesRoutes from './routes/favorites.routes';
-import priceAlertsRoutes from './routes/priceAlerts.routes';
-import adminRoutes from './routes/admin.routes';
+import affiliateRoutes from './routes/affiliate.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import bookingsRoutes from './routes/bookings.routes.js';
+import favoritesRoutes from './routes/favorites.routes.js';
+import priceAlertsRoutes from './routes/priceAlerts.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 // Middleware
-import corsMiddleware from './middleware/cors.middleware';
-import helmetMiddleware from './middleware/helmet.middleware';
-import morganMiddleware from './middleware/logger.middleware';
-import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware';
-import { rateLimiters } from './middleware/rateLimit.middleware';
+import corsMiddleware from './middleware/cors.middleware.js';
+import helmetMiddleware from './middleware/helmet.middleware.js';
+import morganMiddleware from './middleware/logger.middleware.js';
+import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
+import { rateLimiters } from './middleware/rateLimit.middleware.js';
 
 // Services
-import { searchHotels } from './services/travelpayouts.service';
+import { searchHotels } from './services/travelpayouts.service.js';
 
 // Utils
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

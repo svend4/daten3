@@ -1,14 +1,14 @@
 import express from 'express';
-import * as bookingsController from '../controllers/bookings.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validation.middleware';
+import * as bookingsController from '../controllers/bookings.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validation.middleware.js';
 import {
   createBookingValidator,
   getBookingsValidator,
   getBookingValidator,
   updateBookingStatusValidator,
   cancelBookingValidator,
-} from '../validators/booking.validators';
+} from '../validators/booking.validators.js';
 
 const router = express.Router();
 
