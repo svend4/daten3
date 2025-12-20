@@ -54,12 +54,39 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Hotels search endpoint - accepts POST with search params
+app.post('/api/hotels/search', (req, res) => {
+  const searchParams = req.body;
+  console.log('Hotels search params:', searchParams);
+
+  // TODO: Implement actual hotel search logic
+  res.json({
+    message: 'Hotels search endpoint',
+    params: searchParams,
+    hotels: [] // Empty for now, will be populated with real data later
+  });
+});
+
+// Flights search endpoint - accepts POST with search params
+app.post('/api/flights/search', (req, res) => {
+  const searchParams = req.body;
+  console.log('Flights search params:', searchParams);
+
+  // TODO: Implement actual flight search logic
+  res.json({
+    message: 'Flights search endpoint',
+    params: searchParams,
+    flights: [] // Empty for now, will be populated with real data later
+  });
+});
+
+// Keep GET endpoints for manual testing
 app.get('/api/hotels/search', (req, res) => {
-  res.json({ message: 'Hotels search endpoint' });
+  res.json({ message: 'Hotels search endpoint (use POST with params)' });
 });
 
 app.get('/api/flights/search', (req, res) => {
-  res.json({ message: 'Flights search endpoint' });
+  res.json({ message: 'Flights search endpoint (use POST with params)' });
 });
 
 app.listen(PORT, () => {
