@@ -1,16 +1,13 @@
 import express, { Request, Response } from 'express';
 import { rateLimiters } from '../middleware/rateLimit.middleware';
+import { authenticate } from '../middleware/auth.middleware';
+import { requireAdmin } from '../middleware/admin.middleware';
 
 const router = express.Router();
 
-// TODO: Import middleware when created
-// import { authenticate } from '../middleware/auth.middleware';
-// import { requireAdmin } from '../middleware/admin.middleware';
-
 // All routes require authentication and admin privileges
-// TODO: Uncomment when middleware is ready
-// router.use(authenticate);
-// router.use(requireAdmin);
+router.use(authenticate);
+router.use(requireAdmin);
 
 // ===== AFFILIATE MANAGEMENT =====
 

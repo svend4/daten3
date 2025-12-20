@@ -1,59 +1,25 @@
 import express from 'express';
+import * as bookingsController from '../controllers/bookings.controller';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// TODO: Import when controllers/middleware are created
-// import * as bookingsController from '../controllers/bookings.controller';
-// import { authenticate } from '../middleware/auth.middleware';
-
 // All routes require authentication
-// TODO: Uncomment when auth middleware is ready
-// router.use(authenticate);
+router.use(authenticate);
 
 // Get user's bookings
-router.get('/', async (req, res) => {
-  // TODO: Implement bookingsController.getBookings
-  res.status(501).json({
-    success: false,
-    message: 'Get bookings endpoint - implementation pending',
-    data: []
-  });
-});
+router.get('/', bookingsController.getBookings);
 
 // Get single booking
-router.get('/:id', async (req, res) => {
-  // TODO: Implement bookingsController.getBooking
-  res.status(501).json({
-    success: false,
-    message: 'Get booking endpoint - implementation pending'
-  });
-});
+router.get('/:id', bookingsController.getBooking);
 
 // Create booking
-router.post('/', async (req, res) => {
-  // TODO: Implement bookingsController.createBooking
-  res.status(501).json({
-    success: false,
-    message: 'Create booking endpoint - implementation pending'
-  });
-});
+router.post('/', bookingsController.createBooking);
 
 // Update booking status
-router.patch('/:id/status', async (req, res) => {
-  // TODO: Implement bookingsController.updateBookingStatus
-  res.status(501).json({
-    success: false,
-    message: 'Update booking status endpoint - implementation pending'
-  });
-});
+router.patch('/:id/status', bookingsController.updateBookingStatus);
 
 // Cancel booking
-router.delete('/:id', async (req, res) => {
-  // TODO: Implement bookingsController.cancelBooking
-  res.status(501).json({
-    success: false,
-    message: 'Cancel booking endpoint - implementation pending'
-  });
-});
+router.delete('/:id', bookingsController.cancelBooking);
 
 export default router;

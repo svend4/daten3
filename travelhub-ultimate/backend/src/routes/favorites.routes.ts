@@ -1,51 +1,22 @@
 import express from 'express';
+import * as favoritesController from '../controllers/favorites.controller';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// TODO: Import when controllers/middleware are created
-// import * as favoritesController from '../controllers/favorites.controller';
-// import { authenticate } from '../middleware/auth.middleware';
-
 // All routes require authentication
-// TODO: Uncomment when auth middleware is ready
-// router.use(authenticate);
+router.use(authenticate);
 
 // Get user's favorites
-router.get('/', async (req, res) => {
-  // TODO: Implement favoritesController.getFavorites
-  res.status(501).json({
-    success: false,
-    message: 'Get favorites endpoint - implementation pending',
-    data: []
-  });
-});
+router.get('/', favoritesController.getFavorites);
 
 // Add to favorites
-router.post('/', async (req, res) => {
-  // TODO: Implement favoritesController.addFavorite
-  res.status(501).json({
-    success: false,
-    message: 'Add favorite endpoint - implementation pending'
-  });
-});
+router.post('/', favoritesController.addFavorite);
 
 // Remove from favorites
-router.delete('/:id', async (req, res) => {
-  // TODO: Implement favoritesController.removeFavorite
-  res.status(501).json({
-    success: false,
-    message: 'Remove favorite endpoint - implementation pending'
-  });
-});
+router.delete('/:id', favoritesController.removeFavorite);
 
 // Check if item is favorited
-router.get('/check/:type/:itemId', async (req, res) => {
-  // TODO: Implement favoritesController.checkFavorite
-  res.status(501).json({
-    success: false,
-    message: 'Check favorite endpoint - implementation pending',
-    isFavorited: false
-  });
-});
+router.get('/check/:type/:itemId', favoritesController.checkFavorite);
 
 export default router;
