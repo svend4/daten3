@@ -16,6 +16,8 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chmod +x /docker-entrypoint.sh
 
-EXPOSE 80
+# Railway will use the PORT environment variable
+ENV PORT=8080
+EXPOSE 8080
 
 CMD ["/docker-entrypoint.sh"]

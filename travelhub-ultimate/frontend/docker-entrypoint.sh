@@ -1,13 +1,18 @@
 #!/bin/sh
 set -e
 
-# Use Railway's PORT variable, default to 80
-PORT=${PORT:-80}
+# Railway provides PORT, default to 8080 if not set
+export PORT=${PORT:-8080}
 
-echo "Starting nginx on port $PORT"
+echo "=== TravelHub Frontend Starting ==="
+echo "PORT: $PORT"
+echo "Updating nginx configuration..."
 
-# Update nginx config with the correct port
+# Update nginx to listen on Railway's PORT
 sed -i "s/listen 80;/listen $PORT;/g" /etc/nginx/conf.d/default.conf
 
-# Start nginx
+echo "Nginx configuration updated"
+echo "Starting nginx..."
+
+# Start nginx in foreground
 exec nginx -g 'daemon off;'
