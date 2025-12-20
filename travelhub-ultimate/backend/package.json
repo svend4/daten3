@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "npx prisma generate && tsc",
     "start": "node start.js",
+    "start:migrate": "npx prisma migrate deploy && node start.js",
     "start:direct": "node dist/index.js",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
