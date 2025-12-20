@@ -1,60 +1,47 @@
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import dotenv from 'dotenv';
+
+// Load environment variables first
+dotenv.config();
+
+// Routes
 import affiliateRoutes from './routes/affiliate.routes';
 import authRoutes from './routes/auth.routes';
 import bookingsRoutes from './routes/bookings.routes';
 import favoritesRoutes from './routes/favorites.routes';
 import priceAlertsRoutes from './routes/priceAlerts.routes';
 import adminRoutes from './routes/admin.routes';
+
+// Middleware
+import corsMiddleware from './middleware/cors.middleware';
+import helmetMiddleware from './middleware/helmet.middleware';
+import morganMiddleware from './middleware/logger.middleware';
+import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware';
 import { rateLimiters } from './middleware/rateLimit.middleware';
+
+// Services
 import { searchHotels } from './services/travelpayouts.service';
 
-dotenv.config();
+// Utils
+import logger from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-  : ['http://localhost:3001', 'http://localhost:5173'];
+// ============================================
+// MIDDLEWARE SETUP
+// ============================================
 
-// Log CORS configuration on startup
-console.log('🔧 CORS Configuration:');
-console.log('  FRONTEND_URL env:', process.env.FRONTEND_URL || '❌ NOT SET');
-console.log('  Allowed origins:', allowedOrigins);
-console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set');
+// Security middleware
+app.use(helmetMiddleware);
+app.use(corsMiddleware);
 
-app.use(helmet());
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Check if origin is in allowed list
-    if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
-      console.log(`✅ CORS allowed: ${origin}`);
-      return callback(null, true);
-    }
-
-    // In development, allow localhost
-    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
-      console.log(`✅ CORS allowed (dev localhost): ${origin}`);
-      return callback(null, true);
-    }
-
-    console.error(`❌ CORS blocked: ${origin}`);
-    console.error(`   Allowed origins: ${allowedOrigins.join(', ')}`);
-    console.error(`   💡 Set FRONTEND_URL environment variable to: ${origin}`);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.use(express.json());
+// Logging middleware
+app.use(morganMiddleware);
 
 // Health check endpoints (Railway checks /api/health)
 app.get('/health', (req, res) => {
@@ -161,25 +148,59 @@ app.get('/', (req, res) => {
   });
 });
 
+// ============================================
+// ERROR HANDLING
+// ============================================
+
+// 404 handler (must be after all routes)
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
+
+// ============================================
+// SERVER STARTUP
+// ============================================
+
 app.listen(PORT, () => {
-  console.log('');
-  console.log('═══════════════════════════════════════════════════');
-  console.log('🚀 TravelHub Ultimate API Server');
-  console.log('═══════════════════════════════════════════════════');
-  console.log(`📍 Port: ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log('');
-  console.log('📡 API Endpoints:');
-  console.log(`   Auth:         http://localhost:${PORT}/api/auth`);
-  console.log(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
-  console.log(`   Flights:      http://localhost:${PORT}/api/flights/search`);
-  console.log(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
-  console.log(`   Bookings:     http://localhost:${PORT}/api/bookings`);
-  console.log(`   Favorites:    http://localhost:${PORT}/api/favorites`);
-  console.log(`   Price Alerts: http://localhost:${PORT}/api/price-alerts`);
-  console.log(`   Admin:        http://localhost:${PORT}/api/admin`);
-  console.log('');
-  console.log('✅ Server is ready to accept connections');
-  console.log('═══════════════════════════════════════════════════');
-  console.log('');
+  logger.info('═══════════════════════════════════════════════════');
+  logger.info('🚀 TravelHub Ultimate API Server');
+  logger.info('═══════════════════════════════════════════════════');
+  logger.info(`📍 Port: ${PORT}`);
+  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info('');
+  logger.info('📡 API Endpoints:');
+  logger.info(`   Auth:         http://localhost:${PORT}/api/auth`);
+  logger.info(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
+  logger.info(`   Flights:      http://localhost:${PORT}/api/flights/search`);
+  logger.info(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
+  logger.info(`   Bookings:     http://localhost:${PORT}/api/bookings`);
+  logger.info(`   Favorites:    http://localhost:${PORT}/api/favorites`);
+  logger.info(`   Price Alerts: http://localhost:${PORT}/api/price-alerts`);
+  logger.info(`   Admin:        http://localhost:${PORT}/api/admin`);
+  logger.info('');
+  logger.info('✅ Server is ready to accept connections');
+  logger.info('═══════════════════════════════════════════════════');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  process.exit(0);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('💥 Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('💥 Unhandled Rejection:', reason);
+  process.exit(1);
 });
