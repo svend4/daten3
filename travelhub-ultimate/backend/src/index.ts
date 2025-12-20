@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import affiliateRoutes from './routes/affiliate.routes';
+import { rateLimiters } from './middleware/rateLimit.middleware';
 
 dotenv.config();
 
@@ -67,7 +68,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Hotels search endpoint - accepts POST with search params
-app.post('/api/hotels/search', (req, res) => {
+app.post('/api/hotels/search', rateLimiters.moderate, (req, res) => {
   const searchParams = req.body;
   console.log('Hotels search params:', searchParams);
 
@@ -80,7 +81,7 @@ app.post('/api/hotels/search', (req, res) => {
 });
 
 // Flights search endpoint - accepts POST with search params
-app.post('/api/flights/search', (req, res) => {
+app.post('/api/flights/search', rateLimiters.moderate, (req, res) => {
   const searchParams = req.body;
   console.log('Flights search params:', searchParams);
 

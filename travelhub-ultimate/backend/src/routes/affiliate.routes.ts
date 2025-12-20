@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { rateLimiters } from '../middleware/rateLimit.middleware';
 
 const router = express.Router();
 
@@ -6,7 +7,7 @@ const router = express.Router();
  * GET /api/affiliate/dashboard
  * Get affiliate dashboard data
  */
-router.get('/dashboard', (req: Request, res: Response) => {
+router.get('/dashboard', rateLimiters.moderate, (req: Request, res: Response) => {
   // TODO: Implement authentication middleware
   // For now, return mock data
   res.json({
@@ -114,7 +115,7 @@ router.get('/stats', (req: Request, res: Response) => {
  * POST /api/affiliate/register
  * Register as affiliate
  */
-router.post('/register', (req: Request, res: Response) => {
+router.post('/register', rateLimiters.strict, (req: Request, res: Response) => {
   const { userId } = req.body;
 
   // Generate referral code
