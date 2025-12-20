@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "start": "serve dist -l $PORT",
+    "start": "serve -s dist -l $PORT",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
