@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import affiliateRoutes from './routes/affiliate.routes';
+import { rateLimiters } from './middleware/rateLimit.middleware';
+import { searchHotels } from './services/travelpayouts.service';
 
 dotenv.config();
 
@@ -66,20 +69,37 @@ app.get('/api/health', (req, res) => {
 });
 
 // Hotels search endpoint - accepts POST with search params
-app.post('/api/hotels/search', (req, res) => {
-  const searchParams = req.body;
-  console.log('Hotels search params:', searchParams);
+app.post('/api/hotels/search', rateLimiters.moderate, async (req, res) => {
+  try {
+    const searchParams = req.body;
+    console.log('🔍 Hotels search params:', searchParams);
 
-  // TODO: Implement actual hotel search logic
-  res.json({
-    message: 'Hotels search endpoint',
-    params: searchParams,
-    hotels: [] // Empty for now, will be populated with real data later
-  });
+    // Search hotels using Travelpayouts API
+    const results = await searchHotels({
+      destination: searchParams.destination || searchParams.city,
+      checkIn: searchParams.checkIn,
+      checkOut: searchParams.checkOut,
+      adults: searchParams.adults || searchParams.guests || 2,
+      rooms: searchParams.rooms || 1
+    });
+
+    res.json({
+      success: true,
+      message: 'Hotels search successful',
+      data: results
+    });
+  } catch (error: any) {
+    console.error('❌ Hotels search error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Hotel search failed',
+      message: error.message
+    });
+  }
 });
 
 // Flights search endpoint - accepts POST with search params
-app.post('/api/flights/search', (req, res) => {
+app.post('/api/flights/search', rateLimiters.moderate, (req, res) => {
   const searchParams = req.body;
   console.log('Flights search params:', searchParams);
 
@@ -100,6 +120,10 @@ app.get('/api/flights/search', (req, res) => {
   res.json({ message: 'Flights search endpoint (use POST with params)' });
 });
 
+// Affiliate routes
+app.use('/api/affiliate', affiliateRoutes);
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Affiliate API: http://localhost:${PORT}/api/affiliate`);
 });
