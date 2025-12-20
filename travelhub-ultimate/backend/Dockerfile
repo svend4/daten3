@@ -25,8 +25,8 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma and wget for healthcheck
+RUN apk add --no-cache openssl wget
 
 WORKDIR /app
 
@@ -62,9 +62,9 @@ EXPOSE 3000
 # Set environment
 ENV NODE_ENV=production
 
-# Health check
+# Health check - simple wget/curl check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Start application
 CMD ["npm", "run", "start:railway"]
