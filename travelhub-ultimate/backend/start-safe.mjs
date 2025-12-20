@@ -22,6 +22,12 @@ if (!process.env.DATABASE_URL) {
 
 console.log('✅ DATABASE_URL is set\n');
 
+// Show first 60 characters for debugging (without exposing password)
+const dbUrl = process.env.DATABASE_URL || '';
+const preview = dbUrl.length > 60 ? dbUrl.substring(0, 60) + '...' : dbUrl;
+console.log(`DATABASE_URL preview: ${preview}`);
+console.log(`DATABASE_URL length: ${dbUrl.length} characters\n`);
+
 // Parse DATABASE_URL to show configuration
 try {
   const url = new URL(process.env.DATABASE_URL);
