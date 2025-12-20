@@ -1,325 +1,774 @@
 import express, { Request, Response } from 'express';
+import prisma from '../lib/prisma.js';
 import { rateLimiters } from '../middleware/rateLimit.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+/**
+ * Affiliate Routes
+ * Handles affiliate program operations
+ * Now using Prisma ORM with PostgreSQL
+ */
 
 /**
  * GET /api/affiliate/dashboard
  * Get affiliate dashboard data
  */
-router.get('/dashboard', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication middleware
-  // For now, return mock data
-  res.json({
-    success: true,
-    data: {
-      affiliate: {
-        id: 'affiliate_1',
-        referralCode: 'REF123456',
-        level: 1,
-        status: 'active',
-        totalEarnings: 1250.50,
-        totalReferrals: 15
-      },
-      stats: {
-        clicks: 342,
-        conversions: 15,
-        conversionRate: '4.39',
-        directReferrals: 15,
-        totalReferrals: 27,
-        earnings: {
-          pending: 125.00,
-          approved: 875.50,
-          paid: 250.00,
-          total: 1250.50
+router.get('/dashboard', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    // Get affiliate data
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        referrals: true,
+        commissions: true
+      }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Affiliate account not found. Please register as an affiliate first.'
+      });
+      return;
+    }
+
+    // Calculate stats
+    const pendingCommissions = affiliate.commissions.filter(c => c.status === 'pending')
+      .reduce((sum, c) => sum + c.amount, 0);
+    const approvedCommissions = affiliate.commissions.filter(c => c.status === 'approved')
+      .reduce((sum, c) => sum + c.amount, 0);
+    const paidCommissions = affiliate.commissions.filter(c => c.status === 'paid')
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    const conversionRate = affiliate.totalClicks > 0
+      ? ((affiliate.totalReferrals / affiliate.totalClicks) * 100).toFixed(2)
+      : '0.00';
+
+    res.json({
+      success: true,
+      data: {
+        affiliate: {
+          id: affiliate.id,
+          referralCode: affiliate.referralCode,
+          level: affiliate.level,
+          status: affiliate.status,
+          verified: affiliate.verified,
+          totalEarnings: affiliate.totalEarnings,
+          totalReferrals: affiliate.totalReferrals,
+          totalClicks: affiliate.totalClicks
+        },
+        stats: {
+          clicks: affiliate.totalClicks,
+          conversions: affiliate.totalReferrals,
+          conversionRate,
+          directReferrals: affiliate.referrals.filter(r => r.level === 1).length,
+          totalReferrals: affiliate.totalReferrals,
+          earnings: {
+            pending: pendingCommissions,
+            approved: approvedCommissions,
+            paid: paidCommissions,
+            total: affiliate.totalEarnings
+          }
         }
       }
-    }
-  });
+    });
+  } catch (error: any) {
+    console.error('❌ Get dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Request failed', message: error.message });
+  }
 });
 
 /**
  * GET /api/affiliate/referral-tree
  * Get referral tree structure
  */
-router.get('/referral-tree', (req: Request, res: Response) => {
-  // TODO: Implement authentication middleware
-  // For now, return mock data
-  res.json({
-    success: true,
-    data: [
-      {
-        id: 'ref_1',
-        level: 1,
-        status: 'active',
-        totalEarnings: 450.00,
-        createdAt: '2024-11-15T10:30:00Z',
-        user: {
-          name: 'Иван Петров',
-          email: 'ivan@example.com'
-        },
-        referrals: [
-          {
-            id: 'ref_2',
-            level: 2,
-            status: 'active',
-            totalEarnings: 150.00,
-            createdAt: '2024-12-01T14:20:00Z',
-            user: {
-              name: 'Мария Сидорова',
-              email: 'maria@example.com'
-            },
-            referrals: []
-          }
-        ]
+router.get('/referral-tree', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        referrals: {
+          include: {
+            referredAffiliate: {
+              include: {
+                referrals: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    // Build tree structure
+    const tree = affiliate.referrals.map(ref => ({
+      id: ref.id,
+      level: ref.level,
+      status: ref.status,
+      totalEarnings: ref.totalEarnings,
+      createdAt: ref.createdAt,
+      user: {
+        name: ref.userName || 'Unknown',
+        email: ref.userEmail || 'N/A'
       },
-      {
-        id: 'ref_3',
-        level: 1,
-        status: 'active',
-        totalEarnings: 800.50,
-        createdAt: '2024-10-20T09:15:00Z',
+      referrals: ref.referredAffiliate?.referrals.map(subRef => ({
+        id: subRef.id,
+        level: subRef.level,
+        status: subRef.status,
+        totalEarnings: subRef.totalEarnings,
+        createdAt: subRef.createdAt,
         user: {
-          name: 'Алексей Иванов',
-          email: 'alexey@example.com'
+          name: subRef.userName || 'Unknown',
+          email: subRef.userEmail || 'N/A'
         },
         referrals: []
-      }
-    ]
-  });
+      })) || []
+    }));
+
+    res.json({ success: true, data: tree });
+  } catch (error: any) {
+    console.error('❌ Get referral tree error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/stats
  * Get detailed statistics
  */
-router.get('/stats', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    data: {
-      monthly: [
-        { month: '2024-09', earnings: 250.00, referrals: 5 },
-        { month: '2024-10', earnings: 420.50, referrals: 8 },
-        { month: '2024-11', earnings: 380.00, referrals: 7 },
-        { month: '2024-12', earnings: 200.00, referrals: 2 }
-      ],
-      topReferrals: [
-        { name: 'Алексей Иванов', earnings: 800.50 },
-        { name: 'Иван Петров', earnings: 450.00 }
-      ]
+router.get('/stats', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        commissions: {
+          where: { status: 'approved' },
+          orderBy: { createdAt: 'desc' }
+        },
+        referrals: {
+          orderBy: { totalEarnings: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    // Group commissions by month
+    const monthlyData: { [key: string]: { earnings: number; referrals: number } } = {};
+
+    affiliate.commissions.forEach(comm => {
+      const month = comm.createdAt.toISOString().substring(0, 7); // YYYY-MM
+      if (!monthlyData[month]) {
+        monthlyData[month] = { earnings: 0, referrals: 0 };
+      }
+      monthlyData[month].earnings += comm.amount;
+    });
+
+    const monthly = Object.entries(monthlyData)
+      .map(([month, data]) => ({ month, ...data }))
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .slice(0, 12);
+
+    const topReferrals = affiliate.referrals
+      .slice(0, 10)
+      .map(ref => ({
+        name: ref.userName || 'Unknown',
+        earnings: ref.totalEarnings
+      }));
+
+    res.json({
+      success: true,
+      data: { monthly, topReferrals }
+    });
+  } catch (error: any) {
+    console.error('❌ Get stats error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * POST /api/affiliate/register
  * Register as affiliate
  */
-router.post('/register', rateLimiters.strict, (req: Request, res: Response) => {
-  const { userId } = req.body;
-
-  // Generate referral code
-  const referralCode = 'REF' + Math.random().toString(36).substring(2, 12).toUpperCase();
-
-  res.json({
-    success: true,
-    message: 'Successfully registered as affiliate partner',
-    data: {
-      referralCode,
-      status: 'active',
-      level: 1
+router.post('/register', rateLimiters.strict, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    // Check if already registered
+    const existing = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (existing) {
+      res.status(400).json({
+        success: false,
+        error: 'Already registered',
+        message: 'You are already registered as an affiliate.',
+        data: {
+          referralCode: existing.referralCode,
+          status: existing.status
+        }
+      });
+      return;
+    }
+
+    // Generate unique referral code
+    let referralCode = '';
+    let codeExists = true;
+
+    while (codeExists) {
+      referralCode = 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      const existing = await prisma.affiliate.findUnique({
+        where: { referralCode }
+      });
+      codeExists = !!existing;
+    }
+
+    // Create affiliate
+    const affiliate = await prisma.affiliate.create({
+      data: {
+        userId: req.user.id,
+        referralCode,
+        level: 1,
+        status: 'pending',
+        verified: false
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Successfully registered as affiliate partner. Your account is pending verification.',
+      data: {
+        id: affiliate.id,
+        referralCode: affiliate.referralCode,
+        status: affiliate.status,
+        level: affiliate.level,
+        verified: affiliate.verified
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Register affiliate error:', error);
+    res.status(500).json({ success: false, error: 'Registration failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/validate/:code
  * Validate referral code
  */
-router.get('/validate/:code', (req: Request, res: Response) => {
-  const { code } = req.params;
+router.get('/validate/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
 
-  // TODO: Implement actual validation logic
-  res.json({
-    success: true,
-    valid: true,
-    message: 'Referral code is valid'
-  });
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { referralCode: code },
+      select: {
+        id: true,
+        referralCode: true,
+        status: true,
+        verified: true
+      }
+    });
+
+    if (!affiliate) {
+      res.json({
+        success: true,
+        valid: false,
+        message: 'Referral code not found'
+      });
+      return;
+    }
+
+    if (affiliate.status !== 'active') {
+      res.json({
+        success: true,
+        valid: false,
+        message: 'Referral code is not active'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      valid: true,
+      message: 'Referral code is valid',
+      data: {
+        code: affiliate.referralCode,
+        verified: affiliate.verified
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Validate code error:', error);
+    res.status(500).json({ success: false, error: 'Validation failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/earnings
  * Get earnings breakdown
  */
-router.get('/earnings', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real data
-  res.json({
-    success: true,
-    data: {
-      total: 1250.50,
-      pending: 125.00,
-      approved: 875.50,
-      paid: 250.00,
-      history: [
-        {
-          id: 'earn_1',
-          amount: 25.00,
-          type: 'commission',
-          status: 'approved',
-          referralId: 'ref_1',
-          createdAt: '2024-12-01T10:30:00Z'
-        }
-      ]
+router.get('/earnings', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        commissions: {
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        }
+      }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    const pending = affiliate.commissions
+      .filter(c => c.status === 'pending')
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    const approved = affiliate.commissions
+      .filter(c => c.status === 'approved')
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    const paid = affiliate.commissions
+      .filter(c => c.status === 'paid')
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    res.json({
+      success: true,
+      data: {
+        total: affiliate.totalEarnings,
+        pending,
+        approved,
+        paid,
+        history: affiliate.commissions.map(c => ({
+          id: c.id,
+          amount: c.amount,
+          type: c.type,
+          status: c.status,
+          description: c.description,
+          createdAt: c.createdAt,
+          approvedAt: c.approvedAt,
+          paidAt: c.paidAt
+        }))
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Get earnings error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/referrals
  * Get referral list (flat structure)
  */
-router.get('/referrals', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real data
-  res.json({
-    success: true,
-    data: [
-      {
-        id: 'ref_1',
-        name: 'Иван Петров',
-        email: 'ivan@example.com',
-        level: 1,
-        status: 'active',
-        earnings: 450.00,
-        joinedAt: '2024-11-15T10:30:00Z'
+router.get('/referrals', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        referrals: {
+          orderBy: { createdAt: 'desc' }
+        }
       }
-    ]
-  });
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    const referrals = affiliate.referrals.map(ref => ({
+      id: ref.id,
+      name: ref.userName || 'Unknown',
+      email: ref.userEmail || 'N/A',
+      level: ref.level,
+      status: ref.status,
+      earnings: ref.totalEarnings,
+      joinedAt: ref.createdAt
+    }));
+
+    res.json({ success: true, data: referrals });
+  } catch (error: any) {
+    console.error('❌ Get referrals error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/payouts
  * Get payout history
  */
-router.get('/payouts', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real data
-  res.json({
-    success: true,
-    data: [
-      {
-        id: 'payout_1',
-        amount: 250.00,
-        status: 'completed',
-        method: 'bank_transfer',
-        requestedAt: '2024-11-01T10:00:00Z',
-        completedAt: '2024-11-05T14:30:00Z'
+router.get('/payouts', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        payouts: {
+          orderBy: { requestedAt: 'desc' }
+        }
       }
-    ]
-  });
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    const payouts = affiliate.payouts.map(p => ({
+      id: p.id,
+      amount: p.amount,
+      currency: p.currency,
+      status: p.status,
+      method: p.method,
+      transactionId: p.transactionId,
+      requestedAt: p.requestedAt,
+      processedAt: p.processedAt,
+      completedAt: p.completedAt,
+      rejectedAt: p.rejectedAt,
+      reason: p.reason
+    }));
+
+    res.json({ success: true, data: payouts });
+  } catch (error: any) {
+    console.error('❌ Get payouts error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * POST /api/affiliate/payouts/request
  * Request payout
  */
-router.post('/payouts/request', rateLimiters.strict, (req: Request, res: Response) => {
-  const { amount, method } = req.body;
-
-  // TODO: Implement authentication and real logic
-  res.json({
-    success: true,
-    message: 'Payout request submitted successfully',
-    data: {
-      id: 'payout_' + Date.now(),
-      amount,
-      method,
-      status: 'pending',
-      requestedAt: new Date().toISOString()
+router.post('/payouts/request', rateLimiters.strict, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    const { amount, method } = req.body;
+
+    if (!amount || !method) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Amount and method are required'
+      });
+      return;
+    }
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        commissions: {
+          where: { status: 'approved', payoutId: null }
+        }
+      }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    // Check available balance
+    const availableBalance = affiliate.commissions
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    if (amount > availableBalance) {
+      res.status(400).json({
+        success: false,
+        error: 'Insufficient balance',
+        message: `Available balance: ${availableBalance}. Requested: ${amount}`
+      });
+      return;
+    }
+
+    // Check minimum payout amount
+    const minPayout = parseFloat(process.env.AFFILIATE_MIN_PAYOUT || '50');
+    if (amount < minPayout) {
+      res.status(400).json({
+        success: false,
+        error: 'Amount too low',
+        message: `Minimum payout amount is ${minPayout}`
+      });
+      return;
+    }
+
+    // Create payout request
+    const payout = await prisma.payout.create({
+      data: {
+        affiliateId: affiliate.id,
+        amount,
+        currency: 'RUB',
+        method,
+        status: 'pending'
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Payout request submitted successfully',
+      data: {
+        id: payout.id,
+        amount: payout.amount,
+        currency: payout.currency,
+        method: payout.method,
+        status: payout.status,
+        requestedAt: payout.requestedAt
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Request payout error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/links
  * Get affiliate tracking links
  */
-router.get('/links', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real data
-  const referralCode = 'REF123456';
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-  res.json({
-    success: true,
-    data: {
-      referralCode,
-      links: [
-        {
-          type: 'general',
-          url: `${baseUrl}/?ref=${referralCode}`,
-          description: 'General referral link'
-        },
-        {
-          type: 'hotels',
-          url: `${baseUrl}/hotels?ref=${referralCode}`,
-          description: 'Hotels search page'
-        },
-        {
-          type: 'flights',
-          url: `${baseUrl}/flights?ref=${referralCode}`,
-          description: 'Flights search page'
-        }
-      ]
+router.get('/links', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const code = affiliate.referralCode;
+
+    res.json({
+      success: true,
+      data: {
+        referralCode: code,
+        links: [
+          {
+            type: 'general',
+            url: `${baseUrl}/?ref=${code}`,
+            description: 'General referral link'
+          },
+          {
+            type: 'hotels',
+            url: `${baseUrl}/hotels?ref=${code}`,
+            description: 'Hotels search page'
+          },
+          {
+            type: 'flights',
+            url: `${baseUrl}/flights?ref=${code}`,
+            description: 'Flights search page'
+          },
+          {
+            type: 'register',
+            url: `${baseUrl}/register?ref=${code}`,
+            description: 'Registration page'
+          }
+        ]
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Get links error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * POST /api/affiliate/track-click
  * Track affiliate link click
  */
-router.post('/track-click', rateLimiters.lenient, (req: Request, res: Response) => {
-  const { referralCode, source } = req.body;
+router.post('/track-click', rateLimiters.lenient, async (req: Request, res: Response) => {
+  try {
+    const { referralCode, source } = req.body;
 
-  // TODO: Implement click tracking logic
-  res.json({
-    success: true,
-    message: 'Click tracked successfully'
-  });
+    if (!referralCode) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Referral code is required'
+      });
+      return;
+    }
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { referralCode }
+    });
+
+    if (!affiliate) {
+      res.json({ success: true, message: 'Click tracked (code not found)' });
+      return;
+    }
+
+    // Track click
+    await prisma.affiliateClick.create({
+      data: {
+        affiliateId: affiliate.id,
+        referralCode,
+        source: source || 'direct',
+        ipAddress: req.ip || null,
+        userAgent: req.headers['user-agent'] || null
+      }
+    });
+
+    // Update total clicks
+    await prisma.affiliate.update({
+      where: { id: affiliate.id },
+      data: { totalClicks: { increment: 1 } }
+    });
+
+    res.json({ success: true, message: 'Click tracked successfully' });
+  } catch (error: any) {
+    console.error('❌ Track click error:', error);
+    res.status(500).json({ success: false, error: 'Tracking failed' });
+  }
 });
 
 /**
  * GET /api/affiliate/settings
  * Get affiliate settings
  */
-router.get('/settings', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real data
-  res.json({
-    success: true,
-    data: {
-      paymentMethod: 'bank_transfer',
-      bankDetails: {
-        accountNumber: '****1234',
-        bankName: 'Example Bank'
-      },
-      notifications: {
-        email: true,
-        newReferral: true,
-        payoutProcessed: true
-      }
+router.get('/settings', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  });
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        paymentMethod: affiliate.paymentMethod || 'not_set',
+        paymentDetails: affiliate.paymentDetails || {},
+        notifications: {
+          email: affiliate.emailNotifications,
+          newReferral: affiliate.newReferralNotify,
+          payoutProcessed: affiliate.payoutNotify
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Get settings error:', error);
+    res.status(500).json({ success: false, error: 'Request failed' });
+  }
 });
 
 /**
  * PUT /api/affiliate/settings
  * Update affiliate settings
  */
-router.put('/settings', rateLimiters.moderate, (req: Request, res: Response) => {
-  // TODO: Implement authentication and real logic
-  res.json({
-    success: true,
-    message: 'Settings updated successfully',
-    data: req.body
-  });
+router.put('/settings', rateLimiters.moderate, authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    const { paymentMethod, paymentDetails, notifications } = req.body;
+
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!affiliate) {
+      res.status(404).json({ success: false, error: 'Affiliate not found' });
+      return;
+    }
+
+    // Build update data
+    const updateData: any = {};
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+    if (paymentDetails !== undefined) updateData.paymentDetails = paymentDetails;
+    if (notifications?.email !== undefined) updateData.emailNotifications = notifications.email;
+    if (notifications?.newReferral !== undefined) updateData.newReferralNotify = notifications.newReferral;
+    if (notifications?.payoutProcessed !== undefined) updateData.payoutNotify = notifications.payoutProcessed;
+
+    const updated = await prisma.affiliate.update({
+      where: { id: affiliate.id },
+      data: updateData
+    });
+
+    res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: {
+        paymentMethod: updated.paymentMethod,
+        notifications: {
+          email: updated.emailNotifications,
+          newReferral: updated.newReferralNotify,
+          payoutProcessed: updated.payoutNotify
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Update settings error:', error);
+    res.status(500).json({ success: false, error: 'Update failed' });
+  }
 });
 
 export default router;
