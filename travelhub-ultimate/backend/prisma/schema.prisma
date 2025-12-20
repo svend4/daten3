@@ -1,0 +1,480 @@
+// Prisma Schema for TravelHub Ultimate
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  user
+  admin
+  super_admin
+  affiliate
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+  deleted
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  password      String?     // Nullable for OAuth users
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  role          UserRole    @default(user)
+  status        UserStatus  @default(active)
+
+  // OAuth
+  googleId      String?     @unique
+
+  // Timestamps
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  bookings      Booking[]
+  favorites     Favorite[]
+  priceAlerts   PriceAlert[]
+  affiliate     Affiliate?
+
+  @@map("users")
+}
+
+// ============================================
+// BOOKINGS
+// ============================================
+
+enum BookingType {
+  hotel
+  flight
+  package
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+  refunded
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          BookingType
+  status        BookingStatus @default(pending)
+
+  // Item details
+  itemId        String        // Hotel ID or Flight ID from API
+  itemName      String
+  itemImage     String?
+
+  // Dates
+  checkIn       DateTime?     // For hotels
+  checkOut      DateTime?     // For hotels
+  departDate    DateTime?     // For flights
+  returnDate    DateTime?     // For flights
+
+  // Guest details
+  guests        Int           @default(1)
+  rooms         Int?          // For hotels
+
+  // Pricing
+  totalPrice    Float
+  currency      String        @default("RUB")
+
+  // Payment
+  paymentId     String?
+  paymentStatus String?
+
+  // Additional info
+  specialRequests String?
+  metadata      Json?         // Flexible field for extra data
+
+  // Timestamps
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("bookings")
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+}
+
+// ============================================
+// FAVORITES
+// ============================================
+
+enum FavoriteType {
+  hotel
+  flight
+  destination
+}
+
+model Favorite {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          FavoriteType
+  itemId        String        // External ID from API
+
+  // Item details (cached)
+  name          String
+  location      String?
+  price         Float?
+  currency      String?
+  image         String?
+  rating        Float?
+
+  metadata      Json?
+
+  createdAt     DateTime      @default(now())
+
+  @@map("favorites")
+  @@unique([userId, type, itemId])
+  @@index([userId])
+}
+
+// ============================================
+// PRICE ALERTS
+// ============================================
+
+enum AlertType {
+  hotel
+  flight
+}
+
+enum AlertStatus {
+  active
+  triggered
+  expired
+  cancelled
+}
+
+model PriceAlert {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          AlertType
+  destination   String
+
+  // Search criteria
+  checkIn       DateTime?
+  checkOut      DateTime?
+  departDate    DateTime?
+  returnDate    DateTime?
+
+  // Alert conditions
+  targetPrice   Float
+  currency      String        @default("RUB")
+  currentPrice  Float?
+
+  // Status
+  status        AlertStatus   @default(active)
+  isActive      Boolean       @default(true)
+
+  // Notifications
+  lastCheckedAt DateTime?
+  lastNotifiedAt DateTime?
+  triggeredAt   DateTime?
+
+  metadata      Json?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  expiresAt     DateTime?
+
+  @@map("price_alerts")
+  @@index([userId])
+  @@index([status])
+  @@index([isActive])
+}
+
+// ============================================
+// AFFILIATE PROGRAM
+// ============================================
+
+enum AffiliateStatus {
+  pending
+  active
+  suspended
+  terminated
+}
+
+model Affiliate {
+  id              String          @id @default(uuid())
+  userId          String          @unique
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  referralCode    String          @unique
+  level           Int             @default(1)
+  status          AffiliateStatus @default(pending)
+  verified        Boolean         @default(false)
+
+  // Stats
+  totalClicks     Int             @default(0)
+  totalReferrals  Int             @default(0)
+  totalEarnings   Float           @default(0)
+
+  // Payment info
+  paymentMethod   String?
+  paymentDetails  Json?
+
+  // Notifications
+  emailNotifications    Boolean   @default(true)
+  newReferralNotify     Boolean   @default(true)
+  payoutNotify          Boolean   @default(true)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  verifiedAt      DateTime?
+
+  // Relations
+  referrals       Referral[]      @relation("AffiliateReferrals")
+  referredBy      Referral?       @relation("ReferredAffiliate")
+  commissions     Commission[]
+  payouts         Payout[]
+  clicks          AffiliateClick[]
+
+  @@map("affiliates")
+  @@index([referralCode])
+  @@index([status])
+}
+
+// ============================================
+// REFERRALS
+// ============================================
+
+enum ReferralStatus {
+  pending
+  active
+  inactive
+}
+
+model Referral {
+  id              String          @id @default(uuid())
+
+  // Affiliate who made the referral
+  affiliateId     String
+  affiliate       Affiliate       @relation("AffiliateReferrals", fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  // Referred affiliate (if they became affiliate)
+  referredAffiliateId String?     @unique
+  referredAffiliate   Affiliate?  @relation("ReferredAffiliate", fields: [referredAffiliateId], references: [id])
+
+  level           Int             @default(1) // 1 = direct, 2 = second level, 3 = third level
+  status          ReferralStatus  @default(pending)
+
+  // Referred user info
+  userName        String?
+  userEmail       String?
+
+  // Earnings from this referral
+  totalEarnings   Float           @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("referrals")
+  @@index([affiliateId])
+  @@index([status])
+}
+
+// ============================================
+// COMMISSIONS
+// ============================================
+
+enum CommissionType {
+  booking
+  referral
+  bonus
+}
+
+enum CommissionStatus {
+  pending
+  approved
+  rejected
+  paid
+}
+
+model Commission {
+  id              String            @id @default(uuid())
+  affiliateId     String
+  affiliate       Affiliate         @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  type            CommissionType
+  status          CommissionStatus  @default(pending)
+
+  amount          Float
+  currency        String            @default("RUB")
+
+  // Reference
+  bookingId       String?
+  referralId      String?
+
+  // Details
+  description     String?
+  reason          String?           // For rejection
+
+  // Dates
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  paidAt          DateTime?
+
+  // Approved/Rejected by admin
+  approvedBy      String?
+  rejectedBy      String?
+
+  // Linked to payout
+  payoutId        String?
+  payout          Payout?           @relation(fields: [payoutId], references: [id])
+
+  @@map("commissions")
+  @@index([affiliateId])
+  @@index([status])
+  @@index([type])
+}
+
+// ============================================
+// PAYOUTS
+// ============================================
+
+enum PayoutStatus {
+  pending
+  processing
+  completed
+  rejected
+  failed
+}
+
+enum PayoutMethod {
+  bank_transfer
+  paypal
+  crypto
+  other
+}
+
+model Payout {
+  id              String        @id @default(uuid())
+  affiliateId     String
+  affiliate       Affiliate     @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  amount          Float
+  currency        String        @default("RUB")
+
+  method          PayoutMethod
+  status          PayoutStatus  @default(pending)
+
+  // Payment details
+  transactionId   String?
+  accountDetails  Json?
+
+  // Admin notes
+  reason          String?       // For rejection
+  notes           String?
+
+  // Dates
+  requestedAt     DateTime      @default(now())
+  processedAt     DateTime?
+  completedAt     DateTime?
+  rejectedAt      DateTime?
+
+  // Admin actions
+  processedBy     String?
+
+  // Related commissions
+  commissions     Commission[]
+
+  @@map("payouts")
+  @@index([affiliateId])
+  @@index([status])
+}
+
+// ============================================
+// AFFILIATE CLICKS
+// ============================================
+
+model AffiliateClick {
+  id              String    @id @default(uuid())
+  affiliateId     String
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  referralCode    String
+  source          String?   // email, social, direct, etc.
+
+  // Visitor info
+  ipAddress       String?
+  userAgent       String?
+  country         String?
+
+  // Conversion tracking
+  converted       Boolean   @default(false)
+  conversionId    String?   // Booking ID if converted
+
+  createdAt       DateTime  @default(now())
+
+  @@map("affiliate_clicks")
+  @@index([affiliateId])
+  @@index([referralCode])
+  @@index([createdAt])
+}
+
+// ============================================
+// REFRESH TOKENS
+// ============================================
+
+model RefreshToken {
+  id            String    @id @default(uuid())
+  token         String    @unique
+  userId        String
+
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// PASSWORD RESET TOKENS
+// ============================================
+
+model PasswordResetToken {
+  id            String    @id @default(uuid())
+  token         String    @unique
+  userId        String
+  email         String
+
+  expiresAt     DateTime
+  used          Boolean   @default(false)
+  usedAt        DateTime?
+
+  createdAt     DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+  @@index([token])
+  @@index([email])
+}
