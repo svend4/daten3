@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ['nodejs']
+
+[phases.build]
+cmds = ['npm ci', 'npm run build']
+
+[phases.install]
+cmds = ['echo "Static site - no install needed"']
+
+[start]
+cmd = 'npx serve dist -l 8080'
