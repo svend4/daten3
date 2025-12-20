@@ -3,6 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import affiliateRoutes from './routes/affiliate.routes';
+import authRoutes from './routes/auth.routes';
+import bookingsRoutes from './routes/bookings.routes';
+import favoritesRoutes from './routes/favorites.routes';
+import priceAlertsRoutes from './routes/priceAlerts.routes';
+import adminRoutes from './routes/admin.routes';
 import { rateLimiters } from './middleware/rateLimit.middleware';
 import { searchHotels } from './services/travelpayouts.service';
 
@@ -120,10 +125,61 @@ app.get('/api/flights/search', (req, res) => {
   res.json({ message: 'Flights search endpoint (use POST with params)' });
 });
 
+// ===== API ROUTES =====
+
+// Auth routes
+app.use('/api/auth', authRoutes);
+
 // Affiliate routes
 app.use('/api/affiliate', affiliateRoutes);
 
+// User routes
+app.use('/api/bookings', bookingsRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/price-alerts', priceAlertsRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    name: 'TravelHub Ultimate API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      hotels: '/api/hotels/search',
+      flights: '/api/flights/search',
+      affiliate: '/api/affiliate',
+      bookings: '/api/bookings',
+      favorites: '/api/favorites',
+      priceAlerts: '/api/price-alerts',
+      admin: '/api/admin'
+    }
+  });
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Affiliate API: http://localhost:${PORT}/api/affiliate`);
+  console.log('');
+  console.log('═══════════════════════════════════════════════════');
+  console.log('🚀 TravelHub Ultimate API Server');
+  console.log('═══════════════════════════════════════════════════');
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('');
+  console.log('📡 API Endpoints:');
+  console.log(`   Auth:         http://localhost:${PORT}/api/auth`);
+  console.log(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
+  console.log(`   Flights:      http://localhost:${PORT}/api/flights/search`);
+  console.log(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
+  console.log(`   Bookings:     http://localhost:${PORT}/api/bookings`);
+  console.log(`   Favorites:    http://localhost:${PORT}/api/favorites`);
+  console.log(`   Price Alerts: http://localhost:${PORT}/api/price-alerts`);
+  console.log(`   Admin:        http://localhost:${PORT}/api/admin`);
+  console.log('');
+  console.log('✅ Server is ready to accept connections');
+  console.log('═══════════════════════════════════════════════════');
+  console.log('');
 });
