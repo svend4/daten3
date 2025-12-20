@@ -1,8 +1,19 @@
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import SearchWidget from '../components/features/SearchWidget';
+import SearchWidgetExtended from '../components/features/SearchWidgetExtended';
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  const handleSearch = (params: any) => {
+    if (params.type === 'hotels') {
+      navigate('/hotels', { state: { searchParams: params } });
+    } else if (params.type === 'flights') {
+      navigate('/flights', { state: { searchParams: params } });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -15,7 +26,7 @@ export default function Home() {
             <p className="text-xl mb-8">
               Сравните тысячи предложений и сэкономьте до 50%
             </p>
-            <SearchWidget />
+            <SearchWidgetExtended onSearch={handleSearch} />
           </div>
         </section>
       </main>
