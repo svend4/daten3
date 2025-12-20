@@ -5,10 +5,7 @@ nixPkgs = ['nodejs']
 cmds = ['npm ci']
 
 [phases.build]
-cmds = [
-  'npx prisma migrate deploy',
-  'npm run build'
-]
+cmds = ['npm run build']
 
 [start]
-cmd = 'npm start'
+cmd = 'npm run start:migrate'
