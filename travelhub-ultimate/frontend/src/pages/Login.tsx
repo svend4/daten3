@@ -7,6 +7,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import { api } from '../utils/api';
+import { logger } from '../utils/logger';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const Login: React.FC = () => {
         setError(response.message || 'Login failed. Please try again.');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
+      logger.error('Login failed', err);
       setError(
         err.response?.data?.message ||
         'Invalid email or password. Please try again.'
