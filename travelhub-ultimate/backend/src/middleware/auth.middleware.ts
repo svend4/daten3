@@ -68,7 +68,7 @@ export const authenticate = async (
       // Verify user still exists in database and is active
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, role: true, isActive: true }
+        select: { id: true, email: true, role: true, status: true }
       });
 
       if (!user) {
@@ -80,7 +80,7 @@ export const authenticate = async (
         return;
       }
 
-      if (!user.isActive) {
+      if (user.status !== 'active') {
         res.status(401).json({
           success: false,
           error: 'Account disabled',
@@ -155,10 +155,10 @@ export const optionalAuth = async (
       // Verify user exists and is active (optional, so we don't fail if not)
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, role: true, isActive: true }
+        select: { id: true, email: true, role: true, status: true }
       });
 
-      if (user && user.isActive) {
+      if (user && user.status === 'active') {
         req.user = {
           id: user.id,
           email: user.email,
