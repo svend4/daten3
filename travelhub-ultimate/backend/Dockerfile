@@ -47,7 +47,6 @@ COPY --from=builder /app/dist ./dist
 
 # Copy startup scripts
 COPY start.js ./
-COPY start-railway.mjs ./
 COPY start-render.mjs ./
 
 # Create non-root user
