@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import Container from '../layout/Container';
-import Card from '../common/Card';
-import Button from '../common/Button';
-import Loading from '../common/Loading';
-import { formatCurrency } from '../../utils/formatters';
+import Container from '../components/layout/Container';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import Loading from '../components/common/Loading';
+import { formatCurrency } from '../utils/formatters';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
