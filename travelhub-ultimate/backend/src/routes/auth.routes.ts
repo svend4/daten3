@@ -1,5 +1,6 @@
 import express from 'express';
 import { rateLimiters } from '../middleware/rateLimit.middleware.js';
+import { endpointRateLimiters } from '../middleware/perUserRateLimit.middleware.js';
 import * as authController from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validation.middleware.js';
@@ -20,7 +21,7 @@ const router = express.Router();
 // Registration & Login
 router.post(
   '/register',
-  rateLimiters.moderate,
+  endpointRateLimiters.register,
   registerValidator,
   validate,
   authController.register
@@ -28,7 +29,7 @@ router.post(
 
 router.post(
   '/login',
-  rateLimiters.moderate,
+  endpointRateLimiters.login,
   loginValidator,
   validate,
   authController.login
@@ -45,7 +46,7 @@ router.post(
 // Password Management
 router.post(
   '/forgot-password',
-  rateLimiters.strict,
+  endpointRateLimiters.passwordReset,
   forgotPasswordValidator,
   validate,
   authController.forgotPassword
@@ -53,7 +54,7 @@ router.post(
 
 router.post(
   '/reset-password',
-  rateLimiters.strict,
+  endpointRateLimiters.passwordReset,
   resetPasswordValidator,
   validate,
   authController.resetPassword
@@ -62,6 +63,19 @@ router.post(
 // OAuth Routes
 router.get('/google', authController.googleAuth);
 router.get('/google/callback', authController.googleAuthCallback);
+
+// Email Verification
+router.post(
+  '/send-verification-email',
+  endpointRateLimiters.emailVerification,
+  authController.sendVerificationEmail
+);
+
+router.get(
+  '/verify-email',
+  endpointRateLimiters.emailVerification,
+  authController.verifyEmail
+);
 
 // ===== PROTECTED ROUTES =====
 

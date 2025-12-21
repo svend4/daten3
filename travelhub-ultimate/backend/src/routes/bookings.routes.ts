@@ -2,6 +2,7 @@ import express from 'express';
 import * as bookingsController from '../controllers/bookings.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validation.middleware.js';
+import { endpointRateLimiters, perUserRateLimiters } from '../middleware/perUserRateLimit.middleware.js';
 import {
   createBookingValidator,
   getBookingsValidator,
@@ -16,13 +17,13 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get user's bookings
-router.get('/', getBookingsValidator, validate, bookingsController.getBookings);
+router.get('/', perUserRateLimiters.readOnly, getBookingsValidator, validate, bookingsController.getBookings);
 
 // Get single booking
-router.get('/:id', getBookingValidator, validate, bookingsController.getBooking);
+router.get('/:id', perUserRateLimiters.readOnly, getBookingValidator, validate, bookingsController.getBooking);
 
-// Create booking
-router.post('/', createBookingValidator, validate, bookingsController.createBooking);
+// Create booking - strict rate limit to prevent spam
+router.post('/', endpointRateLimiters.createBooking, createBookingValidator, validate, bookingsController.createBooking);
 
 // Update booking status
 router.patch(
