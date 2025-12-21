@@ -8,6 +8,10 @@ dotenv.config();
 import { validateAndLogEnv } from './config/env.validator.js';
 validateAndLogEnv();
 
+// Swagger documentation
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.config.js';
+
 // Routes
 import affiliateRoutes from './routes/affiliate.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -62,6 +66,22 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
+});
+
+// ============================================
+// API DOCUMENTATION (Swagger)
+// ============================================
+
+// Swagger UI at /api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'TravelHub API Documentation',
+}));
+
+// Swagger JSON spec at /api-docs.json
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // Hotels search endpoint - accepts POST with search params
@@ -138,6 +158,7 @@ app.get('/', (req, res) => {
     name: 'TravelHub Ultimate API',
     version: '1.0.0',
     status: 'running',
+    documentation: '/api-docs',
     endpoints: {
       health: '/api/health',
       auth: '/api/auth',
@@ -172,6 +193,9 @@ app.listen(PORT, () => {
   logger.info('═══════════════════════════════════════════════════');
   logger.info(`📍 Port: ${PORT}`);
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info('');
+  logger.info('📚 API Documentation:');
+  logger.info(`   Swagger UI:   http://localhost:${PORT}/api-docs`);
   logger.info('');
   logger.info('📡 API Endpoints:');
   logger.info(`   Auth:         http://localhost:${PORT}/api/auth`);

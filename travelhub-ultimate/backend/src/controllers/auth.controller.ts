@@ -3,6 +3,12 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.middleware.js';
+import {
+  generateVerificationToken,
+  verifyEmailToken,
+  clearVerificationToken,
+  sendVerificationEmail as sendVerificationEmailUtil,
+} from '../utils/email.utils.js';
 
 /**
  * Auth Controller
@@ -708,6 +714,160 @@ export const deleteAccount = async (req: Request, res: Response): Promise<void> 
       success: false,
       error: 'Deletion failed',
       message: 'Failed to delete account.'
+    });
+  }
+};
+
+/**
+ * POST /api/auth/send-verification-email
+ * Send or resend email verification
+ */
+export const sendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists (security best practice)
+      res.json({
+        success: true,
+        message: 'If an account exists with this email, a verification link has been sent.',
+      });
+      return;
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      res.json({
+        success: true,
+        message: 'Email is already verified.',
+      });
+      return;
+    }
+
+    // Generate verification token
+    const token = generateVerificationToken(email);
+
+    // Get base URL for verification link
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    // Send verification email
+    const result = await sendVerificationEmailUtil(email, token, baseUrl);
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: {
+        email,
+        // In development, include the token for easy testing
+        ...(process.env.NODE_ENV === 'development' && { token }),
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Send verification email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Email send failed',
+      message: 'Failed to send verification email.',
+    });
+  }
+};
+
+/**
+ * GET /api/auth/verify-email?token=xxx
+ * Verify email address with token
+ */
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Verification token is required',
+      });
+      return;
+    }
+
+    // Verify the token
+    const result = verifyEmailToken(token);
+
+    if (!result.valid || !result.email) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid token',
+        message: 'Verification token is invalid or expired',
+      });
+      return;
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email: result.email },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        error: 'User not found',
+        message: 'User account not found',
+      });
+      return;
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      res.json({
+        success: true,
+        message: 'Email is already verified',
+        data: {
+          email: user.email,
+          verified: true,
+        },
+      });
+      return;
+    }
+
+    // Mark email as verified
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+      },
+    });
+
+    // Clear the verification token
+    clearVerificationToken(token);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      data: {
+        email: user.email,
+        verified: true,
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Verification failed',
+      message: 'Failed to verify email.',
     });
   }
 };
