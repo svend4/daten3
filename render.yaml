@@ -20,7 +20,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://travelhub-frontend.onrender.com
+        value: https://daten3.onrender.com
     healthCheckPath: /health
     autoDeploy: true
 
@@ -38,7 +38,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_BASE_URL
-        value: https://travelhub-backend.onrender.com/api
+        value: https://daten3-1.onrender.com/api
     buildFilter:
       paths:
         - travelhub-ultimate/frontend/**
