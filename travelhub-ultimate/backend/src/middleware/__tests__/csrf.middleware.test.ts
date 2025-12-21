@@ -36,7 +36,7 @@ function createMockResponse(): Partial<Response> {
   return res;
 }
 
-const createMockNext = (): NextFunction => vi.fn();
+const createMockNext = () => vi.fn() as unknown as NextFunction;
 
 describe('CSRF Middleware', () => {
   describe('generateCSRFToken', () => {
