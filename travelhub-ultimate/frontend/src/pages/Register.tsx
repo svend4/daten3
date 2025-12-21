@@ -7,6 +7,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import { api } from '../utils/api';
+import { logger } from '../utils/logger';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ const Register: React.FC = () => {
         setError(response.message || 'Registration failed. Please try again.');
       }
     } catch (err: any) {
-      console.error('Registration error:', err);
+      logger.error('Registration failed', err);
       setError(
         err.response?.data?.message ||
         'Registration failed. Please try again.'

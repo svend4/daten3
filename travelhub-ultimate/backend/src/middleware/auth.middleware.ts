@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Validate required environment variables
 if (!process.env.JWT_SECRET) {
@@ -62,17 +65,35 @@ export const authenticate = async (
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
-      // TODO: Optionally verify user still exists in database
-      // const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-      // if (!user) {
-      //   throw new Error('User not found');
-      // }
+      // Verify user still exists in database and is active
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, email: true, role: true, isActive: true }
+      });
+
+      if (!user) {
+        res.status(401).json({
+          success: false,
+          error: 'User not found',
+          message: 'User account no longer exists. Please register again.'
+        });
+        return;
+      }
+
+      if (!user.isActive) {
+        res.status(401).json({
+          success: false,
+          error: 'Account disabled',
+          message: 'Your account has been disabled. Please contact support.'
+        });
+        return;
+      }
 
       // Attach user to request
       req.user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role
+        id: user.id,
+        email: user.email,
+        role: user.role
       };
 
       next();
@@ -131,11 +152,19 @@ export const optionalAuth = async (
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
-      req.user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role
-      };
+      // Verify user exists and is active (optional, so we don't fail if not)
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, email: true, role: true, isActive: true }
+      });
+
+      if (user && user.isActive) {
+        req.user = {
+          id: user.id,
+          email: user.email,
+          role: user.role
+        };
+      }
     } catch (jwtError) {
       // Token invalid, but continue without user (optional auth)
       console.warn('⚠️  Invalid token in optional auth, continuing without user');

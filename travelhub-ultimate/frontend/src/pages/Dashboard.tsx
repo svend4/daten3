@@ -94,7 +94,7 @@ class TravelHubService {
     this.api.interceptors.request.use(
       (config) => {
         // Добавить auth token если есть
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('accessToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
