@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, TrendingUp, DollarSign } from 'lucide-react';
 import axios from 'axios';
-import Container from '../layout/Container';
-import Card from '../common/Card';
-import Loading from '../common/Loading';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import Container from '../components/layout/Container';
+import Card from '../components/common/Card';
+import Loading from '../components/common/Loading';
+import { formatCurrency, formatDate } from '../utils/formatters';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
