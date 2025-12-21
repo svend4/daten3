@@ -1,57 +1,92 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { HelmetProvider } from 'react-helmet-async';
-import { AuthProvider } from '@store/AuthContext';
-import './i18n/config';
-
+import React from 'react';
+import { Shield } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import Loading from '../components/common/Loading';
+import Card from '../components/common/Card';
 
-// Lazy load pages
-const Home = lazy(() => import('@pages/Home/Home'));
-const FlightSearch = lazy(() => import('@pages/FlightSearch/FlightSearch'));
-const HotelSearch = lazy(() => import('@pages/HotelSearch/HotelSearch'));
-const Profile = lazy(() => import('@pages/Profile/Profile'));
-const Favorites = lazy(() => import('@pages/Favorites/Favorites'));
-const Bookings = lazy(() => import('@pages/Bookings/Bookings'));
-const NotFound = lazy(() => import('@pages/NotFound/NotFound'));
-
-function App() {
+const Privacy: React.FC = () => {
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <Router>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-
-            <main className="flex-1">
-              <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                  <Loading size="lg" text="Loading page..." />
-                </div>
-              }>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/flights" element={<FlightSearch />} />
-                  <Route path="/hotels" element={<HotelSearch />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/bookings" element={<Bookings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </main>
-
-            <Footer />
-
-            <Toaster position="top-right" />
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow bg-gray-50 py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="mb-8 text-center">
+            <Shield className="w-16 h-16 text-primary-600 mx-auto mb-4" />
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Политика конфиденциальности
+            </h1>
+            <p className="text-gray-600">
+              Последнее обновление: 21 декабря 2024
+            </p>
           </div>
-        </Router>
-      </AuthProvider>
-    </HelmetProvider>
-  );
-}
 
-export default App;
+          <Card className="p-8 prose max-w-none">
+            <h2>1. Сбор информации</h2>
+            <p>
+              Мы собираем информацию, которую вы предоставляете при регистрации,
+              бронировании или использовании нашего сервиса. Это включает ваше
+              имя, email, номер телефона и платёжную информацию.
+            </p>
+
+            <h2>2. Использование информации</h2>
+            <p>
+              Мы используем вашу информацию для:
+            </p>
+            <ul>
+              <li>Обработки бронирований и платежей</li>
+              <li>Отправки подтверждений и уведомлений</li>
+              <li>Улучшения качества сервиса</li>
+              <li>Предотвращения мошенничества</li>
+            </ul>
+
+            <h2>3. Защита данных</h2>
+            <p>
+              Мы применяем современные меры безопасности для защиты ваших
+              персональных данных. Все платежи обрабатываются через безопасные
+              платёжные шлюзы.
+            </p>
+
+            <h2>4. Передача третьим лицам</h2>
+            <p>
+              Мы можем передавать вашу информацию партнёрам (отелям,
+              авиакомпаниям) только для выполнения бронирований. Мы не продаём
+              ваши данные третьим лицам в маркетинговых целях.
+            </p>
+
+            <h2>5. Cookies</h2>
+            <p>
+              Мы используем cookies для улучшения вашего опыта использования
+              сайта. Вы можете отключить cookies в настройках браузера.
+            </p>
+
+            <h2>6. Ваши права</h2>
+            <p>
+              Вы имеете право:
+            </p>
+            <ul>
+              <li>Получить доступ к своим данным</li>
+              <li>Исправить неточную информацию</li>
+              <li>Удалить свой аккаунт</li>
+              <li>Отозвать согласие на обработку данных</li>
+            </ul>
+
+            <h2>7. Изменения в политике</h2>
+            <p>
+              Мы можем обновлять эту политику конфиденциальности. О существенных
+              изменениях мы будем сообщать по email.
+            </p>
+
+            <h2>8. Контакты</h2>
+            <p>
+              По вопросам конфиденциальности свяжитесь с нами:
+              privacy@travelhub.com
+            </p>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Privacy;

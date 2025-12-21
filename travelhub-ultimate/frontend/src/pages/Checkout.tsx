@@ -1,164 +1,138 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Shield, LogOut, Trash2 } from 'lucide-react';
-import { useAuth } from '@store/AuthContext';
+import { CreditCard, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Container from '../components/layout/Container';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import { formatDate } from '../../utils/formatters';
 
-const Profile: React.FC = () => {
-  const { user, logout, updateProfile } = useAuth();
+const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.name || '');
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiry: '',
+    cvv: '',
+  });
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      await updateProfile({ name });
-      setEditing(false);
-    } catch (error) {
-      // Error handled in context
-    } finally {
-      setLoading(false);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Process payment
+    navigate('/payment/success');
   };
-
-  if (!user) {
-    return null;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <Container>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto"
-        >
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">My Profile</h1>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow bg-gray-50 py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            Оформление бронирования
+          </h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Profile Card */}
-            <Card className="md:col-span-2" padding="lg">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-10 h-10 text-primary-600" />
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-                    <p className="text-gray-600">{user.email}</p>
-                  </div>
-                </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Card className="p-8 mb-6">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <CreditCard className="w-6 h-6 text-primary-600" />
+                  Способ оплаты
+                </h2>
 
-                {!editing && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditing(true)}
-                  >
-                    Edit Profile
-                  </Button>
-                )}
-              </div>
-
-              {editing ? (
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <Input
-                    label="Full Name"
-                    value={name}
-                    onChange={setName}
-                    icon={<User className="w-5 h-5" />}
+                    label="Номер карты"
+                    name="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    value={formData.cardNumber}
+                    onChange={handleChange}
+                    maxLength={19}
+                    required
                   />
 
-                  <div className="flex gap-3">
-                    <Button
-                      variant="primary"
-                      onClick={handleSave}
-                      loading={loading}
-                    >
-                      Save Changes
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setEditing(false);
-                        setName(user.name);
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                  <Input
+                    label="Имя владельца карты"
+                    name="cardName"
+                    placeholder="IVAN IVANOV"
+                    value={formData.cardName}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Срок действия"
+                      name="expiry"
+                      placeholder="MM/YY"
+                      value={formData.expiry}
+                      onChange={handleChange}
+                      maxLength={5}
+                      required
+                    />
+
+                    <Input
+                      label="CVV"
+                      name="cvv"
+                      placeholder="123"
+                      type="password"
+                      value={formData.cvv}
+                      onChange={handleChange}
+                      maxLength={3}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span>Защищённое соединение. Ваши данные в безопасности.</span>
+                  </div>
+
+                  <Button type="submit" fullWidth size="lg">
+                    Оплатить
+                  </Button>
+                </form>
+              </Card>
+            </div>
+
+            <div>
+              <Card className="p-6 sticky top-24">
+                <h3 className="text-lg font-bold mb-4">Детали бронирования</h3>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Отель</span>
+                    <span className="font-medium">Grand Hotel</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Даты</span>
+                    <span className="font-medium">25-30 дек</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Гости</span>
+                    <span className="font-medium">2 взрослых</span>
+                  </div>
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex justify-between text-base font-bold">
+                      <span>Итого</span>
+                      <span className="text-primary-600">$599</span>
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Mail className="w-5 h-5" />
-                    <span>{user.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Calendar className="w-5 h-5" />
-                    <span>Member since {formatDate(user.createdAt)}</span>
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            {/* Actions Card */}
-            <Card padding="lg">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Account</h3>
-              
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  fullWidth
-                  icon={<Shield className="w-5 h-5" />}
-                  onClick={() => navigate('/profile/security')}
-                >
-                  Security
-                </Button>
-
-                <Button
-                  variant="outline"
-                  fullWidth
-                  icon={<LogOut className="w-5 h-5" />}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-
-                <Button
-                  variant="outline"
-                  fullWidth
-                  icon={<Trash2 className="w-5 h-5" />}
-                  className="text-error-600 border-error-300 hover:bg-error-50"
-                >
-                  Delete Account
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
-        </motion.div>
-      </Container>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 };
 
-export default Profile;
+export default Checkout;
