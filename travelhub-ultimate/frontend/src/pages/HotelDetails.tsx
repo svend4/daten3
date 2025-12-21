@@ -1,202 +1,213 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
-import { useHotelSearch } from '../hooks/useHotelSearch';
-import Container from '../components/layout/Container';
-import SearchWidget from '../components/features/SearchWidget';
-import HotelCard from '../components/features/HotelCard';
-import FilterPanel from '../components/features/FilterPanel';
-import Loading from '../components/common/Loading';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MapPin, Star, Wifi, Coffee, Car, Users, Check, X } from 'lucide-react';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
-import { HotelFilters } from '../../types/api.types';
+import Card from '../components/common/Card';
 
-const HotelSearch: React.FC = () => {
-  const location = useLocation();
-  const { hotels, loading, error, search, hasSearched } = useHotelSearch();
-  const [filteredHotels, setFilteredHotels] = useState(hotels);
-  const [activeFilters, setActiveFilters] = useState<HotelFilters>({});
-  const [sortBy, setSortBy] = useState<'price' | 'rating' | 'distance'>('price');
+const HotelDetails: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
 
-  // Auto-search if params provided
-  useEffect(() => {
-    const params = location.state?.searchParams;
-    if (params) {
-      search(params);
-    }
-  }, [location.state, search]);
-
-  // Apply filters and sorting
-  useEffect(() => {
-    let filtered = [...hotels];
-
-    // Apply filters
-    if (activeFilters.priceRange) {
-      filtered = filtered.filter(h => 
-        h.price.amount >= activeFilters.priceRange![0] &&
-        h.price.amount <= activeFilters.priceRange![1]
-      );
-    }
-
-    if (activeFilters.stars && activeFilters.stars.length > 0) {
-      filtered = filtered.filter(h => 
-        activeFilters.stars!.includes(h.stars)
-      );
-    }
-
-    if (activeFilters.rating) {
-      filtered = filtered.filter(h => h.rating >= activeFilters.rating!);
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price':
-          return a.price.amount - b.price.amount;
-        case 'rating':
-          return b.rating - a.rating;
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredHotels(filtered);
-  }, [hotels, activeFilters, sortBy]);
-
-  const handleSearch = (params: any) => {
-    search(params);
+  // Demo hotel data
+  const hotel = {
+    id: id || '1',
+    name: 'Grand Plaza Hotel',
+    location: 'Москва, Центр',
+    rating: 4.8,
+    reviews: 1234,
+    stars: 5,
+    price: 12500,
+    images: [
+      'https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=Hotel+Image+1',
+      'https://via.placeholder.com/800x400/7C3AED/FFFFFF?text=Hotel+Image+2',
+    ],
+    description: 'Роскошный отель в центре Москвы с современными удобствами и превосходным обслуживанием.',
+    amenities: [
+      { icon: Wifi, name: 'Бесплатный WiFi' },
+      { icon: Coffee, name: 'Завтрак включен' },
+      { icon: Car, name: 'Парковка' },
+      { icon: Users, name: 'Спа-центр' },
+    ],
+    rooms: [
+      { id: '1', type: 'Стандартный номер', price: 8500, capacity: 2 },
+      { id: '2', type: 'Люкс', price: 15000, capacity: 3 },
+      { id: '3', type: 'Президентский люкс', price: 25000, capacity: 4 },
+    ],
   };
 
-  const handleApplyFilters = (filters: HotelFilters) => {
-    setActiveFilters(filters);
-    if (filters.sortBy) {
-      setSortBy(filters.sortBy);
+  const handleBooking = () => {
+    if (selectedRoom) {
+      navigate('/checkout', { state: { hotel, roomId: selectedRoom } });
     }
-  };
-
-  const handleResetFilters = () => {
-    setActiveFilters({});
-    setSortBy('price');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Container className="py-8">
-        {/* Search Widget */}
-        <div className="mb-8">
-          <SearchWidget
-            onSearch={handleSearch}
-            type="hotels"
-            loading={loading}
-          />
-        </div>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow bg-gray-50 py-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          {/* Hotel Images */}
+          <div className="grid md:grid-cols-2 gap-4 mb-8">
+            {hotel.images.map((img, idx) => (
+              <div key={idx} className="rounded-lg overflow-hidden">
+                <img src={img} alt={`${hotel.name} ${idx + 1}`} className="w-full h-64 object-cover" />
+              </div>
+            ))}
+          </div>
 
-        {/* Results Section */}
-        {hasSearched && (
-          <>
-            {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Info */}
+            <div className="lg:col-span-2 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {loading ? 'Searching...' : `${filteredHotels.length} hotels found`}
-                </h2>
-                {!loading && hotels.length > 0 && (
-                  <p className="text-gray-600 mt-1">
-                    Showing results for your search
-                  </p>
-                )}
+                <div className="flex items-center gap-2 mb-2">
+                  {[...Array(hotel.stars)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">{hotel.name}</h1>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-5 h-5" />
+                  <span>{hotel.location}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-bold">{hotel.rating}</span>
+                  </div>
+                  <span className="text-gray-600">({hotel.reviews} отзывов)</span>
+                </div>
               </div>
 
-              <div className="flex gap-3">
-                {/* Sort Dropdown */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 transition-all"
-                >
-                  <option value="price">Price: Low to High</option>
-                  <option value="rating">Rating: High to Low</option>
-                </select>
+              {/* Description */}
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold mb-4">О отеле</h2>
+                <p className="text-gray-700">{hotel.description}</p>
+              </Card>
 
-                <FilterPanel
-                  type="hotels"
-                  onApply={handleApplyFilters}
-                  onReset={handleResetFilters}
-                />
-              </div>
+              {/* Amenities */}
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Удобства</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {hotel.amenities.map((amenity, idx) => {
+                    const Icon = amenity.icon;
+                    return (
+                      <div key={idx} className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                          <Icon className="w-5 h-5 text-primary-600" />
+                        </div>
+                        <span className="text-gray-700">{amenity.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              {/* Available Rooms */}
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Доступные номера</h2>
+                <div className="space-y-4">
+                  {hotel.rooms.map((room) => (
+                    <div
+                      key={room.id}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        selectedRoom === room.id
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                      onClick={() => setSelectedRoom(room.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-lg">{room.type}</h3>
+                          <p className="text-gray-600 text-sm">До {room.capacity} гостей</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary-600">
+                            {room.price.toLocaleString('ru-RU')} ₽
+                          </div>
+                          <div className="text-sm text-gray-600">за ночь</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
 
-            {/* Loading State */}
-            {loading && (
-              <div className="py-20">
-                <Loading size="lg" text="Finding the perfect hotels for you..." />
-              </div>
-            )}
+            {/* Booking Card */}
+            <div className="lg:col-span-1">
+              <Card className="p-6 sticky top-8">
+                <div className="mb-6">
+                  <div className="text-3xl font-bold text-gray-900">
+                    от {hotel.price.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className="text-gray-600">за ночь</div>
+                </div>
 
-            {/* Error State */}
-            {error && !loading && (
-              <div className="bg-error-50 border-2 border-error-200 rounded-2xl p-8 text-center">
-                <p className="text-error-600 font-semibold text-lg">{error}</p>
-                <p className="text-gray-600 mt-2">
-                  Please try again with different search parameters
-                </p>
-              </div>
-            )}
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Дата заезда
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
 
-            {/* Empty State */}
-            {!loading && !error && filteredHotels.length === 0 && hotels.length > 0 && (
-              <div className="bg-white rounded-2xl p-8 text-center">
-                <p className="text-gray-600 text-lg">
-                  No hotels match your filters. Try adjusting your criteria.
-                </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Дата выезда
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Гости
+                    </label>
+                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                      <option>1 гость</option>
+                      <option>2 гостя</option>
+                      <option>3 гостя</option>
+                      <option>4+ гостей</option>
+                    </select>
+                  </div>
+                </div>
+
                 <Button
-                  variant="outline"
-                  onClick={handleResetFilters}
-                  className="mt-4"
+                  fullWidth
+                  size="lg"
+                  onClick={handleBooking}
+                  disabled={!selectedRoom}
                 >
-                  Reset Filters
+                  {selectedRoom ? 'Забронировать' : 'Выберите номер'}
                 </Button>
-              </div>
-            )}
 
-            {!loading && !error && hotels.length === 0 && (
-              <div className="bg-white rounded-2xl p-8 text-center">
-                <p className="text-gray-600 text-lg">
-                  No hotels found for this destination. Please try a different location or dates.
-                </p>
-              </div>
-            )}
-
-            {/* Results List */}
-            {!loading && !error && filteredHotels.length > 0 && (
-              <div className="space-y-4">
-                {filteredHotels.map((hotel, index) => (
-                  <HotelCard key={hotel.id} hotel={hotel} index={index} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* No Search Yet */}
-        {!hasSearched && (
-          <div className="bg-white rounded-2xl p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ArrowLeft className="w-12 h-12 text-primary-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Search for Hotels
-              </h3>
-              <p className="text-gray-600">
-                Enter your destination and dates above to find the best hotel deals
-              </p>
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Бесплатная отмена</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Подтверждение мгновенно</span>
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
-        )}
-      </Container>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 };
 
-export default HotelSearch;
+export default HotelDetails;
