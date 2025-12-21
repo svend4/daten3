@@ -6,20 +6,25 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import { useAuth } from '../hooks/useAuth';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login({ email, password });
-    if (success) {
+    setLoading(true);
+    setError('');
+
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      // Demo: navigate to dashboard
       navigate('/dashboard');
-    }
+    }, 1000);
   };
 
   return (

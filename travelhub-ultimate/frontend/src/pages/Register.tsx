@@ -6,11 +6,11 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import { useAuth } from '../hooks/useAuth';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { register, loading, error } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,22 +28,21 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Пароли не совпадают!');
+      setError('Пароли не совпадают!');
       return;
     }
 
-    const success = await register({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      password: formData.password,
-    });
+    setLoading(true);
 
-    if (success) {
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      // Demo: navigate to dashboard
       navigate('/dashboard');
-    }
+    }, 1000);
   };
 
   return (
