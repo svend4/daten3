@@ -24,6 +24,26 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
+  # Frontend
+  - type: web
+    name: travelhub-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    rootDir: ./travelhub-ultimate/frontend
+    region: oregon
+    plan: free
+    branch: main
+    dockerCommand: serve -s dist -l 3000
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_BASE_URL
+        value: https://travelhub-backend.onrender.com/api
+    buildFilter:
+      paths:
+        - travelhub-ultimate/frontend/**
+    autoDeploy: true
+
 databases:
   - name: travelhub-db
     databaseName: travelhub
