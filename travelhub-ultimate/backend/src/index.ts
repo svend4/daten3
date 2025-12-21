@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 // Load environment variables first
 dotenv.config();
 
+// Validate environment variables
+import { validateAndLogEnv } from './config/env.validator.js';
+validateAndLogEnv();
+
 // Routes
 import affiliateRoutes from './routes/affiliate.routes.js';
 import authRoutes from './routes/auth.routes.js';
