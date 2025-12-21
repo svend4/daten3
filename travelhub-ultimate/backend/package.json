@@ -11,6 +11,7 @@
     "start:migrate": "npx prisma migrate deploy && node start.js",
     "start:safe": "node start-safe.mjs",
     "start:railway": "node start-railway.mjs",
+    "start:render": "node start-render.mjs",
     "start:direct": "node dist/index.js",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
