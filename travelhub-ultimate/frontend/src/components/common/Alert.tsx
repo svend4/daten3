@@ -1,121 +1,93 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, Plane, Hotel, Trash2 } from 'lucide-react';
-import { useFavorites } from '@hooks/useFavorites';
-import Container from '../layout/Container';
-import FlightCard from '../features/FlightCard';
-import HotelCard from '../features/HotelCard';
-import Loading from '../common/Loading';
-import Button from '../common/Button';
+import React from 'react';
+import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
-const Favorites: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'flights' | 'hotels'>('all');
-  const { favorites, loading, removeFavorite } = useFavorites(
-    activeTab === 'all' ? undefined : activeTab === 'flights' ? 'flight' : 'hotel'
-  );
+export type AlertVariant = 'success' | 'error' | 'warning' | 'info';
 
-  const tabs = [
-    { id: 'all', label: 'All', icon: Heart },
-    { id: 'flights', label: 'Flights', icon: Plane },
-    { id: 'hotels', label: 'Hotels', icon: Hotel },
-  ];
+export interface AlertProps {
+  variant?: AlertVariant;
+  title?: string;
+  message: string;
+  onClose?: () => void;
+  className?: string;
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-20">
-        <Loading size="lg" text="Loading favorites..." />
-      </div>
-    );
-  }
+const Alert: React.FC<AlertProps> = ({
+  variant = 'info',
+  title,
+  message,
+  onClose,
+  className = '',
+}) => {
+  const variantConfig = {
+    success: {
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
+      textColor: 'text-green-800',
+      titleColor: 'text-green-900',
+      icon: CheckCircle,
+      iconColor: 'text-green-600',
+    },
+    error: {
+      bgColor: 'bg-red-50',
+      borderColor: 'border-red-200',
+      textColor: 'text-red-800',
+      titleColor: 'text-red-900',
+      icon: XCircle,
+      iconColor: 'text-red-600',
+    },
+    warning: {
+      bgColor: 'bg-yellow-50',
+      borderColor: 'border-yellow-200',
+      textColor: 'text-yellow-800',
+      titleColor: 'text-yellow-900',
+      icon: AlertCircle,
+      iconColor: 'text-yellow-600',
+    },
+    info: {
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-800',
+      titleColor: 'text-blue-900',
+      icon: Info,
+      iconColor: 'text-blue-600',
+    },
+  };
+
+  const config = variantConfig[variant];
+  const Icon = config.icon;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <Container>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Favorites</h1>
-            <p className="text-xl text-gray-600">
-              {favorites.length} saved {favorites.length === 1 ? 'item' : 'items'}
-            </p>
-          </div>
+    <div
+      className={`
+        ${config.bgColor} ${config.borderColor} ${config.textColor}
+        border rounded-lg p-4 relative
+        ${className}
+      `}
+    >
+      <div className="flex gap-3">
+        <Icon className={`w-5 h-5 ${config.iconColor} flex-shrink-0 mt-0.5`} />
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-8 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`
-                    flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap
-                    ${activeTab === tab.id
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Empty State */}
-          {favorites.length === 0 && (
-            <div className="bg-white rounded-2xl p-12 text-center">
-              <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                No favorites yet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Start adding your favorite flights and hotels to see them here
-              </p>
-              <Button
-                variant="primary"
-                onClick={() => window.location.href = '/'}
-              >
-                Start Searching
-              </Button>
-            </div>
+        <div className="flex-grow">
+          {title && (
+            <h3 className={`font-semibold mb-1 ${config.titleColor}`}>
+              {title}
+            </h3>
           )}
+          <p className="text-sm">{message}</p>
+        </div>
 
-          {/* Favorites List */}
-          <div className="space-y-4">
-            {favorites.map((favorite) => (
-              <div key={favorite.id} className="relative group">
-                {favorite.type === 'flight' && (
-                  <FlightCard flight={favorite.itemData} />
-                )}
-                {favorite.type === 'hotel' && (
-                  <HotelCard hotel={favorite.itemData} />
-                )}
-
-                {/* Remove Button */}
-                <button
-                  onClick={() => removeFavorite(favorite.id)}
-                  className="
-                    absolute top-4 right-4 z-10
-                    p-3 bg-white rounded-full shadow-md
-                    opacity-0 group-hover:opacity-100
-                    transition-opacity
-                    hover:bg-error-50 hover:text-error-600
-                  "
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </Container>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className={`${config.iconColor} hover:opacity-70 transition-opacity flex-shrink-0`}
+            aria-label="Close alert"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
 
-export default Favorites;
+export default Alert;
