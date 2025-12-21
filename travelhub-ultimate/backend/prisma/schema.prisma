@@ -42,6 +42,10 @@ model User {
   // OAuth
   googleId      String?     @unique
 
+  // Email Verification
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+
   // Timestamps
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
