@@ -30,7 +30,7 @@ function createMockResponse(): Partial<Response> {
   return res;
 }
 
-const createMockNext = (): NextFunction => vi.fn();
+const createMockNext = () => vi.fn() as unknown as NextFunction;
 
 describe('Validation Middleware - Zod Schemas', () => {
   describe('Email Schema', () => {
