@@ -6,6 +6,7 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
+import { api } from '../utils/api';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -37,12 +38,48 @@ const Register: React.FC = () => {
 
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await api.post<{
+        success: boolean;
+        message: string;
+        data: {
+          user: {
+            id: string;
+            email: string;
+            name: string;
+            role: string;
+          };
+          accessToken: string;
+          refreshToken: string;
+        };
+      }>('/auth/register', {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.success && response.data) {
+        // Store tokens
+        localStorage.setItem('accessToken', response.data.accessToken);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+
+        // Store user data
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(response.message || 'Registration failed. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(
+        err.response?.data?.message ||
+        'Registration failed. Please try again.'
+      );
+    } finally {
       setLoading(false);
-      // Demo: navigate to dashboard
-      navigate('/dashboard');
-    }, 1000);
+    }
   };
 
   return (
