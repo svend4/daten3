@@ -68,9 +68,12 @@ import {
   clearTenantCacheEndpoint,
   graphqlMetrics,
   resetGraphQLMetricsEndpoint,
+  gatewayMetrics,
+  resetGatewayMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/rbac.middleware.js';
 
 const router = Router();
 
@@ -558,3 +561,17 @@ router.get('/graphql', graphqlMetrics);
  * @access  Admin only
  */
 router.post('/graphql/reset', authenticate, requireAdmin, resetGraphQLMetricsEndpoint);
+
+/**
+ * @route   GET /health/gateway
+ * @desc    API Gateway statistics
+ * @access  Public
+ */
+router.get('/gateway', gatewayMetrics);
+
+/**
+ * @route   POST /health/gateway/reset
+ * @desc    Reset API Gateway statistics
+ * @access  Admin only
+ */
+router.post('/gateway/reset', authenticate, requireAdmin, resetGatewayMetricsEndpoint);
