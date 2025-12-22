@@ -96,12 +96,12 @@ export function getEnvVar(name: string, fallback?: string): string {
   const value = process.env[name];
 
   if (!value) {
-    if (process.env.NODE_ENV === 'production' && !fallback) {
+    if (process.env.NODE_ENV === 'production' && fallback === undefined) {
       throw new Error(`Environment variable ${name} is required in production`);
     }
 
-    if (fallback) {
-      if (process.env.NODE_ENV === 'production') {
+    if (fallback !== undefined) {
+      if (process.env.NODE_ENV === 'production' && fallback) {
         console.warn(`⚠️  Using fallback for ${name} in production (not recommended)`);
       }
       return fallback;
