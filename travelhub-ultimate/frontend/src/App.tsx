@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings';
 import Favorites from './pages/Favorites';
+import PriceAlerts from './pages/PriceAlerts';
 import Settings from './pages/Settings';
 import Reviews from './pages/Reviews';
 
@@ -88,6 +89,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/bookings" element={<MyBookings />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/price-alerts" element={<PriceAlerts />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/reviews" element={<Reviews />} />
 
