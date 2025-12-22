@@ -15,6 +15,8 @@ import {
   Shield,
   Settings as SettingsIcon,
   BarChart3,
+  Eye,
+  X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
@@ -101,7 +103,70 @@ interface Payout {
   };
 }
 
-type TabType = 'dashboard' | 'affiliates' | 'commissions' | 'payouts' | 'analytics';
+interface AffiliateDetails {
+  id: string;
+  referralCode: string;
+  level: number;
+  status: string;
+  verified: boolean;
+  totalEarnings: number;
+  totalReferrals: number;
+  totalClicks: number;
+  conversionRate: number;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    emailVerified: boolean;
+  };
+  earnings: {
+    pending: number;
+    approved: number;
+    paid: number;
+    total: number;
+  };
+  referrals: {
+    total: number;
+    active: number;
+    direct: number;
+    indirect: number;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    description: string;
+    amount?: number;
+    createdAt: string;
+  }>;
+}
+
+interface AdminSettings {
+  commissionRates: {
+    level1: number;
+    level2: number;
+    level3: number;
+  };
+  minPayoutAmount: number;
+  cookieDuration: number;
+  requireVerification: boolean;
+}
+
+interface TopPerformer {
+  rank: number;
+  affiliateId: string;
+  referralCode: string;
+  name: string;
+  email: string;
+  totalEarnings: number;
+  totalReferrals: number;
+  totalClicks: number;
+  conversionRate: string;
+}
+
+type TabType = 'dashboard' | 'affiliates' | 'commissions' | 'payouts' | 'analytics' | 'settings';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -128,6 +193,17 @@ const AdminPanel: React.FC = () => {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [payoutsPage, setPayoutsPage] = useState(1);
   const [payoutsTotalPages, setPayoutsTotalPages] = useState(1);
+
+  // Affiliate details modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [affiliateDetails, setAffiliateDetails] = useState<AffiliateDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Settings data
+  const [settings, setSettings] = useState<AdminSettings | null>(null);
+
+  // Top performers data
+  const [topPerformers, setTopPerformers] = useState<TopPerformer[]>([]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -162,6 +238,8 @@ const AdminPanel: React.FC = () => {
         await fetchPayouts();
       } else if (activeTab === 'analytics') {
         await fetchAnalytics();
+      } else if (activeTab === 'settings') {
+        await fetchSettings();
       }
     } catch (err: any) {
       logger.error('Failed to fetch admin data', err);
@@ -176,14 +254,25 @@ const AdminPanel: React.FC = () => {
   };
 
   const fetchAnalytics = async () => {
-    const response = await api.get<{
-      success: boolean;
-      data: AdminStats;
-    }>('/admin/analytics');
+    const [analyticsResponse, topPerformersResponse] = await Promise.all([
+      api.get<{
+        success: boolean;
+        data: AdminStats;
+      }>('/admin/analytics'),
+      api.get<{
+        success: boolean;
+        data: TopPerformer[];
+      }>('/admin/analytics/top-performers?limit=10')
+    ]);
 
-    if (response.success && response.data) {
-      setStats(response.data);
+    if (analyticsResponse.success && analyticsResponse.data) {
+      setStats(analyticsResponse.data);
       logger.info('Admin analytics loaded');
+    }
+
+    if (topPerformersResponse.success && topPerformersResponse.data) {
+      setTopPerformers(topPerformersResponse.data);
+      logger.info('Top performers loaded');
     }
   };
 
@@ -226,6 +315,18 @@ const AdminPanel: React.FC = () => {
       setPayouts(response.data);
       setPayoutsTotalPages(response.pagination.pages);
       logger.info('Payouts loaded');
+    }
+  };
+
+  const fetchSettings = async () => {
+    const response = await api.get<{
+      success: boolean;
+      data: AdminSettings;
+    }>('/admin/settings');
+
+    if (response.success && response.data) {
+      setSettings(response.data);
+      logger.info('Settings loaded');
     }
   };
 
@@ -357,6 +458,30 @@ const AdminPanel: React.FC = () => {
     } catch (err: any) {
       logger.error('Failed to update affiliate status', err);
       alert(err.response?.data?.message || 'Failed to update affiliate status');
+    }
+  };
+
+  const handleViewAffiliateDetails = async (affiliateId: string) => {
+    setLoadingDetails(true);
+    setShowDetailsModal(true);
+    setAffiliateDetails(null);
+
+    try {
+      const response = await api.get<{
+        success: boolean;
+        data: AffiliateDetails;
+      }>(`/admin/affiliates/${affiliateId}`);
+
+      if (response.success && response.data) {
+        setAffiliateDetails(response.data);
+        logger.info('Affiliate details loaded');
+      }
+    } catch (err: any) {
+      logger.error('Failed to load affiliate details', err);
+      alert(err.response?.data?.message || 'Failed to load affiliate details');
+      setShowDetailsModal(false);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -531,6 +656,19 @@ const AdminPanel: React.FC = () => {
                   Analytics
                 </div>
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === 'settings'
+                    ? 'border-b-2 border-primary-600 text-primary-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <SettingsIcon className="w-4 h-4" />
+                  Settings
+                </div>
+              </button>
             </div>
           </div>
 
@@ -670,7 +808,16 @@ const AdminPanel: React.FC = () => {
                             <span className="text-sm text-gray-600">{formatDate(affiliate.createdAt)}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewAffiliateDetails(affiliate.id)}
+                                icon={<Eye className="w-3 h-3" />}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                Details
+                              </Button>
                               {!affiliate.verified && (
                                 <Button
                                   size="sm"
@@ -946,6 +1093,149 @@ const AdminPanel: React.FC = () => {
             </div>
           )}
 
+          {/* Settings Tab */}
+          {activeTab === 'settings' && settings && (
+            <div className="space-y-6">
+              <Card className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <SettingsIcon className="w-6 h-6 text-primary-600" />
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Affiliate Program Settings</h2>
+                    <p className="text-sm text-gray-600">Configure commission rates and program parameters</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-semibold mb-1">Environment Configuration</p>
+                      <p>
+                        These settings are currently managed via environment variables. To modify them, update the
+                        corresponding environment variables and restart the server.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Commission Rates */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Commission Rates
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-blue-700">Level 1 (Direct)</p>
+                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded">AFFILIATE_COMMISSION_LEVEL1</span>
+                      </div>
+                      <p className="text-3xl font-bold text-blue-900">{settings.commissionRates.level1}%</p>
+                      <p className="text-xs text-blue-700 mt-2">Commission for direct referrals</p>
+                    </div>
+
+                    <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-green-700">Level 2 (Indirect)</p>
+                        <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">AFFILIATE_COMMISSION_LEVEL2</span>
+                      </div>
+                      <p className="text-3xl font-bold text-green-900">{settings.commissionRates.level2}%</p>
+                      <p className="text-xs text-green-700 mt-2">Commission for level 2 referrals</p>
+                    </div>
+
+                    <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-purple-700">Level 3+</p>
+                        <span className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded">AFFILIATE_COMMISSION_LEVEL3</span>
+                      </div>
+                      <p className="text-3xl font-bold text-purple-900">{settings.commissionRates.level3}%</p>
+                      <p className="text-xs text-purple-700 mt-2">Commission for level 3+ referrals</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Program Parameters */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    Program Parameters
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-gray-700">Minimum Payout</p>
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">AFFILIATE_MIN_PAYOUT</span>
+                      </div>
+                      <p className="text-3xl font-bold text-gray-900">{formatCurrency(settings.minPayoutAmount)}</p>
+                      <p className="text-xs text-gray-600 mt-2">Minimum amount required for payout requests</p>
+                    </div>
+
+                    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-gray-700">Cookie Duration</p>
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">AFFILIATE_COOKIE_DURATION</span>
+                      </div>
+                      <p className="text-3xl font-bold text-gray-900">{settings.cookieDuration}</p>
+                      <p className="text-xs text-gray-600 mt-2">Days that referral cookies remain valid</p>
+                    </div>
+
+                    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-gray-700">Require Verification</p>
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">AFFILIATE_REQUIRE_VERIFICATION</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        {settings.requireVerification ? (
+                          <>
+                            <CheckCircle className="w-8 h-8 text-green-600" />
+                            <span className="text-xl font-bold text-green-900">Enabled</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-8 h-8 text-red-600" />
+                            <span className="text-xl font-bold text-red-900">Disabled</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">Admin verification required for new affiliates</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Environment Variables Reference */}
+                <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-md font-bold text-gray-900 mb-3">Environment Variables Reference</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_COMMISSION_LEVEL1</code>
+                      <span className="text-gray-600">Direct referral commission rate (%)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_COMMISSION_LEVEL2</code>
+                      <span className="text-gray-600">Level 2 referral commission rate (%)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_COMMISSION_LEVEL3</code>
+                      <span className="text-gray-600">Level 3+ referral commission rate (%)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_MIN_PAYOUT</code>
+                      <span className="text-gray-600">Minimum payout amount (USD)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_COOKIE_DURATION</code>
+                      <span className="text-gray-600">Cookie duration (days)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <code className="px-2 py-1 bg-white rounded border text-xs">AFFILIATE_REQUIRE_VERIFICATION</code>
+                      <span className="text-gray-600">Require verification (true/false)</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Analytics Tab */}
           {activeTab === 'analytics' && stats && (
             <div className="space-y-6">
@@ -970,9 +1260,365 @@ const AdminPanel: React.FC = () => {
                   ))}
                 </div>
               </Card>
+
+              {/* Top Performers Leaderboard */}
+              {topPerformers.length > 0 && (
+                <Card className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Award className="w-6 h-6 text-yellow-600" />
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Top Performing Affiliates</h2>
+                      <p className="text-sm text-gray-600">Top 10 affiliates by total earnings</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Affiliate</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referrals</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conv. Rate</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {topPerformers.map((performer) => (
+                          <tr key={performer.affiliateId} className="hover:bg-gray-50">
+                            <td className="px-4 py-4">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 text-white font-bold text-sm">
+                                {performer.rank === 1 && '🥇'}
+                                {performer.rank === 2 && '🥈'}
+                                {performer.rank === 3 && '🥉'}
+                                {performer.rank > 3 && `#${performer.rank}`}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{performer.name}</p>
+                                <p className="text-sm text-gray-600">{performer.email}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <code className="px-2 py-1 bg-gray-100 rounded text-sm">
+                                {performer.referralCode}
+                              </code>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="font-bold text-green-600 text-lg">
+                                {formatCurrency(performer.totalEarnings)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="font-semibold text-gray-900">{performer.totalReferrals}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-gray-900">{performer.totalClicks}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+                                {performer.conversionRate}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewAffiliateDetails(performer.affiliateId)}
+                                icon={<Eye className="w-3 h-3" />}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Top 3 Podium Visualization */}
+                  <div className="mt-8 grid grid-cols-3 gap-4">
+                    {topPerformers.slice(0, 3).map((performer, index) => (
+                      <div
+                        key={performer.affiliateId}
+                        className={`p-4 rounded-lg text-center ${
+                          index === 0
+                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 transform -translate-y-2'
+                            : index === 1
+                            ? 'bg-gradient-to-br from-gray-300 to-gray-500'
+                            : 'bg-gradient-to-br from-orange-400 to-orange-600'
+                        }`}
+                      >
+                        <div className="text-4xl mb-2">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                        <p className="font-bold text-white text-lg mb-1">{performer.name}</p>
+                        <p className="text-white text-2xl font-bold">
+                          {formatCurrency(performer.totalEarnings)}
+                        </p>
+                        <p className="text-white text-sm opacity-90 mt-1">
+                          {performer.totalReferrals} referrals
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
           )}
         </Container>
+
+        {/* Affiliate Details Modal */}
+        {showDetailsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Affiliate Details</h2>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {loadingDetails ? (
+                <div className="p-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading affiliate details...</p>
+                </div>
+              ) : affiliateDetails ? (
+                <div className="p-6 space-y-6">
+                  {/* User Information */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      User Information
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Full Name</p>
+                        <p className="font-semibold text-gray-900">
+                          {affiliateDetails.user.firstName} {affiliateDetails.user.lastName}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Email</p>
+                        <p className="font-semibold text-gray-900">{affiliateDetails.user.email}</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Referral Code</p>
+                        <code className="text-sm font-mono bg-white px-3 py-1 rounded border">
+                          {affiliateDetails.referralCode}
+                        </code>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Status</p>
+                        <div className="flex gap-2 items-center">
+                          {getStatusBadge(affiliateDetails.status)}
+                          {affiliateDetails.verified && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <CheckCircle className="w-3 h-3" />
+                              Verified
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistics */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      Statistics
+                    </h3>
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                        <p className="text-sm text-blue-700 mb-1">Level</p>
+                        <p className="text-2xl font-bold text-blue-900">Level {affiliateDetails.level}</p>
+                      </div>
+                      <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                        <p className="text-sm text-green-700 mb-1">Total Clicks</p>
+                        <p className="text-2xl font-bold text-green-900">{affiliateDetails.totalClicks}</p>
+                      </div>
+                      <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                        <p className="text-sm text-purple-700 mb-1">Total Referrals</p>
+                        <p className="text-2xl font-bold text-purple-900">{affiliateDetails.totalReferrals}</p>
+                      </div>
+                      <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+                        <p className="text-sm text-orange-700 mb-1">Conversion Rate</p>
+                        <p className="text-2xl font-bold text-orange-900">
+                          {affiliateDetails.conversionRate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Earnings Breakdown */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Earnings Breakdown
+                    </h3>
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-sm text-yellow-700 mb-1">Pending</p>
+                        <p className="text-xl font-bold text-yellow-900">
+                          {formatCurrency(affiliateDetails.earnings.pending)}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-700 mb-1">Approved</p>
+                        <p className="text-xl font-bold text-green-900">
+                          {formatCurrency(affiliateDetails.earnings.approved)}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-sm text-purple-700 mb-1">Paid Out</p>
+                        <p className="text-xl font-bold text-purple-900">
+                          {formatCurrency(affiliateDetails.earnings.paid)}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-700 mb-1">Total Earnings</p>
+                        <p className="text-xl font-bold text-blue-900">
+                          {formatCurrency(affiliateDetails.earnings.total)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Referrals Overview */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Referrals Overview
+                    </h3>
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Total Referrals</p>
+                        <p className="text-2xl font-bold text-gray-900">{affiliateDetails.referrals.total}</p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-700 mb-1">Active</p>
+                        <p className="text-2xl font-bold text-green-900">{affiliateDetails.referrals.active}</p>
+                      </div>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-700 mb-1">Direct</p>
+                        <p className="text-2xl font-bold text-blue-900">{affiliateDetails.referrals.direct}</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-purple-700 mb-1">Indirect</p>
+                        <p className="text-2xl font-bold text-purple-900">{affiliateDetails.referrals.indirect}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Activity */}
+                  {affiliateDetails.recentActivity && affiliateDetails.recentActivity.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Clock className="w-5 h-5" />
+                        Recent Activity
+                      </h3>
+                      <div className="space-y-2">
+                        {affiliateDetails.recentActivity.slice(0, 5).map((activity) => (
+                          <div
+                            key={activity.id}
+                            className="p-4 bg-gray-50 rounded-lg flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">{activity.description}</p>
+                              <p className="text-sm text-gray-600">{formatDate(activity.createdAt)}</p>
+                            </div>
+                            {activity.amount && (
+                              <span className="font-semibold text-green-600">
+                                {formatCurrency(activity.amount)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Metadata */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Metadata
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Joined Date</p>
+                        <p className="font-semibold text-gray-900">{formatDate(affiliateDetails.createdAt)}</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Last Updated</p>
+                        <p className="font-semibold text-gray-900">{formatDate(affiliateDetails.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t">
+                    {!affiliateDetails.verified && (
+                      <Button
+                        onClick={() => {
+                          handleVerifyAffiliate(affiliateDetails.id);
+                          setShowDetailsModal(false);
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        Verify Affiliate
+                      </Button>
+                    )}
+                    {affiliateDetails.status === 'pending' && (
+                      <Button
+                        onClick={() => {
+                          handleChangeAffiliateStatus(affiliateDetails.id, 'active');
+                          setShowDetailsModal(false);
+                        }}
+                      >
+                        Activate Affiliate
+                      </Button>
+                    )}
+                    {affiliateDetails.status === 'active' && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleChangeAffiliateStatus(affiliateDetails.id, 'suspended');
+                          setShowDetailsModal(false);
+                        }}
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                      >
+                        Suspend Affiliate
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDetailsModal(false)}
+                      className="ml-auto"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No details available</p>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
