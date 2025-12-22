@@ -62,6 +62,8 @@ import { backgroundJobsService } from './services/backgroundJobs.service.js';
 import { initializeI18n, i18nMiddleware, i18nStatsMiddleware } from './middleware/i18n.middleware.js';
 import { distributedTracingMiddleware } from './middleware/distributedTracing.middleware.js';
 import { sseService } from './services/sse.service.js';
+import cdnMiddleware, { cdnStatsMiddleware } from './middleware/cdn.middleware.js';
+import cspMiddleware, { cspStatsMiddleware } from './middleware/csp.middleware.js';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
@@ -100,6 +102,12 @@ app.use(helmetMiddleware);
 app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
+app.use(cspMiddleware);      // Content Security Policy
+app.use(cspStatsMiddleware); // CSP statistics tracking
+
+// CDN optimization middleware
+app.use(cdnMiddleware);      // CDN headers and caching
+app.use(cdnStatsMiddleware); // CDN statistics tracking
 
 // Distributed tracing middleware (early in chain for request tracking)
 app.use(distributedTracingMiddleware);

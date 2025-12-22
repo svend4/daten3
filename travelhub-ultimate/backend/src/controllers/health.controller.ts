@@ -28,6 +28,8 @@ import { getDeduplicationStats, resetDeduplicationStats, clearDeduplicationCache
 import { getI18nStats, resetI18nStats } from '../middleware/i18n.middleware.js';
 import { getDistributedTracingStats, resetDistributedTracingStats } from '../middleware/distributedTracing.middleware.js';
 import { getSSEStats, resetSSEStats } from '../services/sse.service.js';
+import { getCDNStats, resetCDNStats } from '../middleware/cdn.middleware.js';
+import { getCSPStats, resetCSPStats, handleCSPViolation } from '../middleware/csp.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -542,6 +544,8 @@ export const metricsDashboard = (req: Request, res: Response) => {
         i18n: getI18nStats(),
         tracing: getDistributedTracingStats(),
         sse: getSSEStats(),
+        cdn: getCDNStats(),
+        csp: getCSPStats(),
       },
       system: {
         memory: {
@@ -1492,3 +1496,59 @@ export const resetSSEMetricsEndpoint = (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: 'Failed to reset SSE statistics' });
   }
 };
+
+/**
+ * CDN statistics endpoint
+ * GET /api/health/cdn
+ */
+export const cdnMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getCDNStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting CDN stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve CDN statistics' });
+  }
+};
+
+export const resetCDNMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetCDNStats();
+    logger.info('CDN stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'CDN statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting CDN stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset CDN statistics' });
+  }
+};
+
+/**
+ * CSP statistics endpoint
+ * GET /api/health/csp
+ */
+export const cspMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getCSPStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting CSP stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve CSP statistics' });
+  }
+};
+
+export const resetCSPMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetCSPStats();
+    logger.info('CSP stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'CSP statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting CSP stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset CSP statistics' });
+  }
+};
+
+/**
+ * CSP violation report endpoint
+ * POST /api/health/csp/report
+ */
+export const cspViolationReport = handleCSPViolation;
