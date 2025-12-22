@@ -125,7 +125,7 @@ class ReportService {
           type: true,
           totalPrice: true,
           currency: true,
-          destination: true,
+          itemName: true,
           createdAt: true
         }
       });
@@ -156,14 +156,15 @@ class ReportService {
         revenueByDay[date].bookings += 1;
       });
 
-      // Top destinations
+      // Top destinations (using itemName as destination)
       const destinationStats: { [key: string]: { revenue: number; bookings: number } } = {};
       bookings.forEach(b => {
-        if (!destinationStats[b.destination]) {
-          destinationStats[b.destination] = { revenue: 0, bookings: 0 };
+        const destination = b.itemName || 'Unknown';
+        if (!destinationStats[destination]) {
+          destinationStats[destination] = { revenue: 0, bookings: 0 };
         }
-        destinationStats[b.destination].revenue += b.totalPrice;
-        destinationStats[b.destination].bookings += 1;
+        destinationStats[destination].revenue += b.totalPrice;
+        destinationStats[destination].bookings += 1;
       });
 
       const topDestinations = Object.entries(destinationStats)
@@ -222,23 +223,13 @@ class ReportService {
         throw new Error('Affiliate not found');
       }
 
-      // Get all referrals
+      // Get all referrals (using affiliateId instead of referrerId)
       const referrals = await prisma.referral.findMany({
-        where: { referrerId: affiliateId },
-        include: {
-          referred: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              isActive: true
-            }
-          }
-        }
+        where: { affiliateId: affiliateId }
       });
 
       const totalReferrals = referrals.length;
-      const activeReferrals = referrals.filter(r => r.referred.isActive).length;
+      const activeReferrals = referrals.filter(r => r.status === 'active').length;
 
       // Get commissions in date range
       const commissions = await prisma.commission.findMany({
@@ -259,8 +250,10 @@ class ReportService {
         .filter(c => c.status === 'pending')
         .reduce((sum, c) => sum + c.amount, 0);
 
-      // Get bookings from referrals
-      const referralIds = referrals.map(r => r.referredId);
+      // Get bookings from referred affiliates (if they exist)
+      const referralIds = referrals
+        .map(r => r.referredAffiliateId)
+        .filter((id): id is string => id !== null);
       const bookings = await prisma.booking.findMany({
         where: {
           userId: { in: referralIds },

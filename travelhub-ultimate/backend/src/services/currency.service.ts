@@ -104,7 +104,7 @@ class CurrencyService {
         throw new Error(`API returned ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as ExchangeRates;
 
       // Cache for 1 hour
       await cacheService.set(cacheKey, data, CACHE_TTL.SHORT);
