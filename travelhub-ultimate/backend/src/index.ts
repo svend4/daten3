@@ -49,10 +49,31 @@ import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
 import requestIdMiddleware from './middleware/requestId.middleware.js';
 import responseTimeMiddleware from './middleware/responseTime.middleware.js';
+import apiVersionMiddleware from './middleware/apiVersion.middleware.js';
+import sanitizationMiddleware from './middleware/sanitization.middleware.js';
+import timeoutMiddleware from './middleware/timeout.middleware.js';
 
 // Services
 import { redisService } from './services/redis.service.js';
 import { initializeCronJobs } from './services/cron.service.js';
+import { websocketService } from './services/websocket.service.js';
+import { messageQueueService } from './services/messageQueue.service.js';
+import { backgroundJobsService } from './services/backgroundJobs.service.js';
+import { initializeI18n, i18nMiddleware, i18nStatsMiddleware } from './middleware/i18n.middleware.js';
+import { distributedTracingMiddleware } from './middleware/distributedTracing.middleware.js';
+import { sseService } from './services/sse.service.js';
+
+// Audit logging
+import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
+
+// Feature Flags
+import { initializeFeatureFlags } from './middleware/featureFlags.middleware.js';
+
+// API Key Management
+import { loadApiKeys } from './middleware/apiKey.middleware.js';
+
+// Database
+import { prisma } from './lib/prisma.js';
 
 // Utils
 import logger from './utils/logger.js';
@@ -71,11 +92,20 @@ let httpServer: any = null;
 app.use(requestIdMiddleware);  // Assign unique ID to each request
 app.use(responseTimeMiddleware); // Measure response time
 
+// API versioning middleware (early in chain)
+app.use(apiVersionMiddleware);  // Extract and validate API version
+
 // Security middleware
 app.use(helmetMiddleware);
 app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
+
+// Distributed tracing middleware (early in chain for request tracking)
+app.use(distributedTracingMiddleware);
+
+// Request timeout middleware (prevent long-running requests)
+app.use(timeoutMiddleware(30000)); // 30 second timeout
 
 // Cookie parsing middleware (must be before routes)
 app.use(cookieParser());
@@ -83,6 +113,14 @@ app.use(cookieParser());
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request sanitization middleware (after body parsing)
+app.use(sanitizationMiddleware({
+  trim: true,
+  escapeHtml: false, // Don't escape HTML by default (allow rich content)
+  strict: true,      // Remove dangerous patterns
+  maxDepth: 10,      // Maximum object depth
+}));
 
 // Response compression (gzip/brotli)
 app.use(compression({
@@ -101,6 +139,10 @@ app.use(compression({
 // Logging middleware
 app.use(morganMiddleware);
 app.use(requestLogger); // Enhanced logging for slow/failed requests
+
+// i18n middleware (language detection and translation)
+app.use(i18nMiddleware());
+app.use(i18nStatsMiddleware);
 
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
@@ -230,11 +272,34 @@ async function startServer() {
     // Connect to Redis
     await redisService.connect();
 
+    // Initialize feature flags
+    await initializeFeatureFlags();
+
+    // Load API keys from Redis
+    await loadApiKeys();
+
+    // Initialize message queue
+    await messageQueueService.initialize();
+
+    // Initialize background jobs
+    await backgroundJobsService.initialize();
+
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
+    // Initialize i18n (internationalization)
+    await initializeI18n();
+
+    // Start audit log flushing
+    startAuditLogFlushing();
+
     // Start HTTP server and store instance
     httpServer = app.listen(PORT, () => {
+      // Initialize WebSocket after HTTP server starts
+      websocketService.initialize(httpServer);
+
+      // Initialize SSE service
+      sseService.initialize();
       logger.info('═══════════════════════════════════════════════════');
       logger.info('🚀 TravelHub Ultimate API Server');
       logger.info('═══════════════════════════════════════════════════');
@@ -315,12 +380,37 @@ async function gracefulShutdown(signal: string) {
     await redisService.disconnect();
     logger.info('✓ Redis disconnected');
 
-    // Step 3: Disconnect from Prisma
+    // Step 3: Disconnect WebSocket
+    logger.info('Disconnecting WebSocket...');
+    websocketService.disconnect();
+    logger.info('✓ WebSocket disconnected');
+
+    // Step 4: Shutdown SSE service
+    logger.info('Shutting down SSE service...');
+    sseService.shutdown();
+    logger.info('✓ SSE service shut down');
+
+    // Step 5: Shutdown background jobs
+    logger.info('Shutting down background jobs...');
+    await backgroundJobsService.shutdown();
+    logger.info('✓ Background jobs shut down');
+
+    // Step 6: Close message queue
+    logger.info('Closing message queue...');
+    await messageQueueService.close();
+    logger.info('✓ Message queue closed');
+
+    // Step 7: Disconnect from Prisma
     logger.info('Disconnecting from Prisma...');
     await prisma.$disconnect();
     logger.info('✓ Prisma disconnected');
 
-    // Step 4: Clear shutdown timeout
+    // Step 8: Stop audit log flushing
+    logger.info('Stopping audit log flushing...');
+    await stopAuditLogFlushing();
+    logger.info('✓ Audit logs flushed');
+
+    // Step 9: Clear shutdown timeout
     clearTimeout(shutdownTimeout);
 
     logger.info('✅ Graceful shutdown completed successfully');
