@@ -820,7 +820,7 @@ router.get('/analytics', rateLimiters.moderate, async (req: Request, res: Respon
 
     // Format level data
     const byLevel: any = {};
-    affiliatesByLevel.forEach(item => {
+    affiliatesByLevel.forEach((item: any) => {
       byLevel[`level${item.level}`] = {
         count: item._count.id,
         earnings: item._sum.totalEarnings || 0
@@ -843,7 +843,7 @@ router.get('/analytics', rateLimiters.moderate, async (req: Request, res: Respon
 
     // Group by month
     const monthlyData: any = {};
-    monthlyCommissions.forEach(comm => {
+    monthlyCommissions.forEach((comm: any) => {
       const monthKey = `${comm.createdAt.getFullYear()}-${String(comm.createdAt.getMonth() + 1).padStart(2, '0')}`;
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = { month: monthKey, commissions: 0 };
@@ -908,7 +908,7 @@ router.get('/analytics/top-performers', rateLimiters.moderate, async (req: Reque
     });
 
     // Format data with rankings
-    const data = topAffiliates.map((affiliate, index) => {
+    const data = topAffiliates.map((affiliate: any, index: number) => {
       const conversionRate = affiliate.totalClicks > 0
         ? ((affiliate.totalReferrals / affiliate.totalClicks) * 100).toFixed(2)
         : '0.00';
