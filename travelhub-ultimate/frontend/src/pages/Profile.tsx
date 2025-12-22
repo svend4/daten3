@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, AlertCircle, Save, X } from 'lucide-react';
+import { User, Mail, Phone, AlertCircle, Save, X, CheckCircle, XCircle, Send } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Container from '../components/layout/Container';
@@ -22,6 +22,8 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const [profile, setProfile] = useState<ProfileData>({
     firstName: '',
@@ -97,6 +99,35 @@ const Profile: React.FC = () => {
     setEditing(false);
     setError('');
     setSuccess('');
+  };
+
+  const handleSendVerification = async () => {
+    setSendingVerification(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post<{
+        success: boolean;
+        message: string;
+      }>('/auth/send-verification-email', {});
+
+      if (response.success) {
+        setVerificationSent(true);
+        setSuccess('Verification email sent! Please check your inbox.');
+        logger.info('Verification email sent');
+
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccess(''), 5000);
+      } else {
+        setError(response.message || 'Failed to send verification email');
+      }
+    } catch (err: any) {
+      logger.error('Failed to send verification email', err);
+      setError(err.response?.data?.message || 'Failed to send verification email');
+    } finally {
+      setSendingVerification(false);
+    }
   };
 
   // Loading state
@@ -221,14 +252,28 @@ const Profile: React.FC = () => {
                 required
               />
 
-              <Input
-                label="Email"
-                type="email"
-                value={user.email}
-                disabled
-                icon={<Mail className="w-5 h-5" />}
-                helpText="Email cannot be changed"
-              />
+              <div>
+                <Input
+                  label="Email"
+                  type="email"
+                  value={user.email}
+                  disabled
+                  icon={<Mail className="w-5 h-5" />}
+                />
+                <div className="mt-2 flex items-center gap-2">
+                  {user.emailVerified ? (
+                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">Verified</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-yellow-600 text-sm">
+                      <XCircle className="w-4 h-4" />
+                      <span className="font-medium">Not verified</span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <Input
                 label="Телефон"
@@ -263,6 +308,43 @@ const Profile: React.FC = () => {
               </div>
             )}
           </Card>
+
+          {/* Email Verification Card */}
+          {!user.emailVerified && (
+            <Card className="p-6 mt-6 border-yellow-200 bg-yellow-50">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-yellow-600" />
+                  </div>
+                </div>
+                <div className="flex-grow">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Verify Your Email Address
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Please verify your email address to access all features and receive important
+                    notifications about your bookings.
+                  </p>
+                  {verificationSent ? (
+                    <div className="flex items-center gap-2 text-green-700 text-sm">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Verification email sent! Check your inbox.</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleSendVerification}
+                      loading={sendingVerification}
+                      size="sm"
+                      icon={<Send className="w-4 h-4" />}
+                    >
+                      {sendingVerification ? 'Sending...' : 'Send Verification Email'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Additional Info Card */}
           <Card className="p-6 mt-6">
