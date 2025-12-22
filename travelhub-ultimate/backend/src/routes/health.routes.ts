@@ -3,7 +3,8 @@ import {
   basicHealthCheck,
   detailedHealthCheck,
   readinessCheck,
-  livenessCheck
+  livenessCheck,
+  performanceMetrics,
 } from '../controllers/health.controller.js';
 
 const router = Router();
@@ -35,5 +36,12 @@ router.get('/ready', readinessCheck);
  * @access  Public
  */
 router.get('/live', livenessCheck);
+
+/**
+ * @route   GET /health/metrics
+ * @desc    Performance metrics
+ * @access  Public
+ */
+router.get('/metrics', performanceMetrics);
 
 export default router;

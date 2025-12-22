@@ -48,6 +48,13 @@ export const trackAffiliateClick = async (
 
         // Track click (only if from query parameter - new click)
         if (referralCode) {
+          // Extract UTM parameters for marketing attribution
+          const utmSource = req.query.utm_source as string;
+          const utmMedium = req.query.utm_medium as string;
+          const utmCampaign = req.query.utm_campaign as string;
+          const utmTerm = req.query.utm_term as string;
+          const utmContent = req.query.utm_content as string;
+
           await prisma.affiliateClick.create({
             data: {
               affiliateId: affiliate.id,
@@ -55,14 +62,25 @@ export const trackAffiliateClick = async (
               source: req.headers.referer || 'direct',
               ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
               userAgent: req.headers['user-agent'] || 'unknown',
-              converted: false
+              converted: false,
+              // UTM parameters for advanced analytics
+              ...(utmSource && { utmSource }),
+              ...(utmMedium && { utmMedium }),
+              ...(utmCampaign && { utmCampaign }),
+              ...(utmTerm && { utmTerm }),
+              ...(utmContent && { utmContent }),
             }
           });
 
           logger.info('Affiliate click tracked', {
             affiliateId: affiliate.id,
             referralCode: effectiveReferralCode,
-            url: req.url
+            url: req.url,
+            utm: {
+              source: utmSource,
+              medium: utmMedium,
+              campaign: utmCampaign,
+            },
           });
         }
       } else {

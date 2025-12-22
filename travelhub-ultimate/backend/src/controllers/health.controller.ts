@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { redisService } from '../services/redis.service.js';
 import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
+import { getPerformanceMetrics } from '../middleware/logger.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -129,4 +130,26 @@ export const livenessCheck = (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
+};
+
+/**
+ * Performance metrics endpoint
+ * GET /api/health/metrics
+ */
+export const performanceMetrics = (req: Request, res: Response) => {
+  try {
+    const metrics = getPerformanceMetrics();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      metrics,
+    });
+  } catch (error: any) {
+    logger.error('Error getting performance metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve performance metrics',
+    });
+  }
 };
