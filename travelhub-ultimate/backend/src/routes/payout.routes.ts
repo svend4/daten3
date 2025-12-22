@@ -23,28 +23,28 @@ router.post('/:id/cancel', rateLimiters.moderate, payoutController.cancelPayout)
 // Admin routes
 router.get(
   '/admin/all',
-  requireRole('admin'),
+  requireRole(['admin']),
   rateLimiters.moderate,
   payoutController.getAllPayouts
 );
 
 router.post(
   '/admin/:id/approve',
-  requireRole('admin'),
+  requireRole(['admin']),
   rateLimiters.strict,
   payoutController.approvePayout
 );
 
 router.post(
   '/admin/:id/reject',
-  requireRole('admin'),
+  requireRole(['admin']),
   rateLimiters.strict,
   payoutController.rejectPayout
 );
 
 router.post(
   '/admin/:id/process',
-  requireRole('admin'),
+  requireRole(['admin']),
   rateLimiters.strict,
   payoutController.processPayout
 );
