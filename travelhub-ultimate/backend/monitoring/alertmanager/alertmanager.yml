@@ -1,0 +1,120 @@
+# Alertmanager Configuration for TravelHub
+
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL (replace with actual)
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# Route configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+
+    # Warning alerts - batched notification
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 1m
+      group_interval: 5m
+
+    # Info alerts - daily digest
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      group_interval: 24h
+
+# Receivers configuration
+receivers:
+  # Default receiver
+  - name: 'default'
+    slack_configs:
+      - channel: '#travelhub-alerts'
+        title: 'TravelHub Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#travelhub-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Category:* {{ .CommonLabels.category }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'danger'
+
+    email_configs:
+      - to: 'oncall@travelhub.com'
+        from: 'alerts@travelhub.com'
+        smarthost: 'smtp.gmail.com:587'
+        auth_username: 'alerts@travelhub.com'
+        auth_password: 'your-password'
+        headers:
+          Subject: '[CRITICAL] TravelHub Alert: {{ .GroupLabels.alertname }}'
+
+    pagerduty_configs:
+      - service_key: 'your-pagerduty-service-key'
+        description: '{{ .CommonAnnotations.summary }}'
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    slack_configs:
+      - channel: '#travelhub-warnings'
+        title: '⚠️  WARNING: {{ .GroupLabels.alertname }}'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+        color: 'warning'
+
+  # Info alerts
+  - name: 'info-alerts'
+    slack_configs:
+      - channel: '#travelhub-info'
+        title: 'ℹ️  INFO: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+        color: 'good'
+
+# Inhibit rules - prevent alert spam
+inhibit_rules:
+  # If API is down, don't alert on high error rate
+  - source_match:
+      alertname: 'APIDown'
+    target_match:
+      alertname: 'HighErrorRate'
+    equal: ['instance']
+
+  # If database is down, don't alert on slow queries
+  - source_match:
+      alertname: 'LowDatabaseConnections'
+    target_match:
+      alertname: 'SlowDatabaseQueries'
+    equal: ['instance']
+
+  # If critical alert is firing, suppress warning for same issue
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
