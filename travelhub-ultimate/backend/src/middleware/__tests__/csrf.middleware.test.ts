@@ -40,63 +40,63 @@ const createMockNext = () => vi.fn() as unknown as NextFunction;
 
 describe('CSRF Middleware', () => {
   describe('generateCSRFToken', () => {
-    it('should generate a valid CSRF token', () => {
+    it('should generate a valid CSRF token', async () => {
       const sessionId = 'test-session-id';
-      const token = generateCSRFToken(sessionId);
+      const token = await generateCSRFToken(sessionId);
 
       expect(token).toBeDefined();
       expect(typeof token).toBe('string');
       expect(token.length).toBe(64); // 32 bytes = 64 hex characters
     });
 
-    it('should generate different tokens for different sessions', () => {
-      const token1 = generateCSRFToken('session-1');
-      const token2 = generateCSRFToken('session-2');
+    it('should generate different tokens for different sessions', async () => {
+      const token1 = await generateCSRFToken('session-1');
+      const token2 = await generateCSRFToken('session-2');
 
       expect(token1).not.toBe(token2);
     });
   });
 
   describe('csrfProtection middleware', () => {
-    it('should allow GET requests without token', () => {
+    it('should allow GET requests without token', async () => {
       const req = createMockRequest('GET');
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should allow HEAD requests without token', () => {
+    it('should allow HEAD requests without token', async () => {
       const req = createMockRequest('HEAD');
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should allow OPTIONS requests without token', () => {
+    it('should allow OPTIONS requests without token', async () => {
       const req = createMockRequest('OPTIONS');
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should reject POST request without CSRF token', () => {
+    it('should reject POST request without CSRF token', async () => {
       const req = createMockRequest('POST');
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith(
@@ -108,12 +108,12 @@ describe('CSRF Middleware', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should reject POST request with invalid CSRF token', () => {
+    it('should reject POST request with invalid CSRF token', async () => {
       const req = createMockRequest('POST', { 'x-csrf-token': 'invalid-token' });
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith(
@@ -125,9 +125,9 @@ describe('CSRF Middleware', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should accept POST request with valid CSRF token in header', () => {
+    it('should accept POST request with valid CSRF token in header', async () => {
       const sessionId = 'test-session';
-      const token = generateCSRFToken(sessionId);
+      const token = await generateCSRFToken(sessionId);
 
       // Mock authenticated user
       const req = createMockRequest(
@@ -139,15 +139,15 @@ describe('CSRF Middleware', () => {
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should accept POST request with valid CSRF token in body', () => {
+    it('should accept POST request with valid CSRF token in body', async () => {
       const sessionId = 'test-session';
-      const token = generateCSRFToken(sessionId);
+      const token = await generateCSRFToken(sessionId);
 
       const req = createMockRequest(
         'POST',
@@ -158,7 +158,7 @@ describe('CSRF Middleware', () => {
       const res = createMockResponse();
       const next = createMockNext();
 
-      csrfProtection(req as Request, res as Response, next);
+      await csrfProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
@@ -166,31 +166,31 @@ describe('CSRF Middleware', () => {
   });
 
   describe('optionalCSRFProtection middleware', () => {
-    it('should allow POST request without token (optional mode)', () => {
+    it('should allow POST request without token (optional mode)', async () => {
       const req = createMockRequest('POST');
       const res = createMockResponse();
       const next = createMockNext();
 
-      optionalCSRFProtection(req as Request, res as Response, next);
+      await optionalCSRFProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should validate token if provided', () => {
+    it('should validate token if provided', async () => {
       const req = createMockRequest('POST', { 'x-csrf-token': 'invalid-token' });
       const res = createMockResponse();
       const next = createMockNext();
 
-      optionalCSRFProtection(req as Request, res as Response, next);
+      await optionalCSRFProtection(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should accept valid token if provided', () => {
+    it('should accept valid token if provided', async () => {
       const sessionId = 'test-session';
-      const token = generateCSRFToken(sessionId);
+      const token = await generateCSRFToken(sessionId);
 
       const req = createMockRequest(
         'POST',
@@ -201,7 +201,7 @@ describe('CSRF Middleware', () => {
       const res = createMockResponse();
       const next = createMockNext();
 
-      optionalCSRFProtection(req as Request, res as Response, next);
+      await optionalCSRFProtection(req as Request, res as Response, next);
 
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
@@ -209,9 +209,9 @@ describe('CSRF Middleware', () => {
   });
 
   describe('clearCSRFToken', () => {
-    it('should clear token for a session', () => {
+    it('should clear token for a session', async () => {
       const sessionId = 'test-session';
-      const token = generateCSRFToken(sessionId);
+      const token = await generateCSRFToken(sessionId);
 
       // Token should work before clearing
       const req1 = createMockRequest(
@@ -223,11 +223,11 @@ describe('CSRF Middleware', () => {
       const res1 = createMockResponse();
       const next1 = createMockNext();
 
-      csrfProtection(req1 as Request, res1 as Response, next1);
+      await csrfProtection(req1 as Request, res1 as Response, next1);
       expect(next1).toHaveBeenCalled();
 
       // Clear token
-      clearCSRFToken(sessionId);
+      await clearCSRFToken(sessionId);
 
       // Token should not work after clearing
       const req2 = createMockRequest(
@@ -239,7 +239,7 @@ describe('CSRF Middleware', () => {
       const res2 = createMockResponse();
       const next2 = createMockNext();
 
-      csrfProtection(req2 as Request, res2 as Response, next2);
+      await csrfProtection(req2 as Request, res2 as Response, next2);
       expect(res2.status).toHaveBeenCalledWith(403);
       expect(next2).not.toHaveBeenCalled();
     });
