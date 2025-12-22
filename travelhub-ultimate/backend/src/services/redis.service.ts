@@ -65,6 +65,17 @@ class RedisService {
   }
 
   /**
+   * Get the Redis client (for advanced operations)
+   * Returns null if not connected
+   */
+  getClient(): RedisClientType | null {
+    if (!this.isConnected()) {
+      return null;
+    }
+    return this.client;
+  }
+
+  /**
    * CSRF Token Operations
    */
 

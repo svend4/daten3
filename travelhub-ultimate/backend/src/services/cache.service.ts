@@ -32,13 +32,7 @@ class CacheService {
    */
   async get(key: string): Promise<string | null> {
     try {
-      const client = redisService.getClient();
-      if (!client) {
-        logger.warn('Redis client not available');
-        return null;
-      }
-
-      const value = await client.get(key);
+      const value = await redisService.get(key);
 
       if (value) {
         logger.debug(`Cache HIT: ${key}`);
@@ -58,13 +52,7 @@ class CacheService {
    */
   async set(key: string, value: string, ttl: number = CACHE_TTL.MEDIUM): Promise<boolean> {
     try {
-      const client = redisService.getClient();
-      if (!client) {
-        logger.warn('Redis client not available');
-        return false;
-      }
-
-      await client.setEx(key, ttl, value);
+      await redisService.set(key, value, ttl);
       logger.debug(`Cache SET: ${key} (TTL: ${ttl}s)`);
       return true;
     } catch (error: any) {
@@ -78,10 +66,7 @@ class CacheService {
    */
   async del(key: string): Promise<boolean> {
     try {
-      const client = redisService.getClient();
-      if (!client) return false;
-
-      await client.del(key);
+      await redisService.del(key);
       logger.debug(`Cache DEL: ${key}`);
       return true;
     } catch (error: any) {
@@ -95,11 +80,7 @@ class CacheService {
    */
   async exists(key: string): Promise<boolean> {
     try {
-      const client = redisService.getClient();
-      if (!client) return false;
-
-      const result = await client.exists(key);
-      return result === 1;
+      return await redisService.exists(key);
     } catch (error: any) {
       logger.error('Cache exists error:', error);
       return false;
@@ -227,7 +208,7 @@ class CacheService {
       if (!client) return false;
 
       const result = await client.expire(key, seconds);
-      return result === 1;
+      return Boolean(result);
     } catch (error: any) {
       logger.error('Cache expire error:', error);
       return false;

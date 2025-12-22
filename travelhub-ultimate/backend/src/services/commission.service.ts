@@ -178,7 +178,7 @@ class CommissionService {
       }
 
       // Update conversion
-      const totalCommission = commissions.reduce((sum, c) => sum + c.amount, 0);
+      const totalCommission = commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
       const averageRate = (totalCommission / bookingAmount) * 100;
 
       await prisma.affiliateConversion.update({
@@ -397,16 +397,16 @@ class CommissionService {
       });
 
       const pending = commissions
-        .filter(c => c.status === 'pending')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .filter((c: any) => c.status === 'pending')
+        .reduce((sum: number, c: any) => sum + c.amount, 0);
 
       const approved = commissions
-        .filter(c => c.status === 'approved')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .filter((c: any) => c.status === 'approved')
+        .reduce((sum: number, c: any) => sum + c.amount, 0);
 
       const paid = commissions
-        .filter(c => c.status === 'paid')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .filter((c: any) => c.status === 'paid')
+        .reduce((sum: number, c: any) => sum + c.amount, 0);
 
       return {
         pending,
@@ -447,7 +447,7 @@ class CommissionService {
         where: { affiliateId }
       });
 
-      const totalCommission = commissions.reduce((sum, c) => sum + c.amount, 0);
+      const totalCommission = commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
       const averageCommission = totalConversions > 0 ? totalCommission / totalConversions : 0;
       const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
 

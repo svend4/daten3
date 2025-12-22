@@ -403,7 +403,7 @@ class NotificationService {
         select: { id: true }
       });
 
-      const userIds = users.map(u => u.id);
+      const userIds = users.map((u: any) => u.id);
 
       await this.broadcast(userIds, {
         type: NotificationType.ANNOUNCEMENT,
