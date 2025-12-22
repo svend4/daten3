@@ -27,14 +27,14 @@ const allowedOrigins = getAllowedOrigins();
  * Origin validation cache for performance
  * Reduces regex matching overhead for repeated origins
  */
-const originCache = new Map<string, boolean>();
-const CACHE_MAX_SIZE = 1000;
-const CACHE_TTL = 3600000; // 1 hour
-
 interface CacheEntry {
   allowed: boolean;
   timestamp: number;
 }
+
+const originCache = new Map<string, CacheEntry>();
+const CACHE_MAX_SIZE = 1000;
+const CACHE_TTL = 3600000; // 1 hour
 
 /**
  * Check if origin matches allowed patterns
@@ -45,7 +45,7 @@ interface CacheEntry {
  */
 const isOriginAllowed = (origin: string): boolean => {
   // Check cache first
-  const cached = originCache.get(origin) as CacheEntry | undefined;
+  const cached = originCache.get(origin);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.allowed;
   }

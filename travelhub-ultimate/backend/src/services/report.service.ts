@@ -131,13 +131,13 @@ class ReportService {
       });
 
       // Calculate total revenue (assuming all in USD for simplicity)
-      const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+      const totalRevenue = bookings.reduce((sum: number, b: any) => sum + b.totalPrice, 0);
       const totalBookings = bookings.length;
       const averageBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
 
       // Revenue by type
       const revenueByType: { [key: string]: { revenue: number; bookings: number } } = {};
-      bookings.forEach(b => {
+      bookings.forEach((b: any) => {
         if (!revenueByType[b.type]) {
           revenueByType[b.type] = { revenue: 0, bookings: 0 };
         }
@@ -147,7 +147,7 @@ class ReportService {
 
       // Revenue by day
       const revenueByDay: { [key: string]: { revenue: number; bookings: number } } = {};
-      bookings.forEach(b => {
+      bookings.forEach((b: any) => {
         const date = b.createdAt.toISOString().split('T')[0];
         if (!revenueByDay[date]) {
           revenueByDay[date] = { revenue: 0, bookings: 0 };
@@ -158,7 +158,7 @@ class ReportService {
 
       // Top destinations (using itemName as destination)
       const destinationStats: { [key: string]: { revenue: number; bookings: number } } = {};
-      bookings.forEach(b => {
+      bookings.forEach((b: any) => {
         const destination = b.itemName || 'Unknown';
         if (!destinationStats[destination]) {
           destinationStats[destination] = { revenue: 0, bookings: 0 };
@@ -229,7 +229,7 @@ class ReportService {
       });
 
       const totalReferrals = referrals.length;
-      const activeReferrals = referrals.filter(r => r.status === 'active').length;
+      const activeReferrals = referrals.filter((r: any) => r.status === 'active').length;
 
       // Get commissions in date range
       const commissions = await prisma.commission.findMany({
@@ -242,18 +242,18 @@ class ReportService {
         }
       });
 
-      const totalCommissions = commissions.reduce((sum, c) => sum + c.amount, 0);
+      const totalCommissions = commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
       const paidCommissions = commissions
-        .filter(c => c.status === 'paid')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .filter((c: any) => c.status === 'paid')
+        .reduce((sum: number, c: any) => sum + c.amount, 0);
       const pendingCommissions = commissions
-        .filter(c => c.status === 'pending')
-        .reduce((sum, c) => sum + c.amount, 0);
+        .filter((c: any) => c.status === 'pending')
+        .reduce((sum: number, c: any) => sum + c.amount, 0);
 
       // Get bookings from referred affiliates (if they exist)
       const referralIds = referrals
-        .map(r => r.referredAffiliateId)
-        .filter((id): id is string => id !== null);
+        .map((r: any) => r.referredAffiliateId)
+        .filter((id: any): id is string => id !== null);
       const bookings = await prisma.booking.findMany({
         where: {
           userId: { in: referralIds },
@@ -274,7 +274,7 @@ class ReportService {
 
       // Top referrals
       const referralStats = await Promise.all(
-        referralIds.slice(0, 10).map(async (userId) => {
+        referralIds.slice(0, 10).map(async (userId: string) => {
           const userBookings = await prisma.booking.findMany({
             where: {
               userId,
@@ -290,7 +290,7 @@ class ReportService {
           const userCommissions = await prisma.commission.findMany({
             where: {
               affiliateId,
-              bookingId: { in: userBookings.map(b => b.id) }
+              bookingId: { in: userBookings.map((b: any) => b.id) }
             }
           });
 
@@ -298,8 +298,8 @@ class ReportService {
             userId,
             userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
             bookings: userBookings.length,
-            totalSpent: userBookings.reduce((sum, b) => sum + b.totalPrice, 0),
-            commissionsGenerated: userCommissions.reduce((sum, c) => sum + c.amount, 0)
+            totalSpent: userBookings.reduce((sum: number, b: any) => sum + b.totalPrice, 0),
+            commissionsGenerated: userCommissions.reduce((sum: number, c: any) => sum + c.amount, 0)
           };
         })
       );
@@ -372,7 +372,7 @@ class ReportService {
         _count: true
       });
 
-      const usersByRole = usersByRoleResult.map(r => ({
+      const usersByRole = usersByRoleResult.map((r: any) => ({
         role: r.role,
         count: r._count
       }));
@@ -394,7 +394,7 @@ class ReportService {
       });
 
       const userGrowthByDay: { [key: string]: number } = {};
-      allUsers.forEach(u => {
+      allUsers.forEach((u: any) => {
         const date = u.createdAt.toISOString().split('T')[0];
         userGrowthByDay[date] = (userGrowthByDay[date] || 0) + 1;
       });
@@ -431,9 +431,9 @@ class ReportService {
 
       const topSpenders = await Promise.all(
         topSpendersResult
-          .sort((a, b) => (b._sum.totalPrice || 0) - (a._sum.totalPrice || 0))
+          .sort((a: any, b: any) => (b._sum.totalPrice || 0) - (a._sum.totalPrice || 0))
           .slice(0, 10)
-          .map(async (result) => {
+          .map(async (result: any) => {
             const user = await prisma.user.findUnique({
               where: { id: result.userId },
               select: { firstName: true, lastName: true }
