@@ -302,6 +302,64 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleRejectPayout = async (payoutId: string) => {
+    const reason = prompt('Enter rejection reason:');
+    if (!reason) return;
+
+    try {
+      const response = await api.patch<{ success: boolean; message: string }>(
+        `/admin/payouts/${payoutId}/reject`,
+        { reason }
+      );
+
+      if (response.success) {
+        logger.info('Payout rejected');
+        await fetchPayouts();
+      }
+    } catch (err: any) {
+      logger.error('Failed to reject payout', err);
+      alert(err.response?.data?.message || 'Failed to reject payout');
+    }
+  };
+
+  const handleVerifyAffiliate = async (affiliateId: string) => {
+    if (!confirm('Verify this affiliate?')) return;
+
+    try {
+      const response = await api.patch<{ success: boolean; message: string }>(
+        `/admin/affiliates/${affiliateId}/verify`,
+        {}
+      );
+
+      if (response.success) {
+        logger.info('Affiliate verified');
+        await fetchAffiliates();
+      }
+    } catch (err: any) {
+      logger.error('Failed to verify affiliate', err);
+      alert(err.response?.data?.message || 'Failed to verify affiliate');
+    }
+  };
+
+  const handleChangeAffiliateStatus = async (affiliateId: string, newStatus: string) => {
+    if (!confirm(`Change affiliate status to ${newStatus}?`)) return;
+
+    try {
+      const response = await api.patch<{ success: boolean; message: string }>(
+        `/admin/affiliates/${affiliateId}/status`,
+        { status: newStatus }
+      );
+
+      if (response.success) {
+        logger.info('Affiliate status updated');
+        await fetchAffiliates();
+      }
+    } catch (err: any) {
+      logger.error('Failed to update affiliate status', err);
+      alert(err.response?.data?.message || 'Failed to update affiliate status');
+    }
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -579,6 +637,7 @@ const AdminPanel: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referrals</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -609,6 +668,38 @@ const AdminPanel: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm text-gray-600">{formatDate(affiliate.createdAt)}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              {!affiliate.verified && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleVerifyAffiliate(affiliate.id)}
+                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                >
+                                  Verify
+                                </Button>
+                              )}
+                              {affiliate.status === 'pending' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleChangeAffiliateStatus(affiliate.id, 'active')}
+                                >
+                                  Activate
+                                </Button>
+                              )}
+                              {affiliate.status === 'active' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleChangeAffiliateStatus(affiliate.id, 'suspended')}
+                                  className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                                >
+                                  Suspend
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -782,22 +873,44 @@ const AdminPanel: React.FC = () => {
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            {payout.status === 'pending' && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleProcessPayout(payout.id)}
-                              >
-                                Process
-                              </Button>
-                            )}
-                            {payout.status === 'processing' && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleCompletePayout(payout.id)}
-                              >
-                                Complete
-                              </Button>
-                            )}
+                            <div className="flex gap-2">
+                              {payout.status === 'pending' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleProcessPayout(payout.id)}
+                                  >
+                                    Process
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRejectPayout(payout.id)}
+                                    className="text-red-600 border-red-600 hover:bg-red-50"
+                                  >
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                              {payout.status === 'processing' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCompletePayout(payout.id)}
+                                  >
+                                    Complete
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRejectPayout(payout.id)}
+                                    className="text-red-600 border-red-600 hover:bg-red-50"
+                                  >
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
