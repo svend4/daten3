@@ -70,6 +70,8 @@ import {
   resetGraphQLMetricsEndpoint,
   gatewayMetrics,
   resetGatewayMetricsEndpoint,
+  serviceMeshMetrics,
+  resetServiceMeshMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
@@ -566,3 +568,19 @@ router.get('/gateway', gatewayMetrics);
  * @access  Admin only
  */
 router.post('/gateway/reset', authenticate, requireAdmin, resetGatewayMetricsEndpoint);
+
+/**
+ * @route   GET /health/service-mesh
+ * @desc    Service Mesh statistics
+ * @access  Public
+ */
+router.get('/service-mesh', serviceMeshMetrics);
+
+/**
+ * @route   POST /health/service-mesh/reset
+ * @desc    Reset Service Mesh statistics
+ * @access  Admin only
+ */
+router.post('/service-mesh/reset', authenticate, requireAdmin, resetServiceMeshMetricsEndpoint);
+
+export default router;

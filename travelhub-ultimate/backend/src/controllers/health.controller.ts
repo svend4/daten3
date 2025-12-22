@@ -33,6 +33,7 @@ import { getCSPStats, resetCSPStats, handleCSPViolation } from '../middleware/cs
 import { getMultiTenancyStats, resetMultiTenancyStats, clearTenantCache } from '../middleware/multiTenancy.middleware.js';
 import { getGraphQLStats, resetGraphQLStats } from '../graphql/server.js';
 import { gatewayService } from '../gateway/gateway.service.js';
+import { serviceMesh } from '../mesh/controlPlane.js';
 
 interface ServiceStatus {
   status: string;
@@ -552,6 +553,7 @@ export const metricsDashboard = (req: Request, res: Response) => {
         multiTenancy: getMultiTenancyStats(),
         graphql: getGraphQLStats(),
         gateway: gatewayService.getStats(),
+        serviceMesh: serviceMesh.getStats(),
       },
       system: {
         memory: {
@@ -1642,5 +1644,30 @@ export const resetGatewayMetricsEndpoint = (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error resetting API Gateway stats:', error);
     res.status(500).json({ success: false, error: 'Failed to reset API Gateway statistics' });
+  }
+};
+
+/**
+ * Service Mesh statistics endpoint
+ * GET /api/health/service-mesh
+ */
+export const serviceMeshMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = serviceMesh.getStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting Service Mesh stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve Service Mesh statistics' });
+  }
+};
+
+export const resetServiceMeshMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    serviceMesh.resetAllStats();
+    logger.info('Service Mesh stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'Service Mesh statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting Service Mesh stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset Service Mesh statistics' });
   }
 };

@@ -41,6 +41,7 @@ import payoutRoutes from './routes/payout.routes.js';
 import cronRoutes from './routes/cron.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
 import gatewayRoutes from './routes/gateway.routes.js';
+import serviceMeshRoutes from './routes/serviceMesh.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -68,6 +69,8 @@ import cdnMiddleware, { cdnStatsMiddleware } from './middleware/cdn.middleware.j
 import cspMiddleware, { cspStatsMiddleware } from './middleware/csp.middleware.js';
 import multiTenancyMiddleware from './middleware/multiTenancy.middleware.js';
 import { gatewayMiddleware } from './middleware/gateway.middleware.js';
+import { serviceMeshMiddleware } from './middleware/serviceMesh.middleware.js';
+import { serviceMesh } from './mesh/controlPlane.js';
 import { createApolloServer, createContext } from './graphql/server.js';
 import { expressMiddleware } from '@as-integrations/express4';
 import cors from 'cors';
@@ -165,6 +168,9 @@ app.use(multiTenancyMiddleware);
 // API Gateway middleware (request routing and composition)
 app.use(gatewayMiddleware);
 
+// Service Mesh middleware (service discovery and tracking)
+app.use(serviceMeshMiddleware);
+
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
 
@@ -241,6 +247,9 @@ app.use('/api/tenants', tenantRoutes);
 // Gateway management routes
 app.use('/api/gateway', gatewayRoutes);
 
+// Service Mesh management routes
+app.use('/api/mesh', serviceMeshRoutes);
+
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
@@ -316,6 +325,9 @@ async function startServer() {
 
     // Initialize i18n (internationalization)
     await initializeI18n();
+
+    // Initialize service mesh
+    await serviceMesh.initialize();
 
     // Start audit log flushing
     startAuditLogFlushing();
