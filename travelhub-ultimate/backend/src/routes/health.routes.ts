@@ -58,6 +58,11 @@ import {
   resetTracingMetricsEndpoint,
   sseMetrics,
   resetSSEMetricsEndpoint,
+  cdnMetrics,
+  resetCDNMetricsEndpoint,
+  cspMetrics,
+  resetCSPMetricsEndpoint,
+  cspViolationReport,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -478,3 +483,38 @@ router.get('/sse', sseMetrics);
  * @access  Admin only
  */
 router.post('/sse/reset', authenticate, requireAdmin, resetSSEMetricsEndpoint);
+
+/**
+ * @route   GET /health/cdn
+ * @desc    CDN statistics
+ * @access  Public
+ */
+router.get('/cdn', cdnMetrics);
+
+/**
+ * @route   POST /health/cdn/reset
+ * @desc    Reset CDN statistics
+ * @access  Admin only
+ */
+router.post('/cdn/reset', authenticate, requireAdmin, resetCDNMetricsEndpoint);
+
+/**
+ * @route   GET /health/csp
+ * @desc    Content Security Policy statistics
+ * @access  Public
+ */
+router.get('/csp', cspMetrics);
+
+/**
+ * @route   POST /health/csp/reset
+ * @desc    Reset CSP statistics
+ * @access  Admin only
+ */
+router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
+
+/**
+ * @route   POST /health/csp/report
+ * @desc    CSP violation report endpoint
+ * @access  Public (for browser reporting)
+ */
+router.post('/csp/report', cspViolationReport);
