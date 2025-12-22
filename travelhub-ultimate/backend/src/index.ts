@@ -66,6 +66,9 @@ import { sseService } from './services/sse.service.js';
 import cdnMiddleware, { cdnStatsMiddleware } from './middleware/cdn.middleware.js';
 import cspMiddleware, { cspStatsMiddleware } from './middleware/csp.middleware.js';
 import multiTenancyMiddleware from './middleware/multiTenancy.middleware.js';
+import { createApolloServer, createContext } from './graphql/server.js';
+import { expressMiddleware } from '@as-integrations/express4';
+import cors from 'cors';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
@@ -309,8 +312,23 @@ async function startServer() {
     // Start audit log flushing
     startAuditLogFlushing();
 
-    // Start HTTP server and store instance
-    httpServer = app.listen(PORT, () => {
+    // Start HTTP server and store instance (needed for Apollo Server)
+    httpServer = app.listen(PORT, async () => {
+      // Initialize GraphQL Apollo Server
+      const apolloServer = createApolloServer(httpServer);
+      await apolloServer.start();
+
+      // Add GraphQL endpoint
+      app.use(
+        '/graphql',
+        cors<cors.CorsRequest>(),
+        express.json(),
+        expressMiddleware(apolloServer, {
+          context: createContext,
+        })
+      );
+
+      logger.info('GraphQL Server initialized at /graphql');
       // Initialize WebSocket after HTTP server starts
       websocketService.initialize(httpServer);
 
@@ -344,6 +362,9 @@ async function startServer() {
       logger.info(`   Group Bookings: http://localhost:${PORT}/api/group-bookings`);
       logger.info(`   Payouts:       http://localhost:${PORT}/api/payouts`);
       logger.info(`   Admin:         http://localhost:${PORT}/api/admin`);
+      logger.info('');
+      logger.info('🎯 GraphQL API:');
+      logger.info(`   GraphQL:       http://localhost:${PORT}/graphql`);
       logger.info('');
       logger.info('✅ Server is ready to accept connections');
       logger.info('═══════════════════════════════════════════════════');

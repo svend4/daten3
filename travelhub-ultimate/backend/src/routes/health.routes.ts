@@ -66,6 +66,8 @@ import {
   multiTenancyMetrics,
   resetMultiTenancyMetricsEndpoint,
   clearTenantCacheEndpoint,
+  graphqlMetrics,
+  resetGraphQLMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -542,3 +544,17 @@ router.post('/tenancy/reset', authenticate, requireAdmin, resetMultiTenancyMetri
  * @access  Admin only
  */
 router.post('/tenancy/clear-cache', authenticate, requireAdmin, clearTenantCacheEndpoint);
+
+/**
+ * @route   GET /health/graphql
+ * @desc    GraphQL statistics
+ * @access  Public
+ */
+router.get('/graphql', graphqlMetrics);
+
+/**
+ * @route   POST /health/graphql/reset
+ * @desc    Reset GraphQL statistics
+ * @access  Admin only
+ */
+router.post('/graphql/reset', authenticate, requireAdmin, resetGraphQLMetricsEndpoint);
