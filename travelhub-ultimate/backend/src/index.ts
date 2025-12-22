@@ -39,6 +39,7 @@ import loyaltyRoutes from './routes/loyalty.routes.js';
 import groupBookingsRoutes from './routes/groupBookings.routes.js';
 import payoutRoutes from './routes/payout.routes.js';
 import cronRoutes from './routes/cron.routes.js';
+import tenantRoutes from './routes/tenant.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -64,6 +65,7 @@ import { distributedTracingMiddleware } from './middleware/distributedTracing.mi
 import { sseService } from './services/sse.service.js';
 import cdnMiddleware, { cdnStatsMiddleware } from './middleware/cdn.middleware.js';
 import cspMiddleware, { cspStatsMiddleware } from './middleware/csp.middleware.js';
+import multiTenancyMiddleware from './middleware/multiTenancy.middleware.js';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
@@ -152,6 +154,9 @@ app.use(requestLogger); // Enhanced logging for slow/failed requests
 app.use(i18nMiddleware());
 app.use(i18nStatsMiddleware);
 
+// Multi-tenancy middleware (tenant detection and isolation)
+app.use(multiTenancyMiddleware);
+
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
 
@@ -221,6 +226,9 @@ app.use('/api/group-bookings', groupBookingsRoutes);
 
 // Payout routes
 app.use('/api/payouts', payoutRoutes);
+
+// Tenant management routes
+app.use('/api/tenants', tenantRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);

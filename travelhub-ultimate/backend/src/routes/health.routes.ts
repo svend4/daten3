@@ -63,6 +63,9 @@ import {
   cspMetrics,
   resetCSPMetricsEndpoint,
   cspViolationReport,
+  multiTenancyMetrics,
+  resetMultiTenancyMetricsEndpoint,
+  clearTenantCacheEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -518,3 +521,24 @@ router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
  * @access  Public (for browser reporting)
  */
 router.post('/csp/report', cspViolationReport);
+
+/**
+ * @route   GET /health/tenancy
+ * @desc    Multi-tenancy statistics
+ * @access  Public
+ */
+router.get('/tenancy', multiTenancyMetrics);
+
+/**
+ * @route   POST /health/tenancy/reset
+ * @desc    Reset multi-tenancy statistics
+ * @access  Admin only
+ */
+router.post('/tenancy/reset', authenticate, requireAdmin, resetMultiTenancyMetricsEndpoint);
+
+/**
+ * @route   POST /health/tenancy/clear-cache
+ * @desc    Clear tenant cache
+ * @access  Admin only
+ */
+router.post('/tenancy/clear-cache', authenticate, requireAdmin, clearTenantCacheEndpoint);
