@@ -70,7 +70,8 @@ import {
   resetGraphQLMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/rbac.middleware.js';
 
 const router = Router();
 
@@ -439,15 +440,6 @@ router.post('/deduplication/reset', authenticate, requireAdmin, resetDeduplicati
 router.post('/deduplication/clear', authenticate, requireAdmin, clearDeduplicationCacheEndpoint);
 
 /**
- * @route   GET /health/dashboard
- * @desc    Comprehensive metrics dashboard (all metrics in one response)
- * @access  Public
- */
-router.get('/dashboard', metricsDashboard);
-
-export default router;
-
-/**
  * @route   GET /health/i18n
  * @desc    i18n statistics
  * @access  Public
@@ -523,38 +515,4 @@ router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
  * @access  Public (for browser reporting)
  */
 router.post('/csp/report', cspViolationReport);
-
-/**
- * @route   GET /health/tenancy
- * @desc    Multi-tenancy statistics
- * @access  Public
- */
-router.get('/tenancy', multiTenancyMetrics);
-
-/**
- * @route   POST /health/tenancy/reset
- * @desc    Reset multi-tenancy statistics
- * @access  Admin only
- */
-router.post('/tenancy/reset', authenticate, requireAdmin, resetMultiTenancyMetricsEndpoint);
-
-/**
- * @route   POST /health/tenancy/clear-cache
- * @desc    Clear tenant cache
- * @access  Admin only
- */
-router.post('/tenancy/clear-cache', authenticate, requireAdmin, clearTenantCacheEndpoint);
-
-/**
- * @route   GET /health/graphql
- * @desc    GraphQL statistics
- * @access  Public
- */
-router.get('/graphql', graphqlMetrics);
-
-/**
- * @route   POST /health/graphql/reset
- * @desc    Reset GraphQL statistics
- * @access  Admin only
- */
-router.post('/graphql/reset', authenticate, requireAdmin, resetGraphQLMetricsEndpoint);
+ *  
