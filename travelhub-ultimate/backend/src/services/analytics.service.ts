@@ -221,7 +221,7 @@ class AnalyticsService {
         take: limit
       });
 
-      return topUsers.map(user => ({
+      return topUsers.map((user: any) => ({
         userId: user.userId,
         count: user._count.id,
         value: user._sum.totalPrice || 0

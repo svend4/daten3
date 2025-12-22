@@ -51,7 +51,8 @@ export const trackAffiliateClick = async (
           await prisma.affiliateClick.create({
             data: {
               affiliateId: affiliate.id,
-              sourceUrl: req.headers.referer || req.url,
+              referralCode: effectiveReferralCode,
+              source: req.headers.referer || 'direct',
               ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
               userAgent: req.headers['user-agent'] || 'unknown',
               converted: false

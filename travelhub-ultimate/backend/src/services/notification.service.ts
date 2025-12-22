@@ -351,11 +351,11 @@ class NotificationService {
           userId: booking.userId,
           type: NotificationType.BOOKING_REMINDER,
           title: 'Upcoming Booking Reminder',
-          message: `Your booking at ${booking.hotelName} is tomorrow!`,
+          message: `Your booking at ${booking.itemName} is tomorrow!`,
           priority: NotificationPriority.HIGH,
           metadata: {
             bookingId: booking.id,
-            hotelName: booking.hotelName,
+            itemName: booking.itemName,
             checkIn: booking.checkIn
           },
           sendEmail: true,
@@ -403,7 +403,7 @@ class NotificationService {
         select: { id: true }
       });
 
-      const userIds = users.map(u => u.id);
+      const userIds = users.map((u: any) => u.id);
 
       await this.broadcast(userIds, {
         type: NotificationType.ANNOUNCEMENT,

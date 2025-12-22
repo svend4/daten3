@@ -41,12 +41,12 @@ router.get('/dashboard', rateLimiters.moderate, authenticate, async (req: Reques
     }
 
     // Calculate stats
-    const pendingCommissions = affiliate.commissions.filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + c.amount, 0);
-    const approvedCommissions = affiliate.commissions.filter(c => c.status === 'approved')
-      .reduce((sum, c) => sum + c.amount, 0);
-    const paidCommissions = affiliate.commissions.filter(c => c.status === 'paid')
-      .reduce((sum, c) => sum + c.amount, 0);
+    const pendingCommissions = affiliate.commissions.filter((c: any) => c.status === 'pending')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
+    const approvedCommissions = affiliate.commissions.filter((c: any) => c.status === 'approved')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
+    const paidCommissions = affiliate.commissions.filter((c: any) => c.status === 'paid')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
 
     const conversionRate = affiliate.totalClicks > 0
       ? ((affiliate.totalReferrals / affiliate.totalClicks) * 100).toFixed(2)
@@ -69,7 +69,7 @@ router.get('/dashboard', rateLimiters.moderate, authenticate, async (req: Reques
           clicks: affiliate.totalClicks,
           conversions: affiliate.totalReferrals,
           conversionRate,
-          directReferrals: affiliate.referrals.filter(r => r.level === 1).length,
+          directReferrals: affiliate.referrals.filter((r: any) => r.level === 1).length,
           totalReferrals: affiliate.totalReferrals,
           earnings: {
             pending: pendingCommissions,
@@ -119,7 +119,7 @@ router.get('/referral-tree', authenticate, async (req: Request, res: Response) =
     }
 
     // Build tree structure
-    const tree = affiliate.referrals.map(ref => ({
+    const tree = affiliate.referrals.map((ref: any) => ({
       id: ref.id,
       level: ref.level,
       status: ref.status,
@@ -129,7 +129,7 @@ router.get('/referral-tree', authenticate, async (req: Request, res: Response) =
         name: ref.userName || 'Unknown',
         email: ref.userEmail || 'N/A'
       },
-      referrals: ref.referredAffiliate?.referrals.map(subRef => ({
+      referrals: ref.referredAffiliate?.referrals.map((subRef: any) => ({
         id: subRef.id,
         level: subRef.level,
         status: subRef.status,
@@ -183,7 +183,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     // Group commissions by month
     const monthlyData: { [key: string]: { earnings: number; referrals: number } } = {};
 
-    affiliate.commissions.forEach(comm => {
+    affiliate.commissions.forEach((comm: any) => {
       const month = comm.createdAt.toISOString().substring(0, 7); // YYYY-MM
       if (!monthlyData[month]) {
         monthlyData[month] = { earnings: 0, referrals: 0 };
@@ -198,7 +198,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
 
     const topReferrals = affiliate.referrals
       .slice(0, 10)
-      .map(ref => ({
+      .map((ref: any) => ({
         name: ref.userName || 'Unknown',
         earnings: ref.totalEarnings
       }));
@@ -360,16 +360,16 @@ router.get('/earnings', rateLimiters.moderate, authenticate, async (req: Request
     }
 
     const pending = affiliate.commissions
-      .filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + c.amount, 0);
+      .filter((c: any) => c.status === 'pending')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
 
     const approved = affiliate.commissions
-      .filter(c => c.status === 'approved')
-      .reduce((sum, c) => sum + c.amount, 0);
+      .filter((c: any) => c.status === 'approved')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
 
     const paid = affiliate.commissions
-      .filter(c => c.status === 'paid')
-      .reduce((sum, c) => sum + c.amount, 0);
+      .filter((c: any) => c.status === 'paid')
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
 
     res.json({
       success: true,
@@ -378,7 +378,7 @@ router.get('/earnings', rateLimiters.moderate, authenticate, async (req: Request
         pending,
         approved,
         paid,
-        history: affiliate.commissions.map(c => ({
+        history: affiliate.commissions.map((c: any) => ({
           id: c.id,
           amount: c.amount,
           type: c.type,
@@ -421,7 +421,7 @@ router.get('/referrals', rateLimiters.moderate, authenticate, async (req: Reques
       return;
     }
 
-    const referrals = affiliate.referrals.map(ref => ({
+    const referrals = affiliate.referrals.map((ref: any) => ({
       id: ref.id,
       name: ref.userName || 'Unknown',
       email: ref.userEmail || 'N/A',
@@ -463,7 +463,7 @@ router.get('/payouts', rateLimiters.moderate, authenticate, async (req: Request,
       return;
     }
 
-    const payouts = affiliate.payouts.map(p => ({
+    const payouts = affiliate.payouts.map((p: any) => ({
       id: p.id,
       amount: p.amount,
       currency: p.currency,
@@ -522,7 +522,7 @@ router.post('/payouts/request', rateLimiters.strict, authenticate, async (req: R
 
     // Check available balance
     const availableBalance = affiliate.commissions
-      .reduce((sum, c) => sum + c.amount, 0);
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
 
     if (amount > availableBalance) {
       res.status(400).json({
