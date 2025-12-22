@@ -52,6 +52,12 @@ import {
   deduplicationMetrics,
   resetDeduplicationMetricsEndpoint,
   clearDeduplicationCacheEndpoint,
+  i18nMetrics,
+  resetI18nMetricsEndpoint,
+  tracingMetrics,
+  resetTracingMetricsEndpoint,
+  sseMetrics,
+  resetSSEMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -430,3 +436,45 @@ router.post('/deduplication/clear', authenticate, requireAdmin, clearDeduplicati
 router.get('/dashboard', metricsDashboard);
 
 export default router;
+
+/**
+ * @route   GET /health/i18n
+ * @desc    i18n statistics
+ * @access  Public
+ */
+router.get('/i18n', i18nMetrics);
+
+/**
+ * @route   POST /health/i18n/reset
+ * @desc    Reset i18n statistics
+ * @access  Admin only
+ */
+router.post('/i18n/reset', authenticate, requireAdmin, resetI18nMetricsEndpoint);
+
+/**
+ * @route   GET /health/tracing
+ * @desc    Distributed tracing statistics
+ * @access  Public
+ */
+router.get('/tracing', tracingMetrics);
+
+/**
+ * @route   POST /health/tracing/reset
+ * @desc    Reset tracing statistics
+ * @access  Admin only
+ */
+router.post('/tracing/reset', authenticate, requireAdmin, resetTracingMetricsEndpoint);
+
+/**
+ * @route   GET /health/sse
+ * @desc    SSE statistics
+ * @access  Public
+ */
+router.get('/sse', sseMetrics);
+
+/**
+ * @route   POST /health/sse/reset
+ * @desc    Reset SSE statistics
+ * @access  Admin only
+ */
+router.post('/sse/reset', authenticate, requireAdmin, resetSSEMetricsEndpoint);

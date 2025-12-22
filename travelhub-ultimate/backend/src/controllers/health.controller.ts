@@ -25,6 +25,9 @@ import { getMessageQueueStats, resetMessageQueueStats } from '../services/messag
 import { getBackgroundJobsStats, resetBackgroundJobsStats } from '../services/backgroundJobs.service.js';
 import { getAdvancedHealthCheckStats, resetAdvancedHealthCheckStats, runAllHealthChecks } from '../middleware/advancedHealthCheck.middleware.js';
 import { getDeduplicationStats, resetDeduplicationStats, clearDeduplicationCache } from '../middleware/requestDeduplication.middleware.js';
+import { getI18nStats, resetI18nStats } from '../middleware/i18n.middleware.js';
+import { getDistributedTracingStats, resetDistributedTracingStats } from '../middleware/distributedTracing.middleware.js';
+import { getSSEStats, resetSSEStats } from '../services/sse.service.js';
 
 interface ServiceStatus {
   status: string;
@@ -536,6 +539,9 @@ export const metricsDashboard = (req: Request, res: Response) => {
         backgroundJobs: getBackgroundJobsStats(),
         advancedHealthCheck: getAdvancedHealthCheckStats(),
         deduplication: getDeduplicationStats(),
+        i18n: getI18nStats(),
+        tracing: getDistributedTracingStats(),
+        sse: getSSEStats(),
       },
       system: {
         memory: {
@@ -1409,5 +1415,80 @@ export const clearDeduplicationCacheEndpoint = async (req: Request, res: Respons
       success: false,
       error: 'Failed to clear deduplication cache',
     });
+  }
+};
+
+/**
+ * i18n statistics endpoint
+ * GET /api/health/i18n
+ */
+export const i18nMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getI18nStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting i18n stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve i18n statistics' });
+  }
+};
+
+export const resetI18nMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetI18nStats();
+    logger.info('i18n stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'i18n statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting i18n stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset i18n statistics' });
+  }
+};
+
+/**
+ * Distributed Tracing statistics endpoint
+ * GET /api/health/tracing
+ */
+export const tracingMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getDistributedTracingStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting tracing stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve tracing statistics' });
+  }
+};
+
+export const resetTracingMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetDistributedTracingStats();
+    logger.info('Tracing stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'Tracing statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting tracing stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset tracing statistics' });
+  }
+};
+
+/**
+ * SSE statistics endpoint
+ * GET /api/health/sse
+ */
+export const sseMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getSSEStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting SSE stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve SSE statistics' });
+  }
+};
+
+export const resetSSEMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetSSEStats();
+    logger.info('SSE stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'SSE statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting SSE stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset SSE statistics' });
   }
 };

@@ -59,6 +59,9 @@ import { initializeCronJobs } from './services/cron.service.js';
 import { websocketService } from './services/websocket.service.js';
 import { messageQueueService } from './services/messageQueue.service.js';
 import { backgroundJobsService } from './services/backgroundJobs.service.js';
+import { initializeI18n, i18nMiddleware, i18nStatsMiddleware } from './middleware/i18n.middleware.js';
+import { distributedTracingMiddleware } from './middleware/distributedTracing.middleware.js';
+import { sseService } from './services/sse.service.js';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
@@ -98,6 +101,9 @@ app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
 
+// Distributed tracing middleware (early in chain for request tracking)
+app.use(distributedTracingMiddleware);
+
 // Request timeout middleware (prevent long-running requests)
 app.use(timeoutMiddleware(30000)); // 30 second timeout
 
@@ -133,6 +139,10 @@ app.use(compression({
 // Logging middleware
 app.use(morganMiddleware);
 app.use(requestLogger); // Enhanced logging for slow/failed requests
+
+// i18n middleware (language detection and translation)
+app.use(i18nMiddleware());
+app.use(i18nStatsMiddleware);
 
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
@@ -277,6 +287,9 @@ async function startServer() {
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
+    // Initialize i18n (internationalization)
+    await initializeI18n();
+
     // Start audit log flushing
     startAuditLogFlushing();
 
@@ -284,6 +297,9 @@ async function startServer() {
     httpServer = app.listen(PORT, () => {
       // Initialize WebSocket after HTTP server starts
       websocketService.initialize(httpServer);
+
+      // Initialize SSE service
+      sseService.initialize();
       logger.info('═══════════════════════════════════════════════════');
       logger.info('🚀 TravelHub Ultimate API Server');
       logger.info('═══════════════════════════════════════════════════');
@@ -369,27 +385,32 @@ async function gracefulShutdown(signal: string) {
     websocketService.disconnect();
     logger.info('✓ WebSocket disconnected');
 
-    // Step 4: Shutdown background jobs
+    // Step 4: Shutdown SSE service
+    logger.info('Shutting down SSE service...');
+    sseService.shutdown();
+    logger.info('✓ SSE service shut down');
+
+    // Step 5: Shutdown background jobs
     logger.info('Shutting down background jobs...');
     await backgroundJobsService.shutdown();
     logger.info('✓ Background jobs shut down');
 
-    // Step 5: Close message queue
+    // Step 6: Close message queue
     logger.info('Closing message queue...');
     await messageQueueService.close();
     logger.info('✓ Message queue closed');
 
-    // Step 6: Disconnect from Prisma
+    // Step 7: Disconnect from Prisma
     logger.info('Disconnecting from Prisma...');
     await prisma.$disconnect();
     logger.info('✓ Prisma disconnected');
 
-    // Step 7: Stop audit log flushing
+    // Step 8: Stop audit log flushing
     logger.info('Stopping audit log flushing...');
     await stopAuditLogFlushing();
     logger.info('✓ Audit logs flushed');
 
-    // Step 5: Clear shutdown timeout
+    // Step 9: Clear shutdown timeout
     clearTimeout(shutdownTimeout);
 
     logger.info('✅ Graceful shutdown completed successfully');
