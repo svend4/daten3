@@ -31,6 +31,7 @@ import notificationsRoutes from './routes/notifications.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import currencyRoutes from './routes/currency.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import healthRoutes from './routes/health.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -72,22 +73,13 @@ app.use(requestLogger); // Enhanced logging for slow/failed requests
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
 
-// Health check endpoints (Railway checks /api/health)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// ============================================
+// HEALTH CHECK ENDPOINTS
+// ============================================
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// Health check routes (Railway, K8s probes, monitoring)
+app.use('/health', healthRoutes);
+app.use('/api/health', healthRoutes);
 
 // ============================================
 // API DOCUMENTATION (Swagger)

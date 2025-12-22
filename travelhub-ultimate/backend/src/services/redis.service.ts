@@ -65,6 +65,22 @@ class RedisService {
   }
 
   /**
+   * Ping Redis to check if it's responsive
+   */
+  async ping(): Promise<string> {
+    if (!this.isConnected()) {
+      throw new Error('Redis is not connected');
+    }
+
+    try {
+      return await this.client!.ping();
+    } catch (error) {
+      console.error('❌ Error pinging Redis:', error);
+      throw error;
+    }
+  }
+
+  /**
    * CSRF Token Operations
    */
 
