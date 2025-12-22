@@ -91,10 +91,10 @@ class CurrencyService {
       const cacheKey = `exchange_rates:${baseCurrency}`;
 
       // Try to get from cache
-      const cached = await cacheService.get<ExchangeRates>(cacheKey);
+      const cached = await cacheService.get(cacheKey);
       if (cached) {
         logger.info('Exchange rates retrieved from cache', { baseCurrency });
-        return cached;
+        return JSON.parse(cached) as ExchangeRates;
       }
 
       // Fetch from API
@@ -107,7 +107,7 @@ class CurrencyService {
       const data = await response.json() as ExchangeRates;
 
       // Cache for 1 hour
-      await cacheService.set(cacheKey, data, CACHE_TTL.SHORT);
+      await cacheService.set(cacheKey, JSON.stringify(data), CACHE_TTL.SHORT);
 
       logger.info('Exchange rates fetched from API', { baseCurrency });
 
