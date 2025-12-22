@@ -13,6 +13,8 @@ import HotelDetails from './pages/HotelDetails';
 // Auth pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // User pages
 import Dashboard from './pages/Dashboard';
@@ -83,6 +85,8 @@ function App() {
           {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* User routes */}
           <Route path="/dashboard" element={<Dashboard />} />
