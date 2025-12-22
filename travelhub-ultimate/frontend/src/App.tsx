@@ -36,6 +36,8 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import AffiliateDashboard from './pages/AffiliateDashboard';
 import AffiliateReferrals from './pages/AffiliateReferrals';
 import AffiliatePortal from './pages/AffiliatePortal';
+import AffiliatePayouts from './pages/AffiliatePayouts';
+import AffiliateSettings from './pages/AffiliateSettings';
 
 // Admin pages
 import AdminPanel from './pages/AdminPanel';
@@ -110,6 +112,8 @@ function App() {
           <Route path="/affiliate" element={<AffiliateDashboard />} />
           <Route path="/affiliate/referrals" element={<AffiliateReferrals />} />
           <Route path="/affiliate/portal" element={<AffiliatePortal />} />
+          <Route path="/affiliate/payouts" element={<AffiliatePayouts />} />
+          <Route path="/affiliate/settings" element={<AffiliateSettings />} />
 
           {/* Admin routes */}
           <Route path="/admin" element={<AdminPanel />} />

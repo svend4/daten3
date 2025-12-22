@@ -10,6 +10,8 @@ import {
   ExternalLink,
   UserPlus,
   ArrowRight,
+  Settings,
+  Wallet,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
@@ -462,7 +464,7 @@ const AffiliateDashboard: React.FC = () => {
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => navigate('/affiliate/referrals')}
@@ -479,15 +481,15 @@ const AffiliateDashboard: React.FC = () => {
 
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
-              onClick={() => navigate('/affiliate/portal')}
+              onClick={() => navigate('/affiliate/payouts')}
             >
               <div className="flex items-center justify-between mb-3">
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <Wallet className="w-8 h-8 text-green-600" />
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Earnings & Payouts</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Payouts</h3>
               <p className="text-gray-600 text-sm">
-                View earnings breakdown and request payouts
+                View payout history and request withdrawals
               </p>
             </Card>
 
@@ -502,6 +504,20 @@ const AffiliateDashboard: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900 mb-2">Performance Stats</h3>
               <p className="text-gray-600 text-sm">
                 Detailed analytics and monthly earnings reports
+              </p>
+            </Card>
+
+            <Card
+              className="p-6 hover:shadow-lg transition-all cursor-pointer group"
+              onClick={() => navigate('/affiliate/settings')}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <Settings className="w-8 h-8 text-purple-600" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Settings</h3>
+              <p className="text-gray-600 text-sm">
+                Configure payment details and notifications
               </p>
             </Card>
           </div>
