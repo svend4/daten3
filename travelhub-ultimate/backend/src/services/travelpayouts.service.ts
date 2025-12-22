@@ -63,23 +63,30 @@ export async function findCity(query: string): Promise<City> {
   }
 }
 
+interface HotelSearchStartParams {
+  locationId: string;
+  checkIn: string;
+  checkOut: string;
+  adultsCount: number;
+  children?: number;
+  rooms?: number;
+  currency?: string;
+}
+
 /**
  * Start hotel search
  */
-async function startHotelSearch(
-  cityId: string,
-  checkIn: string,
-  checkOut: string,
-  adults: number
-): Promise<string> {
+export async function startHotelSearch(params: HotelSearchStartParams): Promise<string> {
   try {
     const response = await axios.get(`${HOTEL_SEARCH_URL}/search/start`, {
       params: {
-        locationId: cityId,
-        checkIn,
-        checkOut,
-        adultsCount: adults,
-        currency: 'USD',
+        locationId: params.locationId,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        adultsCount: params.adultsCount,
+        childrenCount: params.children || 0,
+        roomsCount: params.rooms || 1,
+        currency: params.currency || 'USD',
         customerIP: '1.1.1.1',
         lang: 'en',
         marker: MARKER
@@ -99,11 +106,8 @@ async function startHotelSearch(
 /**
  * Get hotel search results
  */
-async function getHotelResults(searchId: string): Promise<any> {
+export async function getHotelResults(searchId: string): Promise<any> {
   try {
-    // Wait for search to complete (2-3 seconds)
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
     const response = await axios.get(`${HOTEL_SEARCH_URL}/search/results`, {
       params: {
         searchId,
@@ -130,12 +134,13 @@ export async function searchHotels(params: HotelSearchParams): Promise<any> {
     console.log(`✅ Found city: ${city.name} (ID: ${city.id})`);
 
     // 2. Start search
-    const searchId = await startHotelSearch(
-      city.id,
-      params.checkIn,
-      params.checkOut,
-      params.adults
-    );
+    const searchId = await startHotelSearch({
+      locationId: city.id,
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      adultsCount: params.adults,
+      rooms: params.rooms
+    });
     console.log(`✅ Search started: ${searchId}`);
 
     // 3. Get results
@@ -426,6 +431,44 @@ function generateMockFlights(params: FlightSearchParams): any[] {
       link: `https://www.aviasales.com/search/?marker=${MARKER}`
     }
   ];
+}
+
+/**
+ * Format hotel results for frontend
+ */
+export function formatHotelResults(results: any, city: any): any[] {
+  if (!results || !results.hotels || results.hotels.length === 0) {
+    return [];
+  }
+
+  return results.hotels.map((hotel: any) => ({
+    id: hotel.hotelId || hotel.id,
+    name: hotel.hotelName || hotel.name,
+    stars: hotel.stars || 0,
+    rating: hotel.rating || 0,
+    price: {
+      amount: hotel.priceFrom || hotel.price || 0,
+      currency: hotel.currency || 'USD'
+    },
+    location: {
+      lat: hotel.location?.lat || city.coordinates?.lat,
+      lon: hotel.location?.lon || city.coordinates?.lon,
+      distance: hotel.distanceToCityCentre || 0
+    },
+    image: hotel.photoUrl || hotel.image || 'https://via.placeholder.com/400x300',
+    amenities: hotel.amenities || [],
+    link: generateHotelUrl(hotel.hotelId || hotel.id, city.id, results.searchId)
+  }));
+}
+
+/**
+ * Generate affiliate link for hotel
+ */
+export function generateHotelUrl(hotelId: string, cityId: string, searchId?: string): string {
+  if (searchId) {
+    return `https://www.hotellook.com/hotels/${cityId}?hotelId=${hotelId}&searchId=${searchId}&marker=${MARKER}`;
+  }
+  return `https://www.hotellook.com/hotels/${cityId}?hotelId=${hotelId}&marker=${MARKER}`;
 }
 
 /**

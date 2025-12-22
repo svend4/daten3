@@ -24,6 +24,7 @@ import favoritesRoutes from './routes/favorites.routes.js';
 import priceAlertsRoutes from './routes/priceAlerts.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import flightsRoutes from './routes/flights.routes.js';
+import hotelsRoutes from './routes/hotels.routes.js';
 import carsRoutes from './routes/cars.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
@@ -31,6 +32,10 @@ import notificationsRoutes from './routes/notifications.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import currencyRoutes from './routes/currency.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import healthRoutes from './routes/health.routes.js';
+import recommendationsRoutes from './routes/recommendations.routes.js';
+import loyaltyRoutes from './routes/loyalty.routes.js';
+import groupBookingsRoutes from './routes/groupBookings.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -41,7 +46,6 @@ import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
 
 // Services
-import { searchHotels } from './services/travelpayouts.service.js';
 import { redisService } from './services/redis.service.js';
 
 // Utils
@@ -72,22 +76,13 @@ app.use(requestLogger); // Enhanced logging for slow/failed requests
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
 
-// Health check endpoints (Railway checks /api/health)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// ============================================
+// HEALTH CHECK ENDPOINTS
+// ============================================
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// Health check routes (Railway, K8s probes, monitoring)
+app.use('/health', healthRoutes);
+app.use('/api/health', healthRoutes);
 
 // ============================================
 // API DOCUMENTATION (Swagger)
@@ -105,57 +100,6 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-// Hotels search endpoint - accepts POST with search params
-app.post('/api/hotels/search', rateLimiters.moderate, async (req, res) => {
-  try {
-    const searchParams = req.body;
-    console.log('🔍 Hotels search params:', searchParams);
-
-    // Search hotels using Travelpayouts API
-    const results = await searchHotels({
-      destination: searchParams.destination || searchParams.city,
-      checkIn: searchParams.checkIn,
-      checkOut: searchParams.checkOut,
-      adults: searchParams.adults || searchParams.guests || 2,
-      rooms: searchParams.rooms || 1
-    });
-
-    res.json({
-      success: true,
-      message: 'Hotels search successful',
-      data: results
-    });
-  } catch (error: any) {
-    console.error('❌ Hotels search error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Hotel search failed',
-      message: error.message
-    });
-  }
-});
-
-// Flights search endpoint - accepts POST with search params
-app.post('/api/flights/search', rateLimiters.moderate, (req, res) => {
-  const searchParams = req.body;
-  console.log('Flights search params:', searchParams);
-
-  // TODO: Implement actual flight search logic
-  res.json({
-    message: 'Flights search endpoint',
-    params: searchParams,
-    flights: [] // Empty for now, will be populated with real data later
-  });
-});
-
-// Keep GET endpoints for manual testing
-app.get('/api/hotels/search', (req, res) => {
-  res.json({ message: 'Hotels search endpoint (use POST with params)' });
-});
-
-app.get('/api/flights/search', (req, res) => {
-  res.json({ message: 'Flights search endpoint (use POST with params)' });
-});
 
 // ===== API ROUTES =====
 
@@ -170,6 +114,7 @@ app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/flights', flightsRoutes);
+app.use('/api/hotels', hotelsRoutes);
 app.use('/api/cars', carsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationsRoutes);
@@ -185,6 +130,15 @@ app.use('/api/currency', currencyRoutes);
 
 // Report routes
 app.use('/api/reports', reportRoutes);
+
+// Recommendations routes
+app.use('/api/recommendations', recommendationsRoutes);
+
+// Loyalty program routes
+app.use('/api/loyalty', loyaltyRoutes);
+
+// Group bookings routes
+app.use('/api/group-bookings', groupBookingsRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
@@ -212,6 +166,9 @@ app.get('/', (req, res) => {
       reviews: '/api/reviews',
       currency: '/api/currency',
       reports: '/api/reports',
+      recommendations: '/api/recommendations',
+      loyalty: '/api/loyalty',
+      groupBookings: '/api/group-bookings',
       admin: '/api/admin'
     }
   });
@@ -262,6 +219,9 @@ async function startServer() {
       logger.info(`   Reviews:       http://localhost:${PORT}/api/reviews`);
       logger.info(`   Currency:      http://localhost:${PORT}/api/currency`);
       logger.info(`   Reports:       http://localhost:${PORT}/api/reports`);
+      logger.info(`   Recommendations: http://localhost:${PORT}/api/recommendations`);
+      logger.info(`   Loyalty:       http://localhost:${PORT}/api/loyalty`);
+      logger.info(`   Group Bookings: http://localhost:${PORT}/api/group-bookings`);
       logger.info(`   Admin:         http://localhost:${PORT}/api/admin`);
       logger.info('');
       logger.info('✅ Server is ready to accept connections');

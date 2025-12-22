@@ -448,6 +448,38 @@ model AffiliateClick {
 }
 
 // ============================================
+// AFFILIATE SETTINGS
+// ============================================
+
+model AffiliateSettings {
+  id                String   @id @default(cuid())
+
+  // Commission rates from TravelHub's earnings (NOT from booking amount)
+  // TravelHub receives ~5% from Booking.com/Travelpayouts
+  // These rates are percentages of TravelHub's commission
+  level1Rate        Float    @default(50.0)   // 50% of TravelHub's commission
+  level2Rate        Float    @default(20.0)   // 20% of TravelHub's commission
+  level3Rate        Float    @default(10.0)   // 10% of TravelHub's commission
+
+  // Total to affiliates: 80% of TravelHub's commission
+  // TravelHub keeps: 20% of commission (e.g., $10 out of $50)
+
+  // Base commission rate from provider (Booking.com/Travelpayouts)
+  baseCommissionRate Float   @default(5.0)    // 5% of booking amount
+
+  maxLevels         Int      @default(3)
+  minPayoutAmount   Float    @default(50)
+  commissionHoldDays Int     @default(30)
+  autoApprove       Boolean  @default(false)
+  cookieLifetime    Int      @default(30)     // Days
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("affiliate_settings")
+}
+
+// ============================================
 // REFRESH TOKENS
 // ============================================
 
