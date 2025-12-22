@@ -3,7 +3,7 @@
  * Redis-based caching with graceful degradation
  */
 
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 import { redisService } from './redis.service';
 
 /**
