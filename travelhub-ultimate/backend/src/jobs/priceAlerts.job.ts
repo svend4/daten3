@@ -21,8 +21,8 @@ export async function checkPriceAlerts(): Promise<number> {
     // Get all active alerts that haven't been triggered
     const alerts = await prisma.priceAlert.findMany({
       where: {
-        active: true,
-        triggered: false
+        isActive: true,
+        triggeredAt: null
       },
       include: {
         user: {
@@ -58,7 +58,7 @@ export async function checkPriceAlerts(): Promise<number> {
           where: { id: alert.id },
           data: {
             currentPrice,
-            lastChecked: new Date()
+            lastCheckedAt: new Date()
           }
         });
 
@@ -75,7 +75,7 @@ export async function checkPriceAlerts(): Promise<number> {
           // Mark as triggered
           await prisma.priceAlert.update({
             where: { id: alert.id },
-            data: { triggered: true }
+            data: { triggeredAt: new Date() }
           });
 
           // Send notification
@@ -226,7 +226,9 @@ export async function cleanupOldPriceAlerts(): Promise<number> {
 
     const result = await prisma.priceAlert.deleteMany({
       where: {
-        triggered: true,
+        triggeredAt: {
+          not: null
+        },
         updatedAt: {
           lte: thirtyDaysAgo
         }
