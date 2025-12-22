@@ -36,10 +36,11 @@ import healthRoutes from './routes/health.routes.js';
 import recommendationsRoutes from './routes/recommendations.routes.js';
 import loyaltyRoutes from './routes/loyalty.routes.js';
 import groupBookingsRoutes from './routes/groupBookings.routes.js';
+import payoutRoutes from './routes/payout.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
-import helmetMiddleware from './middleware/helmet.middleware.js';
+import helmetMiddleware, { permissionsPolicy, expectCT } from './middleware/helmet.middleware.js';
 import morganMiddleware, { requestLogger } from './middleware/logger.middleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
 import { rateLimiters } from './middleware/rateLimit.middleware.js';
@@ -60,6 +61,8 @@ const PORT = config.server.port;
 
 // Security middleware
 app.use(helmetMiddleware);
+app.use(permissionsPolicy);  // Advanced Permissions-Policy header
+app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
 
 // Cookie parsing middleware (must be before routes)
@@ -140,6 +143,9 @@ app.use('/api/loyalty', loyaltyRoutes);
 // Group bookings routes
 app.use('/api/group-bookings', groupBookingsRoutes);
 
+// Payout routes
+app.use('/api/payouts', payoutRoutes);
+
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
@@ -169,6 +175,7 @@ app.get('/', (req, res) => {
       recommendations: '/api/recommendations',
       loyalty: '/api/loyalty',
       groupBookings: '/api/group-bookings',
+      payouts: '/api/payouts',
       admin: '/api/admin'
     }
   });
@@ -222,6 +229,7 @@ async function startServer() {
       logger.info(`   Recommendations: http://localhost:${PORT}/api/recommendations`);
       logger.info(`   Loyalty:       http://localhost:${PORT}/api/loyalty`);
       logger.info(`   Group Bookings: http://localhost:${PORT}/api/group-bookings`);
+      logger.info(`   Payouts:       http://localhost:${PORT}/api/payouts`);
       logger.info(`   Admin:         http://localhost:${PORT}/api/admin`);
       logger.info('');
       logger.info('✅ Server is ready to accept connections');

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to TravelHub Affiliate Program</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .welcome-message {
+      font-size: 18px;
+      color: #333333;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .info-box {
+      background-color: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info-box h3 {
+      margin-top: 0;
+      color: #667eea;
+      font-size: 16px;
+    }
+    .referral-code {
+      background-color: #667eea;
+      color: #ffffff;
+      padding: 15px 25px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin: 20px 0;
+    }
+    .commission-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .commission-table th,
+    .commission-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .commission-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #333333;
+    }
+    .cta-button {
+      display: inline-block;
+      background-color: #667eea;
+      color: #ffffff;
+      padding: 14px 30px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .cta-button:hover {
+      background-color: #5568d3;
+    }
+    .steps {
+      margin: 20px 0;
+    }
+    .step {
+      margin: 15px 0;
+      padding-left: 30px;
+      position: relative;
+    }
+    .step::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      top: 0;
+      background-color: #667eea;
+      color: #ffffff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 30px;
+      text-align: center;
+      color: #666666;
+      font-size: 14px;
+    }
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    @media only screen and (max-width: 600px) {
+      .container {
+        width: 100% !important;
+      }
+      .content {
+        padding: 20px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🎉 Welcome to TravelHub Affiliate Program!</h1>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <p class="welcome-message">
+        Hi <strong>{{affiliateName}}</strong>,
+      </p>
+
+      <p class="welcome-message">
+        Congratulations! Your affiliate account has been successfully created. You're now part of the TravelHub family and ready to start earning commissions on every booking made through your referral link.
+      </p>
+
+      <!-- Referral Code -->
+      <div class="info-box">
+        <h3>Your Unique Referral Code:</h3>
+        <div class="referral-code">{{referralCode}}</div>
+        <p style="margin-bottom: 0; color: #666;">
+          Share this code with your audience and earn up to 30% commission on every booking!
+        </p>
+      </div>
+
+      <!-- Referral Link -->
+      <div class="info-box">
+        <h3>Your Referral Link:</h3>
+        <p style="word-break: break-all; background-color: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          {{referralLink}}
+        </p>
+        <p style="margin-bottom: 0; color: #666; font-size: 14px;">
+          Add <code>?ref={{referralCode}}</code> to any TravelHub URL or use the link above
+        </p>
+      </div>
+
+      <!-- Commission Structure -->
+      <h3 style="color: #333; margin-top: 30px;">💰 Commission Structure</h3>
+      <table class="commission-table">
+        <thead>
+          <tr>
+            <th>Tier Level</th>
+            <th>Commission Rate</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Level 1</strong></td>
+            <td><strong>50%</strong></td>
+            <td>Direct referrals</td>
+          </tr>
+          <tr>
+            <td><strong>Level 2</strong></td>
+            <td><strong>20%</strong></td>
+            <td>Sub-affiliates</td>
+          </tr>
+          <tr>
+            <td><strong>Level 3</strong></td>
+            <td><strong>10%</strong></td>
+            <td>2nd level sub-affiliates</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Getting Started -->
+      <h3 style="color: #333; margin-top: 30px;">🚀 Getting Started</h3>
+      <div class="steps">
+        <div class="step">
+          <strong>Login to your dashboard</strong><br>
+          Access your affiliate dashboard to track clicks, conversions, and earnings
+        </div>
+        <div class="step">
+          <strong>Share your referral link</strong><br>
+          Use your unique referral code on social media, blog posts, or email campaigns
+        </div>
+        <div class="step">
+          <strong>Track your performance</strong><br>
+          Monitor real-time statistics and optimize your campaigns
+        </div>
+        <div class="step">
+          <strong>Get paid</strong><br>
+          Request payouts once you reach the minimum threshold of $50
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <center>
+        <a href="{{dashboardLink}}" class="cta-button">
+          Access Your Dashboard →
+        </a>
+      </center>
+
+      <!-- Additional Resources -->
+      <div class="info-box" style="margin-top: 30px;">
+        <h3>📚 Resources</h3>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li><a href="{{baseUrl}}/affiliate/guide" style="color: #667eea;">Affiliate Marketing Guide</a></li>
+          <li><a href="{{baseUrl}}/affiliate/creatives" style="color: #667eea;">Download Banners & Creatives</a></li>
+          <li><a href="{{baseUrl}}/affiliate/terms" style="color: #667eea;">Terms & Conditions</a></li>
+          <li><a href="{{baseUrl}}/support" style="color: #667eea;">Contact Support</a></li>
+        </ul>
+      </div>
+
+      <p style="margin-top: 30px; color: #666; font-size: 14px;">
+        Have questions? Reply to this email or visit our <a href="{{baseUrl}}/support" style="color: #667eea;">support center</a>.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p style="margin: 0 0 10px 0;">
+        <strong>TravelHub Affiliate Program</strong>
+      </p>
+      <p style="margin: 0 0 10px 0;">
+        Making travel affiliate marketing simple and profitable
+      </p>
+      <p style="margin: 0;">
+        <a href="{{baseUrl}}">TravelHub.com</a> |
+        <a href="{{baseUrl}}/affiliate/unsubscribe?email={{email}}">Unsubscribe</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
