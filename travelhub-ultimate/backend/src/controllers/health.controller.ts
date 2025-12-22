@@ -9,6 +9,10 @@ import { getVersionStats, resetVersionStats } from '../middleware/apiVersion.mid
 import { getSanitizationStats, resetSanitizationStats } from '../middleware/sanitization.middleware.js';
 import { getDbPerformanceStats, resetDbPerformanceStats } from '../middleware/dbPerformance.middleware.js';
 import { getTimeoutStats, resetTimeoutStats } from '../middleware/timeout.middleware.js';
+import { getCircuitBreakerStats, resetCircuitBreakerStats } from '../middleware/circuitBreaker.middleware.js';
+import { getCacheStats, resetCacheStats, clearAllCaches } from '../middleware/advancedCache.middleware.js';
+import { getAuditStats, resetAuditStats } from '../middleware/auditLog.middleware.js';
+import { getReplayProtectionStats, resetReplayProtectionStats, clearAllIdempotencyKeys } from '../middleware/replayProtection.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -504,6 +508,10 @@ export const metricsDashboard = (req: Request, res: Response) => {
         sanitization: getSanitizationStats(),
         dbPerformance: getDbPerformanceStats(),
         timeouts: getTimeoutStats(),
+        circuitBreakers: getCircuitBreakerStats(),
+        cache: getCacheStats(),
+        audit: getAuditStats(),
+        replayProtection: getReplayProtectionStats(),
       },
       system: {
         memory: {
@@ -527,6 +535,254 @@ export const metricsDashboard = (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve metrics dashboard',
+    });
+  }
+};
+
+/**
+ * Circuit breaker statistics endpoint
+ * GET /api/health/circuit-breakers
+ * Returns circuit breaker statistics
+ */
+export const circuitBreakerMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getCircuitBreakerStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting circuit breaker stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve circuit breaker statistics',
+    });
+  }
+};
+
+/**
+ * Reset circuit breaker statistics endpoint
+ * POST /api/health/circuit-breakers/reset
+ * Admin only - resets circuit breaker tracking
+ */
+export const resetCircuitBreakerMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    const { name } = req.body;
+    resetCircuitBreakerStats(name);
+
+    logger.info('Circuit breaker stats reset', {
+      adminId: (req as any).user?.id,
+      breakerName: name || 'all',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: name
+        ? `Circuit breaker "${name}" has been reset`
+        : 'All circuit breakers have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting circuit breaker stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset circuit breaker statistics',
+    });
+  }
+};
+
+/**
+ * Cache statistics endpoint
+ * GET /api/health/cache
+ * Returns cache performance statistics
+ */
+export const cacheMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getCacheStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting cache stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve cache statistics',
+    });
+  }
+};
+
+/**
+ * Reset cache statistics endpoint
+ * POST /api/health/cache/reset
+ * Admin only - resets cache tracking
+ */
+export const resetCacheMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetCacheStats();
+
+    logger.info('Cache stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Cache statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting cache stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset cache statistics',
+    });
+  }
+};
+
+/**
+ * Clear all caches endpoint
+ * POST /api/health/cache/clear
+ * Admin only - clears all cached data
+ */
+export const clearCacheEndpoint = async (req: Request, res: Response) => {
+  try {
+    await clearAllCaches();
+
+    logger.info('All caches cleared', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'All caches have been cleared',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error clearing caches:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear caches',
+    });
+  }
+};
+
+/**
+ * Audit log statistics endpoint
+ * GET /api/health/audit
+ * Returns audit logging statistics
+ */
+export const auditMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getAuditStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting audit stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve audit statistics',
+    });
+  }
+};
+
+/**
+ * Reset audit statistics endpoint
+ * POST /api/health/audit/reset
+ * Admin only - resets audit tracking
+ */
+export const resetAuditMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetAuditStats();
+
+    logger.info('Audit stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Audit statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting audit stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset audit statistics',
+    });
+  }
+};
+
+/**
+ * Replay protection statistics endpoint
+ * GET /api/health/replay-protection
+ * Returns replay protection statistics
+ */
+export const replayProtectionMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getReplayProtectionStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting replay protection stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve replay protection statistics',
+    });
+  }
+};
+
+/**
+ * Reset replay protection statistics endpoint
+ * POST /api/health/replay-protection/reset
+ * Admin only - resets replay protection tracking
+ */
+export const resetReplayProtectionMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetReplayProtectionStats();
+
+    logger.info('Replay protection stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Replay protection statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting replay protection stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset replay protection statistics',
+    });
+  }
+};
+
+/**
+ * Clear all idempotency keys endpoint
+ * POST /api/health/replay-protection/clear
+ * Admin only - clears all idempotency keys
+ */
+export const clearIdempotencyKeysEndpoint = async (req: Request, res: Response) => {
+  try {
+    await clearAllIdempotencyKeys();
+
+    logger.info('All idempotency keys cleared', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'All idempotency keys have been cleared',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error clearing idempotency keys:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear idempotency keys',
     });
   }
 };

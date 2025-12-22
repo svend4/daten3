@@ -17,6 +17,16 @@ import {
   resetDbPerformanceMetricsEndpoint,
   timeoutMetrics,
   resetTimeoutMetricsEndpoint,
+  circuitBreakerMetrics,
+  resetCircuitBreakerMetricsEndpoint,
+  cacheMetrics,
+  resetCacheMetricsEndpoint,
+  clearCacheEndpoint,
+  auditMetrics,
+  resetAuditMetricsEndpoint,
+  replayProtectionMetrics,
+  resetReplayProtectionMetricsEndpoint,
+  clearIdempotencyKeysEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -141,6 +151,76 @@ router.get('/timeouts', timeoutMetrics);
  * @access  Admin only
  */
 router.post('/timeouts/reset', authenticate, requireAdmin, resetTimeoutMetricsEndpoint);
+
+/**
+ * @route   GET /health/circuit-breakers
+ * @desc    Circuit breaker statistics
+ * @access  Public
+ */
+router.get('/circuit-breakers', circuitBreakerMetrics);
+
+/**
+ * @route   POST /health/circuit-breakers/reset
+ * @desc    Reset circuit breaker tracking statistics
+ * @access  Admin only
+ */
+router.post('/circuit-breakers/reset', authenticate, requireAdmin, resetCircuitBreakerMetricsEndpoint);
+
+/**
+ * @route   GET /health/cache
+ * @desc    Cache performance statistics
+ * @access  Public
+ */
+router.get('/cache', cacheMetrics);
+
+/**
+ * @route   POST /health/cache/reset
+ * @desc    Reset cache tracking statistics
+ * @access  Admin only
+ */
+router.post('/cache/reset', authenticate, requireAdmin, resetCacheMetricsEndpoint);
+
+/**
+ * @route   POST /health/cache/clear
+ * @desc    Clear all cached data
+ * @access  Admin only
+ */
+router.post('/cache/clear', authenticate, requireAdmin, clearCacheEndpoint);
+
+/**
+ * @route   GET /health/audit
+ * @desc    Audit logging statistics
+ * @access  Public
+ */
+router.get('/audit', auditMetrics);
+
+/**
+ * @route   POST /health/audit/reset
+ * @desc    Reset audit tracking statistics
+ * @access  Admin only
+ */
+router.post('/audit/reset', authenticate, requireAdmin, resetAuditMetricsEndpoint);
+
+/**
+ * @route   GET /health/replay-protection
+ * @desc    Replay protection statistics
+ * @access  Public
+ */
+router.get('/replay-protection', replayProtectionMetrics);
+
+/**
+ * @route   POST /health/replay-protection/reset
+ * @desc    Reset replay protection tracking statistics
+ * @access  Admin only
+ */
+router.post('/replay-protection/reset', authenticate, requireAdmin, resetReplayProtectionMetricsEndpoint);
+
+/**
+ * @route   POST /health/replay-protection/clear
+ * @desc    Clear all idempotency keys
+ * @access  Admin only
+ */
+router.post('/replay-protection/clear', authenticate, requireAdmin, clearIdempotencyKeysEndpoint);
 
 /**
  * @route   GET /health/dashboard

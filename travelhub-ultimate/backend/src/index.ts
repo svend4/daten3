@@ -57,6 +57,9 @@ import timeoutMiddleware from './middleware/timeout.middleware.js';
 import { redisService } from './services/redis.service.js';
 import { initializeCronJobs } from './services/cron.service.js';
 
+// Audit logging
+import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
+
 // Database
 import { prisma } from './lib/prisma.js';
 
@@ -253,6 +256,9 @@ async function startServer() {
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
+    // Start audit log flushing
+    startAuditLogFlushing();
+
     // Start HTTP server and store instance
     httpServer = app.listen(PORT, () => {
       logger.info('═══════════════════════════════════════════════════');
@@ -340,7 +346,12 @@ async function gracefulShutdown(signal: string) {
     await prisma.$disconnect();
     logger.info('✓ Prisma disconnected');
 
-    // Step 4: Clear shutdown timeout
+    // Step 4: Stop audit log flushing
+    logger.info('Stopping audit log flushing...');
+    await stopAuditLogFlushing();
+    logger.info('✓ Audit logs flushed');
+
+    // Step 5: Clear shutdown timeout
     clearTimeout(shutdownTimeout);
 
     logger.info('✅ Graceful shutdown completed successfully');
