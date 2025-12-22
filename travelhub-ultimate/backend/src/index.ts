@@ -49,10 +49,16 @@ import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
 import requestIdMiddleware from './middleware/requestId.middleware.js';
 import responseTimeMiddleware from './middleware/responseTime.middleware.js';
+import apiVersionMiddleware from './middleware/apiVersion.middleware.js';
+import sanitizationMiddleware from './middleware/sanitization.middleware.js';
+import timeoutMiddleware from './middleware/timeout.middleware.js';
 
 // Services
 import { redisService } from './services/redis.service.js';
 import { initializeCronJobs } from './services/cron.service.js';
+
+// Database
+import { prisma } from './lib/prisma.js';
 
 // Utils
 import logger from './utils/logger.js';
@@ -71,11 +77,17 @@ let httpServer: any = null;
 app.use(requestIdMiddleware);  // Assign unique ID to each request
 app.use(responseTimeMiddleware); // Measure response time
 
+// API versioning middleware (early in chain)
+app.use(apiVersionMiddleware);  // Extract and validate API version
+
 // Security middleware
 app.use(helmetMiddleware);
 app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
+
+// Request timeout middleware (prevent long-running requests)
+app.use(timeoutMiddleware(30000)); // 30 second timeout
 
 // Cookie parsing middleware (must be before routes)
 app.use(cookieParser());
@@ -83,6 +95,14 @@ app.use(cookieParser());
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request sanitization middleware (after body parsing)
+app.use(sanitizationMiddleware({
+  trim: true,
+  escapeHtml: false, // Don't escape HTML by default (allow rich content)
+  strict: true,      // Remove dangerous patterns
+  maxDepth: 10,      // Maximum object depth
+}));
 
 // Response compression (gzip/brotli)
 app.use(compression({

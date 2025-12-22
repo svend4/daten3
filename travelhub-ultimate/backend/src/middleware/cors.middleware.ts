@@ -69,9 +69,11 @@ const isOriginAllowed = (origin: string): boolean => {
   if (originCache.size >= CACHE_MAX_SIZE) {
     // Clear oldest entries (simple FIFO)
     const firstKey = originCache.keys().next().value;
-    originCache.delete(firstKey);
+    if (firstKey) {
+      originCache.delete(firstKey);
+    }
   }
-  originCache.set(origin, { allowed, timestamp: Date.now() });
+  originCache.set(origin, { allowed, timestamp: Date.now() } as CacheEntry);
 
   return allowed;
 };

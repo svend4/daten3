@@ -5,6 +5,10 @@ import logger from '../utils/logger.js';
 import { getPerformanceMetrics } from '../middleware/logger.middleware.js';
 import { getErrorMetrics, resetErrorMetrics } from '../middleware/errorHandler.middleware.js';
 import { getResponseTimeStats, resetResponseTimeStats } from '../middleware/responseTime.middleware.js';
+import { getVersionStats, resetVersionStats } from '../middleware/apiVersion.middleware.js';
+import { getSanitizationStats, resetSanitizationStats } from '../middleware/sanitization.middleware.js';
+import { getDbPerformanceStats, resetDbPerformanceStats } from '../middleware/dbPerformance.middleware.js';
+import { getTimeoutStats, resetTimeoutStats } from '../middleware/timeout.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -285,6 +289,244 @@ export const resetResponseTimeMetricsEndpoint = (req: Request, res: Response) =>
     res.status(500).json({
       success: false,
       error: 'Failed to reset response time statistics',
+    });
+  }
+};
+
+/**
+ * API versioning statistics endpoint
+ * GET /api/health/api-versions
+ * Returns API version usage statistics
+ */
+export const apiVersionMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getVersionStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting API version stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve API version statistics',
+    });
+  }
+};
+
+/**
+ * Reset API version statistics endpoint
+ * POST /api/health/api-versions/reset
+ * Admin only - resets API version tracking
+ */
+export const resetApiVersionMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetVersionStats();
+
+    logger.info('API version stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'API version statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting API version stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset API version statistics',
+    });
+  }
+};
+
+/**
+ * Sanitization statistics endpoint
+ * GET /api/health/sanitization
+ * Returns input sanitization statistics
+ */
+export const sanitizationMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getSanitizationStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting sanitization stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve sanitization statistics',
+    });
+  }
+};
+
+/**
+ * Reset sanitization statistics endpoint
+ * POST /api/health/sanitization/reset
+ * Admin only - resets sanitization tracking
+ */
+export const resetSanitizationMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetSanitizationStats();
+
+    logger.info('Sanitization stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Sanitization statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting sanitization stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset sanitization statistics',
+    });
+  }
+};
+
+/**
+ * Database performance metrics endpoint
+ * GET /api/health/db-performance
+ * Returns database query performance statistics
+ */
+export const dbPerformanceMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getDbPerformanceStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting database performance stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve database performance statistics',
+    });
+  }
+};
+
+/**
+ * Reset database performance statistics endpoint
+ * POST /api/health/db-performance/reset
+ * Admin only - resets database performance tracking
+ */
+export const resetDbPerformanceMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetDbPerformanceStats();
+
+    logger.info('Database performance stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Database performance statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting database performance stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset database performance statistics',
+    });
+  }
+};
+
+/**
+ * Request timeout statistics endpoint
+ * GET /api/health/timeouts
+ * Returns request timeout statistics
+ */
+export const timeoutMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getTimeoutStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting timeout stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve timeout statistics',
+    });
+  }
+};
+
+/**
+ * Reset timeout statistics endpoint
+ * POST /api/health/timeouts/reset
+ * Admin only - resets timeout tracking
+ */
+export const resetTimeoutMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetTimeoutStats();
+
+    logger.info('Timeout stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Timeout statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting timeout stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset timeout statistics',
+    });
+  }
+};
+
+/**
+ * Comprehensive metrics dashboard endpoint
+ * GET /api/health/dashboard
+ * Returns all metrics in one response
+ */
+export const metricsDashboard = (req: Request, res: Response) => {
+  try {
+    const dashboard = {
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      metrics: {
+        performance: getPerformanceMetrics(),
+        errors: getErrorMetrics(),
+        responseTimes: getResponseTimeStats(),
+        apiVersions: getVersionStats(),
+        sanitization: getSanitizationStats(),
+        dbPerformance: getDbPerformanceStats(),
+        timeouts: getTimeoutStats(),
+      },
+      system: {
+        memory: {
+          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+          percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100),
+          unit: 'MB',
+        },
+        cpu: process.cpuUsage(),
+        nodeVersion: process.version,
+        platform: process.platform,
+      },
+    };
+
+    res.status(200).json({
+      success: true,
+      dashboard,
+    });
+  } catch (error: any) {
+    logger.error('Error getting metrics dashboard:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve metrics dashboard',
     });
   }
 };
