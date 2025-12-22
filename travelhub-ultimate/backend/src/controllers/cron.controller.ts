@@ -65,16 +65,16 @@ export const getPendingCommissionsStats = async (req: Request, res: Response) =>
     });
 
     // Separate into ready and not ready
-    const readyForApproval = allPending.filter((c) => c.createdAt <= holdDate);
-    const notReady = allPending.filter((c) => c.createdAt > holdDate);
+    const readyForApproval = allPending.filter((c: any) => c.createdAt <= holdDate);
+    const notReady = allPending.filter((c: any) => c.createdAt > holdDate);
 
-    const readyAmount = readyForApproval.reduce((sum, c) => sum + c.amount, 0);
-    const notReadyAmount = notReady.reduce((sum, c) => sum + c.amount, 0);
+    const readyAmount = readyForApproval.reduce((sum: number, c: any) => sum + c.amount, 0);
+    const notReadyAmount = notReady.reduce((sum: number, c: any) => sum + c.amount, 0);
     const totalAmount = readyAmount + notReadyAmount;
 
     // Get oldest pending commission
     const oldestPending = allPending.length > 0
-      ? allPending.reduce((oldest, current) =>
+      ? allPending.reduce((oldest: any, current: any) =>
           current.createdAt < oldest.createdAt ? current : oldest
         )
       : null;
