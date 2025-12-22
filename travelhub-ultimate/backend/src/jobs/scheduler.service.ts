@@ -7,9 +7,10 @@
  * npm install @types/node-cron --save-dev
  */
 
-import logger from '../utils/logger';
-import { commissionService } from '../services/commission.service';
-import { notificationService } from '../services/notification.service';
+import logger from '../utils/logger.js';
+import { commissionService } from '../services/commission.service.js';
+import { notificationService } from '../services/notification.service.js';
+import { checkPriceAlerts, cleanupOldPriceAlerts } from './priceAlerts.job.js';
 
 /**
  * Scheduler Service Class
@@ -92,12 +93,9 @@ class SchedulerService {
     try {
       logger.info('Running: Check price alerts job');
 
-      // TODO: Implement price checking
-      // Import checkPricesAndTrigger from priceAlerts.controller
-      // const { checkPricesAndTrigger } = require('../controllers/priceAlerts.controller');
-      // await checkPricesAndTrigger();
+      const triggeredCount = await checkPriceAlerts();
 
-      logger.info('Price alerts checked successfully');
+      logger.info(`Price alerts checked successfully. Triggered: ${triggeredCount}`);
     } catch (error: any) {
       logger.error('Check price alerts job failed:', error);
     }
@@ -111,11 +109,15 @@ class SchedulerService {
     try {
       logger.info('Running: Cleanup old data job');
 
-      // TODO: Implement cleanup logic
+      // Clean up old price alerts (triggered > 30 days ago)
+      const deletedAlerts = await cleanupOldPriceAlerts();
+      logger.info(`Deleted ${deletedAlerts} old price alerts`);
+
+      // TODO: Additional cleanup tasks:
       // - Delete expired sessions
       // - Archive old logs
-      // - Remove expired price alerts
-      // - Clean up old analytics data
+      // - Clean up old analytics data (>90 days)
+      // - Remove old affiliate clicks (>180 days)
 
       logger.info('Old data cleaned up successfully');
     } catch (error: any) {
