@@ -40,6 +40,7 @@ import groupBookingsRoutes from './routes/groupBookings.routes.js';
 import payoutRoutes from './routes/payout.routes.js';
 import cronRoutes from './routes/cron.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
+import gatewayRoutes from './routes/gateway.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -66,6 +67,7 @@ import { sseService } from './services/sse.service.js';
 import cdnMiddleware, { cdnStatsMiddleware } from './middleware/cdn.middleware.js';
 import cspMiddleware, { cspStatsMiddleware } from './middleware/csp.middleware.js';
 import multiTenancyMiddleware from './middleware/multiTenancy.middleware.js';
+import { gatewayMiddleware } from './middleware/gateway.middleware.js';
 import { createApolloServer, createContext } from './graphql/server.js';
 import { expressMiddleware } from '@as-integrations/express4';
 import cors from 'cors';
@@ -160,6 +162,9 @@ app.use(i18nStatsMiddleware);
 // Multi-tenancy middleware (tenant detection and isolation)
 app.use(multiTenancyMiddleware);
 
+// API Gateway middleware (request routing and composition)
+app.use(gatewayMiddleware);
+
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);
 
@@ -232,6 +237,9 @@ app.use('/api/payouts', payoutRoutes);
 
 // Tenant management routes
 app.use('/api/tenants', tenantRoutes);
+
+// Gateway management routes
+app.use('/api/gateway', gatewayRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);

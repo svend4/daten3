@@ -32,6 +32,7 @@ import { getCDNStats, resetCDNStats } from '../middleware/cdn.middleware.js';
 import { getCSPStats, resetCSPStats, handleCSPViolation } from '../middleware/csp.middleware.js';
 import { getMultiTenancyStats, resetMultiTenancyStats, clearTenantCache } from '../middleware/multiTenancy.middleware.js';
 import { getGraphQLStats, resetGraphQLStats } from '../graphql/server.js';
+import { gatewayService } from '../gateway/gateway.service.js';
 
 interface ServiceStatus {
   status: string;
@@ -550,6 +551,7 @@ export const metricsDashboard = (req: Request, res: Response) => {
         csp: getCSPStats(),
         multiTenancy: getMultiTenancyStats(),
         graphql: getGraphQLStats(),
+        gateway: gatewayService.getStats(),
       },
       system: {
         memory: {
@@ -1615,5 +1617,30 @@ export const resetGraphQLMetricsEndpoint = (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error resetting GraphQL stats:', error);
     res.status(500).json({ success: false, error: 'Failed to reset GraphQL statistics' });
+  }
+};
+
+/**
+ * API Gateway statistics endpoint
+ * GET /api/health/gateway
+ */
+export const gatewayMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = gatewayService.getStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting API Gateway stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve API Gateway statistics' });
+  }
+};
+
+export const resetGatewayMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    gatewayService.resetStats();
+    logger.info('API Gateway stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'API Gateway statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting API Gateway stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset API Gateway statistics' });
   }
 };
