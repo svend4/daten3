@@ -296,7 +296,14 @@ export const compareFlights = async (req: Request, res: Response) => {
   try {
     const { flightIds, compareBy } = req.query;
 
-    const ids = typeof flightIds === 'string' ? flightIds.split(',') : flightIds;
+    if (!flightIds) {
+      return res.status(400).json({
+        success: false,
+        error: 'flightIds parameter is required'
+      });
+    }
+
+    const ids = typeof flightIds === 'string' ? flightIds.split(',') : (flightIds as string[]);
     const fields = compareBy ? (typeof compareBy === 'string' ? compareBy.split(',') : compareBy) : ['price', 'duration', 'stops'];
 
     logger.info(`Comparing ${ids.length} flights`);
@@ -313,9 +320,9 @@ export const compareFlights = async (req: Request, res: Response) => {
         arrival: '14:00',
       })),
       comparison: {
-        bestPrice: ids[0],
-        bestDuration: ids[0],
-        bestStops: ids[0],
+        bestPrice: ids[0] || '',
+        bestDuration: ids[0] || '',
+        bestStops: ids[0] || '',
       },
       differences: [
         { field: 'price', range: [300, 450], difference: 150 },

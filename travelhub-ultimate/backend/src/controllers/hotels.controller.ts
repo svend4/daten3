@@ -209,8 +209,7 @@ export const autocompleteHotels = async (req: Request, res: Response) => {
     logger.info(`Hotel autocomplete: ${query}`);
 
     const results = await travelpayoutsService.searchLocation(
-      query as string,
-      (locale as string) || 'en'
+      query as string
     );
 
     res.json({
