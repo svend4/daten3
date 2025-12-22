@@ -5,7 +5,10 @@ import {
   readinessCheck,
   livenessCheck,
   performanceMetrics,
+  errorMetrics,
+  resetErrorMetricsEndpoint,
 } from '../controllers/health.controller.js';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -43,5 +46,19 @@ router.get('/live', livenessCheck);
  * @access  Public
  */
 router.get('/metrics', performanceMetrics);
+
+/**
+ * @route   GET /health/errors
+ * @desc    Error tracking metrics
+ * @access  Public
+ */
+router.get('/errors', errorMetrics);
+
+/**
+ * @route   POST /health/errors/reset
+ * @desc    Reset error tracking metrics
+ * @access  Admin only
+ */
+router.post('/errors/reset', authenticate, requireAdmin, resetErrorMetricsEndpoint);
 
 export default router;
