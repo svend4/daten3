@@ -40,7 +40,7 @@ import payoutRoutes from './routes/payout.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
-import helmetMiddleware from './middleware/helmet.middleware.js';
+import helmetMiddleware, { permissionsPolicy, expectCT } from './middleware/helmet.middleware.js';
 import morganMiddleware, { requestLogger } from './middleware/logger.middleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
 import { rateLimiters } from './middleware/rateLimit.middleware.js';
@@ -61,6 +61,8 @@ const PORT = config.server.port;
 
 // Security middleware
 app.use(helmetMiddleware);
+app.use(permissionsPolicy);  // Advanced Permissions-Policy header
+app.use(expectCT);           // Certificate Transparency enforcement
 app.use(corsMiddleware);
 
 // Cookie parsing middleware (must be before routes)

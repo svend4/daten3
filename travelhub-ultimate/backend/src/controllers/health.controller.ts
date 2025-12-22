@@ -25,45 +25,53 @@ export const basicHealthCheck = (req: Request, res: Response) => {
 
 /**
  * Detailed health check endpoint
- * Checks all critical dependencies (Database, Redis, etc.)
+ * Checks all critical dependencies (Database, Redis, External APIs)
  */
 export const detailedHealthCheck = async (req: Request, res: Response) => {
-  const healthStatus = {
+  const healthStatus: any = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
     services: {
       database: { status: 'unknown', responseTime: 0 } as ServiceStatus,
-      redis: { status: 'unknown', responseTime: 0 } as ServiceStatus
+      redis: { status: 'unknown', responseTime: 0 } as ServiceStatus,
+      travelpayoutsAPI: { status: 'unknown', responseTime: 0 } as ServiceStatus,
     },
     system: {
       memory: {
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
         used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        unit: 'MB'
+        percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100),
+        unit: 'MB',
       },
       cpu: process.cpuUsage(),
-      nodeVersion: process.version
-    }
+      nodeVersion: process.version,
+      platform: process.platform,
+      pid: process.pid,
+    },
   };
 
   let hasErrors = false;
+  let hasDegradation = false;
 
   // Check Database connection
   try {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
+    const responseTime = Date.now() - dbStart;
     healthStatus.services.database = {
-      status: 'healthy',
-      responseTime: Date.now() - dbStart
+      status: responseTime > 1000 ? 'slow' : 'healthy',
+      responseTime,
     };
+    if (responseTime > 1000) hasDegradation = true;
   } catch (error: any) {
     logger.error('Health check - Database error:', error);
     healthStatus.services.database = {
       status: 'unhealthy',
       responseTime: 0,
-      error: error.message
+      error: error.message,
     };
     hasErrors = true;
   }
@@ -72,25 +80,54 @@ export const detailedHealthCheck = async (req: Request, res: Response) => {
   try {
     const redisStart = Date.now();
     await redisService.ping();
+    const responseTime = Date.now() - redisStart;
     healthStatus.services.redis = {
-      status: 'healthy',
-      responseTime: Date.now() - redisStart
+      status: responseTime > 500 ? 'slow' : 'healthy',
+      responseTime,
     };
+    if (responseTime > 500) hasDegradation = true;
   } catch (error: any) {
     logger.error('Health check - Redis error:', error);
     healthStatus.services.redis = {
       status: 'unhealthy',
       responseTime: 0,
-      error: error.message
+      error: error.message,
     };
-    hasErrors = true;
+    // Redis is not critical, so degraded instead of error
+    hasDegradation = true;
+  }
+
+  // Check Travelpayouts API (external API health)
+  try {
+    const apiStart = Date.now();
+    // Simple ping to Travelpayouts API endpoints
+    const response = await fetch('https://api.travelpayouts.com/v1/flight_search_results?', {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+    const responseTime = Date.now() - apiStart;
+    healthStatus.services.travelpayoutsAPI = {
+      status: response.ok ? 'healthy' : 'degraded',
+      responseTime,
+      statusCode: response.status,
+    };
+    if (!response.ok) hasDegradation = true;
+  } catch (error: any) {
+    logger.warn('Health check - Travelpayouts API error:', error.message);
+    healthStatus.services.travelpayoutsAPI = {
+      status: 'unhealthy',
+      responseTime: 0,
+      error: error.message,
+    };
+    // External API is not critical for our health
+    hasDegradation = true;
   }
 
   // Set overall status
-  healthStatus.status = hasErrors ? 'degraded' : 'ok';
+  healthStatus.status = hasErrors ? 'unhealthy' : hasDegradation ? 'degraded' : 'healthy';
 
   // Return appropriate status code
-  const statusCode = hasErrors ? 503 : 200;
+  const statusCode = hasErrors ? 503 : hasDegradation ? 200 : 200;
   res.status(statusCode).json(healthStatus);
 };
 

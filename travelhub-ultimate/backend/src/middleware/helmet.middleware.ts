@@ -1,10 +1,19 @@
 import helmet from 'helmet';
+import { Request, Response, NextFunction } from 'express';
 
 /**
  * Enhanced Helmet Middleware Configuration
- * Comprehensive security HTTP headers
+ * Comprehensive security HTTP headers with advanced features
  * Based on Innovation Library best practices
  */
+
+/**
+ * Get CSP report URI from environment (optional)
+ */
+const getCspReportUri = (): string[] => {
+  const reportUri = process.env.CSP_REPORT_URI;
+  return reportUri ? [reportUri] : [];
+};
 
 /**
  * Production Helmet configuration
@@ -21,14 +30,21 @@ const helmetProdConfig = helmet({
         "'self'",
         'https://api.travelpayouts.com',
         'https://autocomplete.travelpayouts.com',
-        'https://engine.hotellook.com'
+        'https://engine.hotellook.com',
+        'https://suggestions.dadata.ru', // Location suggestions
+        'https://places.aviasales.ru'    // Places API
       ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https:', 'data:'],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
       formAction: ["'self'"],
-      upgradeInsecureRequests: []
+      baseUri: ["'self'"],              // Restrict <base> tag URLs
+      childSrc: ["'none'"],              // Restrict web workers and nested contexts
+      workerSrc: ["'self'", 'blob:'],   // Web workers
+      manifestSrc: ["'self'"],           // PWA manifest
+      upgradeInsecureRequests: [],
+      ...(getCspReportUri().length > 0 && { reportUri: getCspReportUri() })
     }
   },
 
@@ -97,6 +113,60 @@ const helmetDevConfig = helmet({
   noSniff: true,
   xssFilter: true
 });
+
+/**
+ * Permissions-Policy middleware
+ * Modern replacement for Feature-Policy
+ * Controls which browser features can be used
+ */
+export const permissionsPolicy = (req: Request, res: Response, next: NextFunction) => {
+  // Restrictive permissions for production security
+  const policies = [
+    'accelerometer=()',           // Block accelerometer access
+    'ambient-light-sensor=()',    // Block ambient light sensor
+    'autoplay=()',                // Block autoplay
+    'battery=()',                 // Block battery status API
+    'camera=()',                  // Block camera access
+    'display-capture=()',         // Block screen capture
+    'document-domain=()',         // Block document.domain
+    'encrypted-media=()',         // Block encrypted media
+    'fullscreen=(self)',          // Allow fullscreen only for same origin
+    'geolocation=(self)',         // Allow geolocation only for same origin (travel app needs it)
+    'gyroscope=()',               // Block gyroscope
+    'magnetometer=()',            // Block magnetometer
+    'microphone=()',              // Block microphone
+    'midi=()',                    // Block MIDI access
+    'payment=(self)',             // Allow payment API only for same origin
+    'picture-in-picture=()',      // Block picture-in-picture
+    'publickey-credentials-get=(self)', // Allow WebAuthn only for same origin
+    'screen-wake-lock=()',        // Block wake lock
+    'sync-xhr=()',                // Block synchronous XHR
+    'usb=()',                     // Block USB access
+    'web-share=(self)',           // Allow Web Share API for same origin
+    'xr-spatial-tracking=()'      // Block XR/VR tracking
+  ];
+
+  res.setHeader('Permissions-Policy', policies.join(', '));
+  next();
+};
+
+/**
+ * Expect-CT middleware
+ * Certificate Transparency enforcement
+ */
+export const expectCT = (req: Request, res: Response, next: NextFunction) => {
+  if (process.env.NODE_ENV === 'production') {
+    const reportUri = process.env.EXPECT_CT_REPORT_URI || '';
+    const maxAge = 86400; // 24 hours
+
+    const value = reportUri
+      ? `max-age=${maxAge}, enforce, report-uri="${reportUri}"`
+      : `max-age=${maxAge}, enforce`;
+
+    res.setHeader('Expect-CT', value);
+  }
+  next();
+};
 
 // Export appropriate config based on environment
 const helmetConfig = process.env.NODE_ENV === 'production' ? helmetProdConfig : helmetDevConfig;
