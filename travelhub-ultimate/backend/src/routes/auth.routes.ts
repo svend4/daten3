@@ -4,6 +4,7 @@ import { endpointRateLimiters } from '../middleware/perUserRateLimit.middleware.
 import * as authController from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validation.middleware.js';
+import { getCSRFToken } from '../middleware/csrf.middleware.js';
 import {
   registerValidator,
   loginValidator,
@@ -17,6 +18,9 @@ import {
 const router = express.Router();
 
 // ===== PUBLIC ROUTES =====
+
+// CSRF Token
+router.get('/csrf-token', rateLimiters.lenient, getCSRFToken);
 
 // Registration & Login
 router.post(
@@ -41,6 +45,12 @@ router.post(
   refreshTokenValidator,
   validate,
   authController.refreshToken
+);
+
+router.post(
+  '/logout',
+  rateLimiters.lenient,
+  authController.logout
 );
 
 // Password Management

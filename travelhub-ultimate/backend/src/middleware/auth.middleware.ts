@@ -1,17 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { config } from '../config/index.js';
 
 const prisma = new PrismaClient();
 
-// Validate required environment variables
-if (!process.env.JWT_SECRET) {
-  throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Cannot start server without secure JWT secret.');
-}
-
-if (!process.env.JWT_REFRESH_SECRET) {
-  throw new Error('CRITICAL: JWT_REFRESH_SECRET environment variable is not set. Cannot start server without secure refresh secret.');
-}
+// JWT secrets from centralized config
+const JWT_SECRET = config.jwt.secret;
+const JWT_REFRESH_SECRET = config.jwt.refreshSecret;
 
 // Extend Express Request type to include user
 declare global {
@@ -45,10 +41,19 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
+    // Get token from httpOnly cookie (preferred) or Authorization header (fallback)
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // First, try to get token from httpOnly cookie
+    if (req.cookies && req.cookies[config.cookie.names.accessToken]) {
+      token = req.cookies[config.cookie.names.accessToken];
+    }
+    // Fallback: try Authorization header for backward compatibility
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.substring(7);
+    }
+
+    if (!token) {
       res.status(401).json({
         success: false,
         error: 'Unauthorized',
@@ -57,10 +62,7 @@ export const authenticate = async (
       return;
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
     // Verify token
-    const JWT_SECRET = process.env.JWT_SECRET!; // Validated at startup
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
@@ -182,11 +184,8 @@ export const optionalAuth = async (
  * Generate JWT token
  */
 export const generateToken = (payload: JWTPayload): string => {
-  const JWT_SECRET = process.env.JWT_SECRET!; // Validated at startup
-  const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
-
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN
+    expiresIn: config.jwt.expiresIn
   } as jwt.SignOptions);
 };
 
@@ -194,11 +193,8 @@ export const generateToken = (payload: JWTPayload): string => {
  * Generate refresh token
  */
 export const generateRefreshToken = (payload: JWTPayload): string => {
-  const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!; // Validated at startup
-  const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-
   return jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: JWT_REFRESH_EXPIRES_IN
+    expiresIn: config.jwt.refreshExpiresIn
   } as jwt.SignOptions);
 };
 
@@ -206,7 +202,5 @@ export const generateRefreshToken = (payload: JWTPayload): string => {
  * Verify refresh token
  */
 export const verifyRefreshToken = (token: string): JWTPayload => {
-  const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!; // Validated at startup
-
   return jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload;
 };

@@ -1,13 +1,15 @@
 /**
  * CSRF (Cross-Site Request Forgery) Protection Middleware
  * Protects against CSRF attacks on state-changing operations
+ * Uses Redis for production, falls back to in-memory for development
  */
 
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { redisService } from '../services/redis.service.js';
 
 /**
- * CSRF token storage (in production, use Redis or database)
+ * CSRF token storage (fallback for when Redis is not available)
  * Maps session ID to CSRF token
  */
 const csrfTokens = new Map<string, string>();
@@ -15,9 +17,17 @@ const csrfTokens = new Map<string, string>();
 /**
  * Generate a CSRF token for a session
  */
-export function generateCSRFToken(sessionId: string): string {
+export async function generateCSRFToken(sessionId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
-  csrfTokens.set(sessionId, token);
+
+  // Try to store in Redis first
+  if (redisService.isConnected()) {
+    await redisService.setCSRFToken(sessionId, token);
+  } else {
+    // Fallback to in-memory storage
+    csrfTokens.set(sessionId, token);
+  }
+
   return token;
 }
 
@@ -41,9 +51,9 @@ function getSessionId(req: Request): string {
  * CSRF Token Generation Endpoint Middleware
  * Generates and returns a CSRF token
  */
-export const getCSRFToken = (req: Request, res: Response): void => {
+export const getCSRFToken = async (req: Request, res: Response): Promise<void> => {
   const sessionId = getSessionId(req);
-  const token = generateCSRFToken(sessionId);
+  const token = await generateCSRFToken(sessionId);
 
   res.json({
     success: true,
@@ -57,7 +67,7 @@ export const getCSRFToken = (req: Request, res: Response): void => {
  * CSRF Protection Middleware
  * Validates CSRF token on state-changing requests (POST, PUT, PATCH, DELETE)
  */
-export const csrfProtection = (req: Request, res: Response, next: NextFunction): void => {
+export const csrfProtection = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   // Skip CSRF check for GET, HEAD, OPTIONS requests (safe methods)
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     next();
@@ -78,7 +88,15 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
 
   // Verify token
   const sessionId = getSessionId(req);
-  const storedToken = csrfTokens.get(sessionId);
+  let storedToken: string | null = null;
+
+  // Try to get from Redis first
+  if (redisService.isConnected()) {
+    storedToken = await redisService.getCSRFToken(sessionId);
+  } else {
+    // Fallback to in-memory storage
+    storedToken = csrfTokens.get(sessionId) || null;
+  }
 
   if (!storedToken || storedToken !== csrfToken) {
     res.status(403).json({
@@ -97,7 +115,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
  * Optional CSRF Protection
  * Only validates if token is provided (for gradual migration)
  */
-export const optionalCSRFProtection = (req: Request, res: Response, next: NextFunction): void => {
+export const optionalCSRFProtection = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   // Skip for safe methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     next();
@@ -114,7 +132,15 @@ export const optionalCSRFProtection = (req: Request, res: Response, next: NextFu
 
   // If token is provided, validate it
   const sessionId = getSessionId(req);
-  const storedToken = csrfTokens.get(sessionId);
+  let storedToken: string | null = null;
+
+  // Try to get from Redis first
+  if (redisService.isConnected()) {
+    storedToken = await redisService.getCSRFToken(sessionId);
+  } else {
+    // Fallback to in-memory storage
+    storedToken = csrfTokens.get(sessionId) || null;
+  }
 
   if (!storedToken || storedToken !== csrfToken) {
     res.status(403).json({
@@ -131,7 +157,13 @@ export const optionalCSRFProtection = (req: Request, res: Response, next: NextFu
 /**
  * Clear CSRF token for a session (logout)
  */
-export function clearCSRFToken(sessionId: string): void {
+export async function clearCSRFToken(sessionId: string): Promise<void> {
+  // Clear from Redis
+  if (redisService.isConnected()) {
+    await redisService.deleteCSRFToken(sessionId);
+  }
+
+  // Clear from in-memory storage (if used as fallback)
   csrfTokens.delete(sessionId);
 }
 
