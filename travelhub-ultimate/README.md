@@ -12,14 +12,21 @@ TravelHub Ultimate - это полностью переработанная пр
 - ❌ Mock данные → ✅ Готовность к реальным API и БД
 
 **📊 Статистика проекта:**
-- **61 файлов** активировано
+- **65 файлов** активировано
 - **52 API endpoints** с полной валидацией
 - **28 UI компонентов** готовы к использованию
-- **24 страницы** полностью интегрированы
+- **29 страниц** (16 полностью интегрированы с backend)
 - **7 middleware** для безопасности и обработки
 - **3 контроллера** с mock имплементацией
 - **16 валидаторов** для всех входных данных
 - **600+ строк** API документации
+
+**🎯 Последние обновления (Dec 22, 2025):**
+- ✅ **Affiliate Program** - полная интеграция (Dashboard, Referrals, Portal)
+- ✅ **Admin Panel** - 5 вкладок управления партнерской программой
+- ✅ **14 backend endpoints** интегрировано в этой сессии
+- ✅ **HttpOnly cookies** authentication по всему приложению
+- ✅ **~2,500 строк** production-ready кода
 
 ## 🏗️ Архитектура проекта
 
@@ -128,6 +135,41 @@ travelhub-ultimate/
 - **Booking.com API** - Отели
 - **Skyscanner API** - Авиабилеты
 - **Travelpayouts** - Агрегатор
+
+## 📱 Интегрированные страницы (Frontend-Backend)
+
+### ✅ Полностью интегрированы (HttpOnly Cookies)
+1. **Authentication Flow**
+   - Login (`/login`) - JWT authentication
+   - Register (`/register`) - User registration
+   - ForgotPassword (`/forgot-password`) - Password recovery
+   - ResetPassword (`/reset-password/:token`) - Password reset
+   - EmailVerification (`/verify-email/:token`) - Email confirmation
+
+2. **User Dashboard**
+   - Dashboard (`/dashboard`) - Overview with stats
+   - Profile (`/profile`) - User profile management
+   - Settings (`/settings`) - Password change
+   - MyBookings (`/bookings`) - Booking history
+   - BookingDetails (`/bookings/:id`) - Detailed view
+   - Favorites (`/favorites`) - Saved items
+   - PriceAlerts (`/price-alerts`) - Price monitoring
+
+3. **Affiliate Program** 🆕
+   - AffiliateDashboard (`/affiliate`) - Stats & registration
+   - AffiliateReferrals (`/affiliate/referrals`) - Network tree
+   - AffiliatePortal (`/affiliate/portal`) - Marketing page
+
+4. **Admin Panel** 🆕
+   - AdminPanel (`/admin`) - 5 tabs: Dashboard, Affiliates, Commissions, Payouts, Analytics
+
+### 🔶 Частично интегрированы / Mock данные
+- Home - Marketing page
+- FlightSearch, HotelSearch - Placeholders
+- Reviews - Mock data
+- Support, Privacy, Terms - Static pages
+
+---
 
 ## 🚀 Быстрый старт
 

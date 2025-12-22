@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Lock, Shield, AlertCircle, Save, CheckCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Lock, Shield, AlertCircle, Save, CheckCircle, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Container from '../components/layout/Container';
@@ -11,7 +12,8 @@ import { api } from '../utils/api';
 import { logger } from '../utils/logger';
 
 const Settings: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -22,6 +24,11 @@ const Settings: React.FC = () => {
     newPassword: '',
     confirmPassword: '',
   });
+
+  // Delete account modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +80,47 @@ const Settings: React.FC = () => {
       setError(err.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Validate confirmation
+    if (deleteConfirmation.toLowerCase() !== 'delete') {
+      setError('Please type DELETE to confirm');
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setError('');
+
+      const response = await api.delete<{
+        success: boolean;
+        message: string;
+      }>('/auth/me');
+
+      if (response.success) {
+        logger.info('Account deleted successfully');
+
+        // Logout user
+        await logout();
+
+        // Redirect to home page
+        navigate('/', {
+          state: {
+            message: 'Your account has been permanently deleted. We\'re sorry to see you go!'
+          }
+        });
+      } else {
+        setError(response.message || 'Failed to delete account');
+      }
+    } catch (err: any) {
+      logger.error('Failed to delete account', err);
+      setError(err.response?.data?.message || 'Failed to delete account. Please try again.');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setDeleteConfirmation('');
     }
   };
 
@@ -280,7 +328,7 @@ const Settings: React.FC = () => {
           </Card>
 
           {/* Danger Zone */}
-          <Card className="p-8 mt-6 border-red-200">
+          <Card className="p-8 mt-6 border-red-200 bg-red-50">
             <h2 className="text-2xl font-bold text-red-600 mb-4">
               Danger Zone
             </h2>
@@ -289,16 +337,95 @@ const Settings: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900">Delete Account</h3>
                   <p className="text-sm text-gray-600">
-                    Permanently delete your account and all associated data
+                    Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                  onClick={() => setShowDeleteModal(true)}
+                  icon={<Trash2 className="w-4 h-4" />}
+                >
                   Delete Account
                 </Button>
               </div>
             </div>
           </Card>
         </Container>
+
+        {/* Delete Account Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-red-600">Delete Account</h3>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmation('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-red-800">
+                      <p className="font-semibold mb-2">Warning: This action is permanent!</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>All your bookings will be cancelled</li>
+                        <li>Your favorites and price alerts will be deleted</li>
+                        <li>Your affiliate network will be disbanded</li>
+                        <li>All personal data will be erased</li>
+                        <li>This action cannot be reversed</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 mb-4">
+                  Please type <strong className="text-red-600">DELETE</strong> to confirm account deletion:
+                </p>
+
+                <Input
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Type DELETE to confirm"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  fullWidth
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmation('');
+                  }}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  fullWidth
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleDeleteAccount}
+                  loading={deleting}
+                  disabled={deleteConfirmation.toLowerCase() !== 'delete'}
+                  icon={<Trash2 className="w-4 h-4" />}
+                >
+                  Delete Forever
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
