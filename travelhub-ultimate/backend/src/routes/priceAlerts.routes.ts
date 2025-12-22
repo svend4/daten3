@@ -1,6 +1,6 @@
 import express from 'express';
-import * as priceAlertsController from '../controllers/priceAlerts.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import * as priceAlertsController from '../controllers/priceAlerts.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 

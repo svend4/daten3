@@ -1,7 +1,7 @@
 import express from 'express';
-import * as paymentController from '../controllers/payment.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
+import * as paymentController from '../controllers/payment.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 
