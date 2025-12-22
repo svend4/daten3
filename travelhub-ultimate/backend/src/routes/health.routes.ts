@@ -65,7 +65,8 @@ import {
   cspViolationReport,
   metricsDashboard,
 } from '../controllers/health.controller.js';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/rbac.middleware.js';
 
 const router = Router();
 
@@ -483,6 +484,7 @@ router.get('/sse', sseMetrics);
  * @access  Admin only
  */
 router.post('/sse/reset', authenticate, requireAdmin, resetSSEMetricsEndpoint);
+<<<<<<< HEAD
 
 /**
  * @route   GET /health/cdn
@@ -518,3 +520,5 @@ router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
  * @access  Public (for browser reporting)
  */
 router.post('/csp/report', cspViolationReport);
+=======
+>>>>>>> 2f00f17 (fix: Resolve TypeScript compilation errors in cron controller and routes)

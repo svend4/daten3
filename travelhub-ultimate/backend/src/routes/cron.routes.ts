@@ -11,7 +11,8 @@ import {
   cleanupOldClicks,
   cleanupOldPriceAlerts,
 } from '../controllers/cron.controller.js';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { requireAdmin } from '../middleware/rbac.middleware.js';
 
 const router = Router();
 
