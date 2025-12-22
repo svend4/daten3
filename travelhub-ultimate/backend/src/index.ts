@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 // Load environment variables first
 dotenv.config();
@@ -7,6 +8,9 @@ dotenv.config();
 // Validate environment variables
 import { validateAndLogEnv } from './config/env.validator.js';
 validateAndLogEnv();
+
+// Configuration
+import { config } from './config/index.js';
 
 // Swagger documentation
 import swaggerUi from 'swagger-ui-express';
@@ -34,7 +38,7 @@ import { searchHotels } from './services/travelpayouts.service.js';
 import logger from './utils/logger.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.server.port;
 
 // ============================================
 // MIDDLEWARE SETUP
@@ -43,6 +47,9 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
+
+// Cookie parsing middleware (must be before routes)
+app.use(cookieParser());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

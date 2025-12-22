@@ -1,27 +1,12 @@
 import cors from 'cors';
+import { config } from '../config/index.js';
 
 /**
  * CORS Middleware Configuration
- * Handles Cross-Origin Resource Sharing
+ * Handles Cross-Origin Resource Sharing with httpOnly cookies support
  */
 
-// Get allowed origins from environment
-const getAllowedOrigins = (): string[] => {
-  const frontendUrl = process.env.FRONTEND_URL;
-
-  if (frontendUrl) {
-    return frontendUrl.split(',').map(url => url.trim());
-  }
-
-  // Default origins for development
-  return [
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ];
-};
-
-const allowedOrigins = getAllowedOrigins();
+const allowedOrigins = config.cors.origin;
 
 // CORS options
 const corsOptions: cors.CorsOptions = {
@@ -50,16 +35,17 @@ const corsOptions: cors.CorsOptions = {
 
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
+  credentials: config.cors.credentials, // Required for httpOnly cookies
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
     'X-Requested-With',
     'Accept',
-    'Origin'
+    'Origin',
+    'X-CSRF-Token' // CSRF protection
   ],
-  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id', 'Set-Cookie'],
   maxAge: 86400, // 24 hours
 };
 
