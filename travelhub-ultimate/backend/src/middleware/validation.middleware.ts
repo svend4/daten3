@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
 import { z, ZodError, ZodSchema } from 'zod';
-import { AppError } from './errorHandler.middleware';
+import { AppError } from './errorHandler.middleware.js';
 
 /**
  * Validation Middleware

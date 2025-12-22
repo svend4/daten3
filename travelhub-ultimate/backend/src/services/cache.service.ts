@@ -4,7 +4,7 @@
  */
 
 import logger from '../utils/logger.js';
-import { redisService } from './redis.service';
+import { redisService } from './redis.service.js';
 
 /**
  * Cache TTL constants (in seconds)

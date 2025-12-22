@@ -5,7 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger.js';
-import { cacheService, CACHE_TTL } from './cache.service';
+import { cacheService, CACHE_TTL } from './cache.service.js';
 
 const prisma = new PrismaClient();
 

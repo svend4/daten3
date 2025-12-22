@@ -5,7 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger.js';
-import { emailService } from './email.service';
+import { emailService } from './email.service.js';
 
 const prisma = new PrismaClient();
 
