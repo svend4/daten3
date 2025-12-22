@@ -435,15 +435,6 @@ router.post('/deduplication/reset', authenticate, requireAdmin, resetDeduplicati
 router.post('/deduplication/clear', authenticate, requireAdmin, clearDeduplicationCacheEndpoint);
 
 /**
- * @route   GET /health/dashboard
- * @desc    Comprehensive metrics dashboard (all metrics in one response)
- * @access  Public
- */
-router.get('/dashboard', metricsDashboard);
-
-export default router;
-
-/**
  * @route   GET /health/i18n
  * @desc    i18n statistics
  * @access  Public
@@ -484,7 +475,6 @@ router.get('/sse', sseMetrics);
  * @access  Admin only
  */
 router.post('/sse/reset', authenticate, requireAdmin, resetSSEMetricsEndpoint);
-<<<<<<< HEAD
 
 /**
  * @route   GET /health/cdn
@@ -520,5 +510,12 @@ router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
  * @access  Public (for browser reporting)
  */
 router.post('/csp/report', cspViolationReport);
-=======
->>>>>>> 2f00f17 (fix: Resolve TypeScript compilation errors in cron controller and routes)
+
+/**
+ * @route   GET /health/dashboard
+ * @desc    Comprehensive metrics dashboard (all metrics in one response)
+ * @access  Public
+ */
+router.get('/dashboard', metricsDashboard);
+
+export default router;
