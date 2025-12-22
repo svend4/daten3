@@ -5,7 +5,7 @@
 import express from 'express';
 import * as recommendationsController from '../controllers/recommendations.controller.js';
 import { rateLimiters } from '../middleware/rateLimit.middleware.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 

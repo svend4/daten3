@@ -1,9 +1,9 @@
 import express from 'express';
 import * as flightsController from '../controllers/flights.controller.js';
 import * as flightValidators from '../validators/flight.validators.js';
-import { validate } from '../middleware/validate.js';
+import { validate } from '../middleware/validation.middleware.js';
 import { rateLimiters } from '../middleware/rateLimit.middleware.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
