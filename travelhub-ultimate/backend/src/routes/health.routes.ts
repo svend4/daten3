@@ -27,6 +27,21 @@ import {
   replayProtectionMetrics,
   resetReplayProtectionMetricsEndpoint,
   clearIdempotencyKeysEndpoint,
+  featureFlagMetrics,
+  resetFeatureFlagMetricsEndpoint,
+  apiKeyMetrics,
+  resetApiKeyMetricsEndpoint,
+  tieredRateLimitMetrics,
+  resetTieredRateLimitMetricsEndpoint,
+  batchingMetrics,
+  resetBatchingMetricsEndpoint,
+  websocketMetrics,
+  fileUploadMetrics,
+  resetFileUploadMetricsEndpoint,
+  dataExportMetrics,
+  resetDataExportMetricsEndpoint,
+  webhookMetrics,
+  resetWebhookMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -221,6 +236,111 @@ router.post('/replay-protection/reset', authenticate, requireAdmin, resetReplayP
  * @access  Admin only
  */
 router.post('/replay-protection/clear', authenticate, requireAdmin, clearIdempotencyKeysEndpoint);
+
+/**
+ * @route   GET /health/feature-flags
+ * @desc    Feature flag statistics
+ * @access  Public
+ */
+router.get('/feature-flags', featureFlagMetrics);
+
+/**
+ * @route   POST /health/feature-flags/reset
+ * @desc    Reset feature flag statistics
+ * @access  Admin only
+ */
+router.post('/feature-flags/reset', authenticate, requireAdmin, resetFeatureFlagMetricsEndpoint);
+
+/**
+ * @route   GET /health/api-keys
+ * @desc    API key statistics
+ * @access  Public
+ */
+router.get('/api-keys', apiKeyMetrics);
+
+/**
+ * @route   POST /health/api-keys/reset
+ * @desc    Reset API key statistics
+ * @access  Admin only
+ */
+router.post('/api-keys/reset', authenticate, requireAdmin, resetApiKeyMetricsEndpoint);
+
+/**
+ * @route   GET /health/tiered-rate-limit
+ * @desc    Tiered rate limit statistics
+ * @access  Public
+ */
+router.get('/tiered-rate-limit', tieredRateLimitMetrics);
+
+/**
+ * @route   POST /health/tiered-rate-limit/reset
+ * @desc    Reset tiered rate limit statistics
+ * @access  Admin only
+ */
+router.post('/tiered-rate-limit/reset', authenticate, requireAdmin, resetTieredRateLimitMetricsEndpoint);
+
+/**
+ * @route   GET /health/batching
+ * @desc    Request batching statistics
+ * @access  Public
+ */
+router.get('/batching', batchingMetrics);
+
+/**
+ * @route   POST /health/batching/reset
+ * @desc    Reset batching statistics
+ * @access  Admin only
+ */
+router.post('/batching/reset', authenticate, requireAdmin, resetBatchingMetricsEndpoint);
+
+/**
+ * @route   GET /health/websocket
+ * @desc    WebSocket connection statistics
+ * @access  Public
+ */
+router.get('/websocket', websocketMetrics);
+
+/**
+ * @route   GET /health/file-upload
+ * @desc    File upload statistics
+ * @access  Public
+ */
+router.get('/file-upload', fileUploadMetrics);
+
+/**
+ * @route   POST /health/file-upload/reset
+ * @desc    Reset file upload statistics
+ * @access  Admin only
+ */
+router.post('/file-upload/reset', authenticate, requireAdmin, resetFileUploadMetricsEndpoint);
+
+/**
+ * @route   GET /health/data-export
+ * @desc    Data export statistics
+ * @access  Public
+ */
+router.get('/data-export', dataExportMetrics);
+
+/**
+ * @route   POST /health/data-export/reset
+ * @desc    Reset data export statistics
+ * @access  Admin only
+ */
+router.post('/data-export/reset', authenticate, requireAdmin, resetDataExportMetricsEndpoint);
+
+/**
+ * @route   GET /health/webhooks
+ * @desc    Webhook statistics
+ * @access  Public
+ */
+router.get('/webhooks', webhookMetrics);
+
+/**
+ * @route   POST /health/webhooks/reset
+ * @desc    Reset webhook statistics
+ * @access  Admin only
+ */
+router.post('/webhooks/reset', authenticate, requireAdmin, resetWebhookMetricsEndpoint);
 
 /**
  * @route   GET /health/dashboard

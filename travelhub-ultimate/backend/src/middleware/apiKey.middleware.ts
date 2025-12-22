@@ -247,7 +247,7 @@ export const authenticateApiKey = (options: {
   required?: string[];  // Required permissions
   optional?: boolean;   // Allow requests without API key
 } = {}) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const apiKey = req.headers[API_KEY_HEADER.toLowerCase()] as string;
 
     if (!apiKey) {

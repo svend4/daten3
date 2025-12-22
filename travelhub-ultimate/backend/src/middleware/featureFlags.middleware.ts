@@ -254,7 +254,7 @@ export const requireFeature = (flagName: string, options: {
   errorMessage?: string;
   fallbackHandler?: (req: Request, res: Response) => void;
 } = {}) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction): any => {
     const user = (req as any).user;
     const context = {
       userId: user?.id,

@@ -56,9 +56,16 @@ import timeoutMiddleware from './middleware/timeout.middleware.js';
 // Services
 import { redisService } from './services/redis.service.js';
 import { initializeCronJobs } from './services/cron.service.js';
+import { websocketService } from './services/websocket.service.js';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
+
+// Feature Flags
+import { initializeFeatureFlags } from './middleware/featureFlags.middleware.js';
+
+// API Key Management
+import { loadApiKeys } from './middleware/apiKey.middleware.js';
 
 // Database
 import { prisma } from './lib/prisma.js';
@@ -253,6 +260,12 @@ async function startServer() {
     // Connect to Redis
     await redisService.connect();
 
+    // Initialize feature flags
+    await initializeFeatureFlags();
+
+    // Load API keys from Redis
+    await loadApiKeys();
+
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
@@ -261,6 +274,8 @@ async function startServer() {
 
     // Start HTTP server and store instance
     httpServer = app.listen(PORT, () => {
+      // Initialize WebSocket after HTTP server starts
+      websocketService.initialize(httpServer);
       logger.info('═══════════════════════════════════════════════════');
       logger.info('🚀 TravelHub Ultimate API Server');
       logger.info('═══════════════════════════════════════════════════');
@@ -341,12 +356,17 @@ async function gracefulShutdown(signal: string) {
     await redisService.disconnect();
     logger.info('✓ Redis disconnected');
 
-    // Step 3: Disconnect from Prisma
+    // Step 3: Disconnect WebSocket
+    logger.info('Disconnecting WebSocket...');
+    websocketService.disconnect();
+    logger.info('✓ WebSocket disconnected');
+
+    // Step 4: Disconnect from Prisma
     logger.info('Disconnecting from Prisma...');
     await prisma.$disconnect();
     logger.info('✓ Prisma disconnected');
 
-    // Step 4: Stop audit log flushing
+    // Step 5: Stop audit log flushing
     logger.info('Stopping audit log flushing...');
     await stopAuditLogFlushing();
     logger.info('✓ Audit logs flushed');

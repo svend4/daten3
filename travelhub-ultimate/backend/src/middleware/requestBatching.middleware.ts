@@ -276,7 +276,7 @@ export const batchRequestMiddleware = (
     ...customConfig,
   };
 
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const { requests } = req.body;
 
     if (!Array.isArray(requests)) {

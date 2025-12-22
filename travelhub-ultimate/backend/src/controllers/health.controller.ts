@@ -13,6 +13,14 @@ import { getCircuitBreakerStats, resetCircuitBreakerStats } from '../middleware/
 import { getCacheStats, resetCacheStats, clearAllCaches } from '../middleware/advancedCache.middleware.js';
 import { getAuditStats, resetAuditStats } from '../middleware/auditLog.middleware.js';
 import { getReplayProtectionStats, resetReplayProtectionStats, clearAllIdempotencyKeys } from '../middleware/replayProtection.middleware.js';
+import { getFeatureFlagStats, resetFeatureFlagStats } from '../middleware/featureFlags.middleware.js';
+import { getApiKeyStats, resetApiKeyStats } from '../middleware/apiKey.middleware.js';
+import { getTieredRateLimitStats, resetTieredRateLimitStats } from '../middleware/tieredRateLimit.middleware.js';
+import { getBatchStats, resetBatchStats } from '../middleware/requestBatching.middleware.js';
+import { getWebSocketStats } from '../services/websocket.service.js';
+import { getFileUploadStats, resetFileUploadStats } from '../middleware/fileUpload.middleware.js';
+import { getDataExportStats, resetDataExportStats } from '../services/dataExport.service.js';
+import { getWebhookStats, resetWebhookStats } from '../services/webhook.service.js';
 
 interface ServiceStatus {
   status: string;
@@ -512,6 +520,14 @@ export const metricsDashboard = (req: Request, res: Response) => {
         cache: getCacheStats(),
         audit: getAuditStats(),
         replayProtection: getReplayProtectionStats(),
+        featureFlags: getFeatureFlagStats(),
+        apiKeys: getApiKeyStats(),
+        tieredRateLimit: getTieredRateLimitStats(),
+        batching: getBatchStats(),
+        websocket: getWebSocketStats(),
+        fileUpload: getFileUploadStats(),
+        dataExport: getDataExportStats(),
+        webhooks: getWebhookStats(),
       },
       system: {
         memory: {
@@ -783,6 +799,365 @@ export const clearIdempotencyKeysEndpoint = async (req: Request, res: Response) 
     res.status(500).json({
       success: false,
       error: 'Failed to clear idempotency keys',
+    });
+  }
+};
+
+/**
+ * Feature flags statistics endpoint
+ * GET /api/health/feature-flags
+ * Returns feature flag statistics
+ */
+export const featureFlagMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getFeatureFlagStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting feature flag stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve feature flag statistics',
+    });
+  }
+};
+
+/**
+ * Reset feature flag statistics endpoint
+ * POST /api/health/feature-flags/reset
+ * Admin only - resets feature flag tracking
+ */
+export const resetFeatureFlagMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetFeatureFlagStats();
+
+    logger.info('Feature flag stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Feature flag statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting feature flag stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset feature flag statistics',
+    });
+  }
+};
+
+/**
+ * API key statistics endpoint
+ * GET /api/health/api-keys
+ * Returns API key statistics
+ */
+export const apiKeyMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getApiKeyStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting API key stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve API key statistics',
+    });
+  }
+};
+
+/**
+ * Reset API key statistics endpoint
+ * POST /api/health/api-keys/reset
+ * Admin only - resets API key tracking
+ */
+export const resetApiKeyMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetApiKeyStats();
+
+    logger.info('API key stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'API key statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting API key stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset API key statistics',
+    });
+  }
+};
+
+/**
+ * Tiered rate limit statistics endpoint
+ * GET /api/health/tiered-rate-limit
+ * Returns tiered rate limit statistics
+ */
+export const tieredRateLimitMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getTieredRateLimitStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting tiered rate limit stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve tiered rate limit statistics',
+    });
+  }
+};
+
+/**
+ * Reset tiered rate limit statistics endpoint
+ * POST /api/health/tiered-rate-limit/reset
+ * Admin only - resets tiered rate limit tracking
+ */
+export const resetTieredRateLimitMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetTieredRateLimitStats();
+
+    logger.info('Tiered rate limit stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Tiered rate limit statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting tiered rate limit stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset tiered rate limit statistics',
+    });
+  }
+};
+
+/**
+ * Request batching statistics endpoint
+ * GET /api/health/batching
+ * Returns request batching statistics
+ */
+export const batchingMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getBatchStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting batching stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve batching statistics',
+    });
+  }
+};
+
+/**
+ * Reset batching statistics endpoint
+ * POST /api/health/batching/reset
+ * Admin only - resets batching tracking
+ */
+export const resetBatchingMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetBatchStats();
+
+    logger.info('Batching stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Batching statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting batching stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset batching statistics',
+    });
+  }
+};
+
+/**
+ * WebSocket statistics endpoint
+ * GET /api/health/websocket
+ * Returns WebSocket connection statistics
+ */
+export const websocketMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getWebSocketStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting WebSocket stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve WebSocket statistics',
+    });
+  }
+};
+
+/**
+ * File upload statistics endpoint
+ * GET /api/health/file-upload
+ * Returns file upload statistics
+ */
+export const fileUploadMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getFileUploadStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting file upload stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve file upload statistics',
+    });
+  }
+};
+
+/**
+ * Reset file upload statistics endpoint
+ * POST /api/health/file-upload/reset
+ * Admin only - resets file upload tracking
+ */
+export const resetFileUploadMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetFileUploadStats();
+
+    logger.info('File upload stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'File upload statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting file upload stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset file upload statistics',
+    });
+  }
+};
+
+/**
+ * Data export statistics endpoint
+ * GET /api/health/data-export
+ * Returns data export statistics
+ */
+export const dataExportMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getDataExportStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting data export stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve data export statistics',
+    });
+  }
+};
+
+/**
+ * Reset data export statistics endpoint
+ * POST /api/health/data-export/reset
+ * Admin only - resets data export tracking
+ */
+export const resetDataExportMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetDataExportStats();
+
+    logger.info('Data export stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Data export statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting data export stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset data export statistics',
+    });
+  }
+};
+
+/**
+ * Webhook statistics endpoint
+ * GET /api/health/webhooks
+ * Returns webhook statistics
+ */
+export const webhookMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getWebhookStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting webhook stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve webhook statistics',
+    });
+  }
+};
+
+/**
+ * Reset webhook statistics endpoint
+ * POST /api/health/webhooks/reset
+ * Admin only - resets webhook tracking
+ */
+export const resetWebhookMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetWebhookStats();
+
+    logger.info('Webhook stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Webhook statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting webhook stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset webhook statistics',
     });
   }
 };

@@ -149,6 +149,7 @@ const createTierRateLimiter = (
     legacyHeaders: false,
     ...(redisClient && {
       store: new RedisStore({
+        // @ts-ignore - RedisStore type definitions may vary
         client: redisClient,
         prefix: `tier_rl:${tier.toLowerCase()}:`,
         sendCommand: (...args: string[]) => redisClient.sendCommand(args),
