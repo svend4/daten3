@@ -4,11 +4,11 @@
  * Based on Innovation Library v28.js
  */
 
-import prisma from '../config/database.js';
+import prisma from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import { searchFlights as searchFlightsTravelpayouts } from '../services/travelpayouts.service.js';
 import { searchHotels } from '../services/travelpayouts.service.js';
-import { notificationService } from '../services/notification.service.js';
+import { notificationService, NotificationType, NotificationPriority } from '../services/notification.service.js';
 
 /**
  * Check all active price alerts and trigger notifications
@@ -186,7 +186,7 @@ async function sendPriceAlertNotification(alert: any, currentPrice: number): Pro
     // Send in-app notification
     await notificationService.send({
       userId: alert.user.id,
-      type: 'PRICE_DROP',
+      type: NotificationType.PRICE_DROP,
       title: `🎉 Price Drop Alert - ${alert.type === 'flight' ? 'Flight' : 'Hotel'}!`,
       message: `The price dropped to $${currentPrice}! You save $${savings} (${savingsPercentage}%)`,
       metadata: {
@@ -198,7 +198,7 @@ async function sendPriceAlertNotification(alert: any, currentPrice: number): Pro
         savingsPercentage,
         searchParams: alert.searchParams
       },
-      priority: 'high',
+      priority: NotificationPriority.HIGH,
       sendEmail: true,
       sendPush: true
     });
