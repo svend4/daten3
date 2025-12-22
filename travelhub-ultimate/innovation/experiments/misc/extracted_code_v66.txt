@@ -1,0 +1,27 @@
+model AffiliateSettings {
+  id                String   @id @default(cuid())
+  
+  // НОВАЯ МОДЕЛЬ: Процент ОТ КОМИССИИ TravelHub
+  // TravelHub получает, например, 5% от Booking.com
+  // Из этих 5% распределяем партнёрам:
+  
+  level1Rate        Float    @default(50.0)   // 50% от комиссии TravelHub
+  level2Rate        Float    @default(20.0)   // 20% от комиссии TravelHub
+  level3Rate        Float    @default(10.0)   // 10% от комиссии TravelHub
+  
+  // Итого партнёрам: 80% от комиссии TravelHub
+  // TravelHub остаётся: 20% от комиссии (например, $10 из $50)
+  
+  // Базовая комиссия от провайдера (Booking.com/Travelpayouts)
+  baseCommissionRate Float   @default(5.0)    // 5% от суммы бронирования
+  
+  maxLevels         Int      @default(3)
+  minPayoutAmount   Float    @default(50)
+  commissionHoldDays Int     @default(30)
+  autoApprove       Boolean  @default(false)
+  cookieLifetime    Int      @default(30)
+  
+  updatedAt         DateTime @updatedAt
+  
+  @@map("affiliate_settings")
+}

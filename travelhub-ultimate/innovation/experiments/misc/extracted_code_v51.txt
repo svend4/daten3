@@ -1,0 +1,190 @@
+// Партнёрская программа
+
+model Affiliate {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Реферальная информация
+  referralCode    String   @unique
+  referredBy      String?  // ID родительского партнёра
+  referrer        Affiliate? @relation("ReferralTree", fields: [referredBy], references: [id])
+  referrals       Affiliate[] @relation("ReferralTree")
+  
+  // Уровень в партнёрской сети
+  level           Int      @default(1)
+  
+  // Статус
+  status          String   @default("pending") // pending, active, suspended, banned
+  isVerified      Boolean  @default(false)
+  
+  // Статистика
+  totalEarnings   Float    @default(0)
+  totalReferrals  Int      @default(0)
+  activeReferrals Int      @default(0)
+  
+  // Настройки выплат
+  paymentMethod   String?  // bank, paypal, crypto
+  paymentDetails  Json?
+  minPayout       Float    @default(50)
+  
+  // Метаданные
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Связи
+  commissions     Commission[]
+  clicks          AffiliateClick[]
+  conversions     AffiliateConversion[]
+  payouts         AffiliatePayout[]
+  
+  @@index([referredBy])
+  @@index([referralCode])
+  @@map("affiliates")
+}
+
+model AffiliateClick {
+  id            String   @id @default(cuid())
+  affiliateId   String
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  
+  // Tracking информация
+  clickedAt     DateTime @default(now())
+  ipAddress     String
+  userAgent     String?
+  referrer      String?
+  landingPage   String
+  
+  // UTM параметры
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  
+  // Конверсия
+  converted     Boolean  @default(false)
+  conversionId  String?
+  
+  @@index([affiliateId, clickedAt])
+  @@map("affiliate_clicks")
+}
+
+model AffiliateConversion {
+  id            String   @id @default(cuid())
+  affiliateId   String
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  
+  // Информация о бронировании
+  bookingId     String?
+  bookingType   String   // flight, hotel, car
+  bookingAmount Float
+  currency      String   @default("USD")
+  
+  // Комиссия
+  commissionRate Float   // процент
+  commissionAmount Float // сумма в валюте
+  
+  // Статус
+  status        String   @default("pending") // pending, approved, rejected, paid
+  
+  // Метаданные
+  convertedAt   DateTime @default(now())
+  approvedAt    DateTime?
+  paidAt        DateTime?
+  
+  @@index([affiliateId, status])
+  @@map("affiliate_conversions")
+}
+
+model Commission {
+  id              String   @id @default(cuid())
+  affiliateId     String
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  
+  // Конверсия
+  conversionId    String
+  
+  // Уровень комиссии
+  level           Int      // 1, 2, 3...
+  
+  // Суммы
+  baseAmount      Float    // базовая сумма бронирования
+  rate            Float    // процент для этого уровня
+  amount          Float    // сумма комиссии
+  currency        String   @default("USD")
+  
+  // Статус
+  status          String   @default("pending") // pending, approved, paid
+  
+  // Метаданные
+  createdAt       DateTime @default(now())
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  
+  @@index([affiliateId, status])
+  @@index([conversionId])
+  @@map("commissions")
+}
+
+model AffiliatePayout {
+  id            String   @id @default(cuid())
+  affiliateId   String
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  
+  // Сумма
+  amount        Float
+  currency      String   @default("USD")
+  
+  // Метод оплаты
+  method        String   // bank, paypal, crypto
+  details       Json
+  
+  // Статус
+  status        String   @default("pending") // pending, processing, completed, failed
+  
+  // Метаданные
+  requestedAt   DateTime @default(now())
+  processedAt   DateTime?
+  completedAt   DateTime?
+  
+  // Транзакция
+  transactionId String?
+  
+  @@index([affiliateId, status])
+  @@map("affiliate_payouts")
+}
+
+// Настройки партнёрской программы
+model AffiliateSettings {
+  id                String   @id @default(cuid())
+  
+  // Комиссионные ставки по уровням
+  level1Rate        Float    @default(3.0)   // 3%
+  level2Rate        Float    @default(1.5)   // 1.5%
+  level3Rate        Float    @default(0.5)   // 0.5%
+  
+  // Максимальная глубина рефералов
+  maxLevels         Int      @default(3)
+  
+  // Минимальная сумма для выплаты
+  minPayoutAmount   Float    @default(50)
+  
+  // Период удержания комиссии (дни)
+  commissionHoldDays Int     @default(30)
+  
+  // Автоматическое одобрение
+  autoApprove       Boolean  @default(false)
+  
+  // Cookie lifetime (дни)
+  cookieLifetime    Int      @default(30)
+  
+  updatedAt         DateTime @updatedAt
+  
+  @@map("affiliate_settings")
+}
+
+// Добавить к модели User
+model User {
+  // ... существующие поля
+  
+  affiliate         Affiliate?
+}
