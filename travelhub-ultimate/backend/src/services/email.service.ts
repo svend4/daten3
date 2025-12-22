@@ -10,7 +10,7 @@
  * - Postmark (focused on transactional emails)
  */
 
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /**
  * Email configuration
