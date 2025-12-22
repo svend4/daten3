@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger.js';
 
 /**
  * Custom Error Class
@@ -38,6 +39,7 @@ export const notFoundHandler = (
 /**
  * Global Error Handler
  * Centralized error handling for all errors
+ * Enhanced with comprehensive logging and error type detection
  */
 export const errorHandler = (
   err: any,
@@ -45,32 +47,72 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  err.statusCode = err.statusCode || 500;
+  err.statusCode = err.statusCode || err.status || 500;
   err.status = err.status || 'error';
 
-  // Log error in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error('❌ ERROR:', {
-      message: err.message,
-      statusCode: err.statusCode,
-      stack: err.stack,
-      path: req.originalUrl,
-      method: req.method
-    });
+  // Log error with winston logger
+  logger.error('Error occurred', {
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userId: (req as any).user?.id,
+    statusCode: err.statusCode,
+    name: err.name
+  });
+
+  // Handle specific error types
+  let error = err;
+
+  // Validation errors
+  if (err.name === 'ValidationError') {
+    error = handleValidationError(err);
+  }
+
+  // Unauthorized errors
+  if (err.name === 'UnauthorizedError') {
+    error = new AppError('Authentication required or token invalid', 401);
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    error = handleJWTError();
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    error = handleJWTExpiredError();
+  }
+
+  // Timeout errors
+  if (err.code === 'ETIMEDOUT') {
+    error = new AppError('External API request timed out', 504);
+  }
+
+  // Prisma/DB errors
+  if (err.code === 'P2002') {
+    error = handleDuplicateFieldsError(err);
+  }
+
+  if (err.code === 'P2025') {
+    error = new AppError('Record not found', 404);
   }
 
   // Production error response
   if (process.env.NODE_ENV === 'production') {
     // Operational, trusted error: send message to client
-    if (err.isOperational) {
-      res.status(err.statusCode).json({
+    if (error.isOperational) {
+      res.status(error.statusCode).json({
         success: false,
-        status: err.status,
-        error: err.message
+        status: error.status,
+        error: error.message
       });
     } else {
       // Programming or unknown error: don't leak error details
-      console.error('💥 UNEXPECTED ERROR:', err);
+      logger.error('Unexpected non-operational error', {
+        error: err,
+        stack: err.stack
+      });
 
       res.status(500).json({
         success: false,
@@ -80,16 +122,14 @@ export const errorHandler = (
     }
   } else {
     // Development error response (detailed)
-    res.status(err.statusCode).json({
+    res.status(error.statusCode).json({
       success: false,
-      status: err.status,
-      error: err.message,
-      stack: err.stack,
-      details: {
-        path: req.originalUrl,
-        method: req.method,
-        timestamp: new Date().toISOString()
-      }
+      status: error.status,
+      error: error.message,
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error.stack,
+        details: err.details
+      })
     });
   }
 };

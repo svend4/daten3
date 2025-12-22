@@ -43,9 +43,17 @@ const corsOptions: cors.CorsOptions = {
     'X-Requested-With',
     'Accept',
     'Origin',
-    'X-CSRF-Token' // CSRF protection
+    'X-CSRF-Token', // CSRF protection
+    'X-API-Key'
   ],
-  exposedHeaders: ['Content-Length', 'X-Request-Id', 'Set-Cookie'],
+  exposedHeaders: [
+    'Content-Length',
+    'X-Request-Id',
+    'Set-Cookie',
+    'X-RateLimit-Limit',
+    'X-RateLimit-Remaining',
+    'X-RateLimit-Reset'
+  ],
   maxAge: 86400, // 24 hours
 };
 
