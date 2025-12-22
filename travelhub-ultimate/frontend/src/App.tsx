@@ -13,11 +13,15 @@ import HotelDetails from './pages/HotelDetails';
 // Auth pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import EmailVerification from './pages/EmailVerification';
 
 // User pages
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings';
+import BookingDetails from './pages/BookingDetails';
 import Favorites from './pages/Favorites';
 import PriceAlerts from './pages/PriceAlerts';
 import Settings from './pages/Settings';
@@ -83,11 +87,15 @@ function App() {
           {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
 
           {/* User routes */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/bookings" element={<MyBookings />} />
+          <Route path="/bookings/:id" element={<BookingDetails />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/price-alerts" element={<PriceAlerts />} />
           <Route path="/settings" element={<Settings />} />

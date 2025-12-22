@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, CreditCard, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, CreditCard, X, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Container from '../components/layout/Container';
@@ -30,6 +31,7 @@ interface Booking {
 }
 
 const MyBookings: React.FC = () => {
+  const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -334,23 +336,34 @@ const MyBookings: React.FC = () => {
                         </p>
                       </div>
 
-                      {booking.status === 'CONFIRMED' && (
+                      <div className="flex flex-col gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCancelBooking(booking.id)}
-                          loading={cancellingId === booking.id}
-                          className="text-red-600 border-red-600 hover:bg-red-50"
+                          onClick={() => navigate(`/bookings/${booking.id}`)}
+                          icon={<Eye className="w-4 h-4" />}
                         >
-                          Cancel Booking
+                          View Details
                         </Button>
-                      )}
 
-                      {booking.status === 'PENDING' && (
-                        <div className="text-sm text-yellow-600 font-medium">
-                          Awaiting Confirmation
-                        </div>
-                      )}
+                        {booking.status === 'CONFIRMED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelBooking(booking.id)}
+                            loading={cancellingId === booking.id}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            Cancel Booking
+                          </Button>
+                        )}
+
+                        {booking.status === 'PENDING' && (
+                          <div className="text-sm text-yellow-600 font-medium text-center">
+                            Awaiting Confirmation
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
