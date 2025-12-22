@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
+// import RedisStore from 'rate-limit-redis'; // TODO: Install rate-limit-redis package
 import { Request, Response } from 'express';
 import { redisService } from '../services/redis.service.js';
 import logger from '../utils/logger.js';
@@ -29,15 +29,15 @@ function createRateLimiter(maxRequests: number, windowSeconds: number, options: 
     windowMs: windowSeconds * 1000,
     max: maxRequests,
 
-    // Use Redis store for distributed rate limiting (if available)
-    ...(redisClient && {
-      store: new RedisStore({
-        // @ts-ignore - RedisStore types are compatible
-        client: redisClient,
-        prefix: 'rl:',
-        sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-      }),
-    }),
+    // TODO: Use Redis store for distributed rate limiting (requires rate-limit-redis package)
+    // ...(redisClient && {
+    //   store: new RedisStore({
+    //     // @ts-ignore - RedisStore types are compatible
+    //     client: redisClient,
+    //     prefix: 'rl:',
+    //     sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+    //   }),
+    // }),
 
     // Use standard headers
     standardHeaders: true,

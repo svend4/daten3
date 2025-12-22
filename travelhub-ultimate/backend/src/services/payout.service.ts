@@ -59,8 +59,8 @@ export async function requestPayout(
         affiliateId: affiliate.id,
         amount: request.amount,
         currency: 'USD',
-        paymentMethod: request.paymentMethod,
-        paymentDetails: request.paymentDetails,
+        method: request.paymentMethod,
+        accountDetails: request.paymentDetails,
         status: 'pending',
       },
     });
@@ -116,16 +116,16 @@ export async function getAvailableBalance(userId: string): Promise<{
 
     const total = pending + approved + paid;
 
-    // Get pending payouts
+    // Get pending payouts (not yet completed)
     const pendingPayoutsSum = await prisma.payout.aggregate({
       where: {
         affiliateId: affiliate.id,
-        status: { in: ['pending', 'processing', 'approved'] },
+        status: { in: ['pending', 'processing'] },
       },
       _sum: { amount: true },
     });
 
-    const pendingPayouts = pendingPayoutsSum._sum.amount || 0;
+    const pendingPayouts = pendingPayoutsSum._sum?.amount || 0;
 
     // Available = approved commissions - pending payouts
     const available = approved - pendingPayouts;
@@ -163,9 +163,9 @@ export async function getUserPayouts(
     const payouts = await prisma.payout.findMany({
       where: {
         affiliateId: affiliate.id,
-        ...(filters.status && { status: filters.status }),
+        ...(filters.status && { status: filters.status as any }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { requestedAt: 'desc' },
       take: filters.limit || 50,
     });
 
@@ -190,7 +190,8 @@ export async function getPayoutById(payoutId: string): Promise<any> {
               select: {
                 id: true,
                 email: true,
-                name: true,
+                firstName: true,
+                lastName: true,
               },
             },
           },
@@ -229,10 +230,14 @@ export async function cancelPayout(payoutId: string, userId: string): Promise<an
 
     const updatedPayout = await prisma.payout.update({
       where: { id: payoutId },
-      data: { status: 'cancelled' },
+      data: {
+        status: 'rejected',
+        reason: 'Cancelled by user',
+        rejectedAt: new Date()
+      },
     });
 
-    logger.info(`Payout cancelled: ${payoutId}`);
+    logger.info(`Payout cancelled/rejected: ${payoutId}`);
 
     return updatedPayout;
   } catch (error: any) {
@@ -254,11 +259,10 @@ export async function getAllPayouts(filters: {
   total: number;
   stats: {
     pending: number;
-    approved: number;
     processing: number;
     completed: number;
+    rejected: number;
     failed: number;
-    cancelled: number;
   };
 }> {
   try {
@@ -282,13 +286,14 @@ export async function getAllPayouts(filters: {
                 select: {
                   id: true,
                   email: true,
-                  name: true,
+                  firstName: true,
+                  lastName: true,
                 },
               },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { requestedAt: 'desc' },
         take: filters.limit || 50,
         skip: filters.offset || 0,
       }),
@@ -301,11 +306,10 @@ export async function getAllPayouts(filters: {
 
     const statsMap: any = {
       pending: 0,
-      approved: 0,
       processing: 0,
       completed: 0,
+      rejected: 0,
       failed: 0,
-      cancelled: 0,
     };
 
     stats.forEach((s: any) => {
@@ -343,13 +347,13 @@ export async function approvePayout(payoutId: string, adminId: string): Promise<
     const updatedPayout = await prisma.payout.update({
       where: { id: payoutId },
       data: {
-        status: 'approved',
-        approvedAt: new Date(),
-        approvedBy: adminId,
+        status: 'processing',
+        processedAt: new Date(),
+        processedBy: adminId,
       },
     });
 
-    logger.info(`Payout approved: ${payoutId} by admin ${adminId}`);
+    logger.info(`Payout approved and set to processing: ${payoutId} by admin ${adminId}`);
 
     // TODO: Send notification to affiliate
 
@@ -415,15 +419,13 @@ export async function processPayout(payoutId: string, adminId: string): Promise<
       throw new Error('Payout not found');
     }
 
-    if (payout.status !== 'approved') {
-      throw new Error('Can only process approved payouts');
+    if (payout.status !== 'processing') {
+      throw new Error('Can only process payouts that are in processing status');
     }
 
-    // Update status to processing
-    await prisma.payout.update({
-      where: { id: payoutId },
-      data: { status: 'processing', processedAt: new Date() },
-    });
+    // Payment processing logic would go here
+    // For now, we'll just update to completed
+    // In real implementation, call payment provider API first
 
     // TODO: Integrate with payment provider based on paymentMethod
     // - PayPal: Use PayPal Payouts API
