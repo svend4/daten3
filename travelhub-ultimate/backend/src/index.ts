@@ -28,6 +28,9 @@ import carsRoutes from './routes/cars.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
+import reviewRoutes from './routes/review.routes.js';
+import currencyRoutes from './routes/currency.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -174,6 +177,15 @@ app.use('/api/notifications', notificationsRoutes);
 // Analytics routes
 app.use('/api/analytics', analyticsRoutes);
 
+// Review routes
+app.use('/api/reviews', reviewRoutes);
+
+// Currency routes
+app.use('/api/currency', currencyRoutes);
+
+// Report routes
+app.use('/api/reports', reportRoutes);
+
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
@@ -197,6 +209,9 @@ app.get('/', (req, res) => {
       bookings: '/api/bookings',
       favorites: '/api/favorites',
       priceAlerts: '/api/price-alerts',
+      reviews: '/api/reviews',
+      currency: '/api/currency',
+      reports: '/api/reports',
       admin: '/api/admin'
     }
   });
@@ -244,6 +259,9 @@ async function startServer() {
       logger.info(`   Bookings:      http://localhost:${PORT}/api/bookings`);
       logger.info(`   Favorites:     http://localhost:${PORT}/api/favorites`);
       logger.info(`   Price Alerts:  http://localhost:${PORT}/api/price-alerts`);
+      logger.info(`   Reviews:       http://localhost:${PORT}/api/reviews`);
+      logger.info(`   Currency:      http://localhost:${PORT}/api/currency`);
+      logger.info(`   Reports:       http://localhost:${PORT}/api/reports`);
       logger.info(`   Admin:         http://localhost:${PORT}/api/admin`);
       logger.info('');
       logger.info('✅ Server is ready to accept connections');
