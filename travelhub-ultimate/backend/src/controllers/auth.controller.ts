@@ -9,6 +9,7 @@ import {
   clearVerificationToken,
   sendVerificationEmail as sendVerificationEmailUtil,
 } from '../utils/email.utils.js';
+import { config } from '../config/index.js';
 
 /**
  * Auth Controller
@@ -86,6 +87,21 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Set httpOnly cookies
+    res.cookie(config.cookie.names.accessToken, token, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge.accessToken
+    });
+
+    res.cookie(config.cookie.names.refreshToken, refreshToken, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge.refreshToken
+    });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -98,9 +114,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
           phone: user.phone,
           role: user.role,
           status: user.status
-        },
-        accessToken: token,
-        refreshToken
+        }
+        // Tokens are now in httpOnly cookies, not in response body
       }
     });
   } catch (error: any) {
@@ -204,6 +219,21 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Set httpOnly cookies
+    res.cookie(config.cookie.names.accessToken, token, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge.accessToken
+    });
+
+    res.cookie(config.cookie.names.refreshToken, refreshToken, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge.refreshToken
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -217,9 +247,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           avatar: user.avatar,
           role: user.role,
           status: user.status
-        },
-        accessToken: token,
-        refreshToken
+        }
+        // Tokens are now in httpOnly cookies, not in response body
       }
     });
   } catch (error: any) {
@@ -234,11 +263,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 /**
  * POST /api/auth/refresh
- * Refresh access token using refresh token
+ * Refresh access token using refresh token from httpOnly cookie
  */
 export const refreshToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    // Get refresh token from httpOnly cookie (preferred) or request body (fallback)
+    const refreshToken = req.cookies?.[config.cookie.names.refreshToken] || req.body.refreshToken;
 
     if (!refreshToken) {
       res.status(400).json({
@@ -302,11 +332,19 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       role: user.role
     });
 
+    // Update httpOnly cookie
+    res.cookie(config.cookie.names.accessToken, newToken, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite,
+      maxAge: config.cookie.maxAge.accessToken
+    });
+
     res.json({
       success: true,
       message: 'Token refreshed successfully',
       data: {
-        accessToken: newToken
+        // Token is now in httpOnly cookie
       }
     });
   } catch (error: any) {
@@ -315,6 +353,49 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       success: false,
       error: 'Invalid refresh token',
       message: 'Failed to refresh token. Please login again.'
+    });
+  }
+};
+
+/**
+ * POST /api/auth/logout
+ * Logout user and clear cookies
+ */
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Get refresh token from cookie
+    const refreshToken = req.cookies?.[config.cookie.names.refreshToken];
+
+    // If refresh token exists, delete it from database
+    if (refreshToken) {
+      await prisma.refreshToken.deleteMany({
+        where: { token: refreshToken }
+      });
+    }
+
+    // Clear httpOnly cookies
+    res.clearCookie(config.cookie.names.accessToken, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite
+    });
+
+    res.clearCookie(config.cookie.names.refreshToken, {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+      sameSite: config.cookie.sameSite
+    });
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error: any) {
+    console.error('❌ Logout error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Logout failed',
+      message: 'Failed to logout.'
     });
   }
 };

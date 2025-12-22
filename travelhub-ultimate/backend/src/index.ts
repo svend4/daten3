@@ -33,6 +33,7 @@ import { rateLimiters } from './middleware/rateLimit.middleware.js';
 
 // Services
 import { searchHotels } from './services/travelpayouts.service.js';
+import { redisService } from './services/redis.service.js';
 
 // Utils
 import logger from './utils/logger.js';
@@ -194,38 +195,55 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-app.listen(PORT, () => {
-  logger.info('═══════════════════════════════════════════════════');
-  logger.info('🚀 TravelHub Ultimate API Server');
-  logger.info('═══════════════════════════════════════════════════');
-  logger.info(`📍 Port: ${PORT}`);
-  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info('');
-  logger.info('📚 API Documentation:');
-  logger.info(`   Swagger UI:   http://localhost:${PORT}/api-docs`);
-  logger.info('');
-  logger.info('📡 API Endpoints:');
-  logger.info(`   Auth:         http://localhost:${PORT}/api/auth`);
-  logger.info(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
-  logger.info(`   Flights:      http://localhost:${PORT}/api/flights/search`);
-  logger.info(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
-  logger.info(`   Bookings:     http://localhost:${PORT}/api/bookings`);
-  logger.info(`   Favorites:    http://localhost:${PORT}/api/favorites`);
-  logger.info(`   Price Alerts: http://localhost:${PORT}/api/price-alerts`);
-  logger.info(`   Admin:        http://localhost:${PORT}/api/admin`);
-  logger.info('');
-  logger.info('✅ Server is ready to accept connections');
-  logger.info('═══════════════════════════════════════════════════');
-});
+// Initialize services before starting server
+async function startServer() {
+  try {
+    // Connect to Redis
+    await redisService.connect();
+
+    // Start HTTP server
+    app.listen(PORT, () => {
+      logger.info('═══════════════════════════════════════════════════');
+      logger.info('🚀 TravelHub Ultimate API Server');
+      logger.info('═══════════════════════════════════════════════════');
+      logger.info(`📍 Port: ${PORT}`);
+      logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info('');
+      logger.info('📚 API Documentation:');
+      logger.info(`   Swagger UI:   http://localhost:${PORT}/api-docs`);
+      logger.info('');
+      logger.info('📡 API Endpoints:');
+      logger.info(`   Auth:         http://localhost:${PORT}/api/auth`);
+      logger.info(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
+      logger.info(`   Flights:      http://localhost:${PORT}/api/flights/search`);
+      logger.info(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
+      logger.info(`   Bookings:     http://localhost:${PORT}/api/bookings`);
+      logger.info(`   Favorites:    http://localhost:${PORT}/api/favorites`);
+      logger.info(`   Price Alerts: http://localhost:${PORT}/api/price-alerts`);
+      logger.info(`   Admin:        http://localhost:${PORT}/api/admin`);
+      logger.info('');
+      logger.info('✅ Server is ready to accept connections');
+      logger.info('═══════════════════════════════════════════════════');
+    });
+  } catch (error) {
+    logger.error('💥 Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
+  await redisService.disconnect();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully...');
+  await redisService.disconnect();
   process.exit(0);
 });
 
