@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import { getPerformanceMetrics } from '../middleware/logger.middleware.js';
 import { getErrorMetrics, resetErrorMetrics } from '../middleware/errorHandler.middleware.js';
+import { getResponseTimeStats, resetResponseTimeStats } from '../middleware/responseTime.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -236,6 +237,54 @@ export const resetErrorMetricsEndpoint = (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to reset error metrics',
+    });
+  }
+};
+
+/**
+ * Response time statistics endpoint
+ * GET /api/health/response-times
+ * Returns detailed response time distribution and statistics
+ */
+export const responseTimeMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getResponseTimeStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting response time stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve response time statistics',
+    });
+  }
+};
+
+/**
+ * Reset response time statistics endpoint
+ * POST /api/health/response-times/reset
+ * Admin only - resets response time tracking
+ */
+export const resetResponseTimeMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetResponseTimeStats();
+
+    logger.info('Response time stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Response time statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting response time stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset response time statistics',
     });
   }
 };

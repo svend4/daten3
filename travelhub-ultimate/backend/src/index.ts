@@ -46,6 +46,8 @@ import morganMiddleware, { requestLogger } from './middleware/logger.middleware.
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
 import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
+import requestIdMiddleware from './middleware/requestId.middleware.js';
+import responseTimeMiddleware from './middleware/responseTime.middleware.js';
 
 // Services
 import { redisService } from './services/redis.service.js';
@@ -60,6 +62,10 @@ const PORT = config.server.port;
 // ============================================
 // MIDDLEWARE SETUP
 // ============================================
+
+// Request tracking middleware (must be first)
+app.use(requestIdMiddleware);  // Assign unique ID to each request
+app.use(responseTimeMiddleware); // Measure response time
 
 // Security middleware
 app.use(helmetMiddleware);

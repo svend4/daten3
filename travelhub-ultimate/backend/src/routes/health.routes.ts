@@ -7,6 +7,8 @@ import {
   performanceMetrics,
   errorMetrics,
   resetErrorMetricsEndpoint,
+  responseTimeMetrics,
+  resetResponseTimeMetricsEndpoint,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
 
@@ -60,5 +62,19 @@ router.get('/errors', errorMetrics);
  * @access  Admin only
  */
 router.post('/errors/reset', authenticate, requireAdmin, resetErrorMetricsEndpoint);
+
+/**
+ * @route   GET /health/response-times
+ * @desc    Response time distribution and statistics
+ * @access  Public
+ */
+router.get('/response-times', responseTimeMetrics);
+
+/**
+ * @route   POST /health/response-times/reset
+ * @desc    Reset response time tracking statistics
+ * @access  Admin only
+ */
+router.post('/response-times/reset', authenticate, requireAdmin, resetResponseTimeMetricsEndpoint);
 
 export default router;
