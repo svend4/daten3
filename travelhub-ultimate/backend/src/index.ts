@@ -23,6 +23,8 @@ import bookingsRoutes from './routes/bookings.routes.js';
 import favoritesRoutes from './routes/favorites.routes.js';
 import priceAlertsRoutes from './routes/priceAlerts.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import flightsRoutes from './routes/flights.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -156,6 +158,8 @@ app.use('/api/affiliate', affiliateRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/flights', flightsRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
@@ -171,7 +175,8 @@ app.get('/', (req, res) => {
       health: '/api/health',
       auth: '/api/auth',
       hotels: '/api/hotels/search',
-      flights: '/api/flights/search',
+      flights: '/api/flights',
+      payment: '/api/payment',
       affiliate: '/api/affiliate',
       bookings: '/api/bookings',
       favorites: '/api/favorites',
@@ -215,7 +220,8 @@ async function startServer() {
       logger.info('📡 API Endpoints:');
       logger.info(`   Auth:         http://localhost:${PORT}/api/auth`);
       logger.info(`   Hotels:       http://localhost:${PORT}/api/hotels/search`);
-      logger.info(`   Flights:      http://localhost:${PORT}/api/flights/search`);
+      logger.info(`   Flights:      http://localhost:${PORT}/api/flights`);
+      logger.info(`   Payment:      http://localhost:${PORT}/api/payment`);
       logger.info(`   Affiliate:    http://localhost:${PORT}/api/affiliate`);
       logger.info(`   Bookings:     http://localhost:${PORT}/api/bookings`);
       logger.info(`   Favorites:    http://localhost:${PORT}/api/favorites`);
