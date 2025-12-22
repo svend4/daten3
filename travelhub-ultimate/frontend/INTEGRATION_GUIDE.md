@@ -237,11 +237,15 @@ if (response.success) {
 **Endpoints:**
 - GET `/auth/me` - данные пользователя
 - PUT `/auth/me` - обновление профиля
+- POST `/auth/send-verification-email` - отправка verification email
 
 **Функционал:**
 - Просмотр профиля
 - Редактирование firstName, lastName, phone
 - Email read-only
+- **Email verification status badge (Verified/Not verified)**
+- **Email verification card для неверифицированных пользователей**
+- **Send verification email button**
 - Success/error notifications
 
 ### 6. Settings (`/settings`)
@@ -277,6 +281,64 @@ if (response.success) {
 - Visual indicator (red when favorited)
 - Room selection
 - Booking navigation
+
+### 9. Forgot Password (`/forgot-password`)
+
+**Endpoints:**
+- POST `/auth/forgot-password` - отправка ссылки восстановления
+
+**Функционал:**
+- Запрос восстановления пароля по email
+- Email validation
+- Success/error messaging
+- Link на страницу login
+- Link на страницу registration
+
+### 10. Reset Password (`/reset-password`)
+
+**Endpoints:**
+- POST `/auth/reset-password` - сброс пароля по токену
+
+**Функционал:**
+- Token extraction из URL query parameters
+- Password strength validation (8+ chars, uppercase, lowercase, number)
+- Real-time password requirements indicator
+- Password visibility toggle
+- Passwords match validation
+- Expired/invalid token handling
+- Auto-redirect на login после успеха
+
+### 11. Email Verification (`/verify-email`)
+
+**Endpoints:**
+- GET `/auth/verify-email` - верификация email по токену
+
+**Функционал:**
+- Автоматическая верификация при загрузке страницы
+- Token extraction из URL query parameters
+- 4 verification states: verifying, success, error, invalid
+- Auto-redirect на dashboard/login после успешной верификации
+- Helpful error messages с troubleshooting tips
+- Retry options при ошибках
+
+### 12. Booking Details (`/bookings/:id`)
+
+**Endpoints:**
+- GET `/bookings/:id` - детальная информация о бронировании
+- DELETE `/bookings/:id` - отмена бронирования (через действие на странице)
+
+**Функционал:**
+- Comprehensive booking information display
+- Hotel/Flight details с изображениями
+- Check-in/Check-out dates с расчетом количества ночей
+- Guest и room information
+- Payment information и breakdown
+- Status indicators (CONFIRMED, PENDING, CANCELLED, COMPLETED)
+- Cancel booking button (только для CONFIRMED)
+- Booking metadata (ID, created, updated dates)
+- Action buttons placeholders (Download invoice, Email confirmation)
+- Help card с ссылкой на support
+- Back navigation to My Bookings
 
 ---
 
@@ -540,30 +602,36 @@ VITE_API_BASE_URL=https://api.travelhub.com/api
 
 ## 🚀 Следующие шаги
 
-### Неинтегрированные функции (приоритет 3)
+### Неинтегрированные функции (приоритет 4)
 
-1. **Password Recovery**
-   - POST `/auth/forgot-password`
-   - POST `/auth/reset-password`
+1. **Extended Booking Features**
+   - PATCH `/bookings/:id` - модификация бронирований
+   - Booking history filtering
+   - PDF invoice generation
+   - Email confirmation sending
 
-2. **Email Verification**
-   - POST `/auth/send-verification-email`
-   - GET `/auth/verify-email`
-
-3. **Booking Details**
-   - GET `/bookings/:id`
-   - PATCH `/bookings/:id`
-
-4. **Reviews System**
+2. **Reviews System**
    - Требует создания endpoints на backend
+   - Создание отзывов на отели
+   - Рейтинги и модерация
 
-5. **Affiliate Program**
-   - Множество endpoints уже есть
+3. **Affiliate Program**
+   - Множество endpoints уже есть (14 endpoints)
    - Требует создание UI
+   - Реферальная система
+   - Комиссии и Payouts
 
-6. **Admin Panel**
-   - Множество endpoints уже есть
+4. **Admin Panel**
+   - Множество endpoints уже есть (15 endpoints)
    - Требует создание UI
+   - Управление пользователями
+   - Аналитика
+   - Модерация контента
+
+5. **Social Authentication**
+   - Google OAuth
+   - Facebook OAuth
+   - Автоматическая регистрация
 
 ---
 

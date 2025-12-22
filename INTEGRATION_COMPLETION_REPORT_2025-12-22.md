@@ -193,26 +193,113 @@
 
 ---
 
+### Приоритет 3: ДОПОЛНИТЕЛЬНО ✅ (Завершено)
+
+#### 8. Password Recovery Flow
+**Статус:** ✅ Завершено
+**Commit:** `08b5dd1`
+
+**Интегрированные endpoints:**
+- ✅ `POST /api/auth/forgot-password` - Отправка ссылки восстановления
+- ✅ `POST /api/auth/reset-password` - Сброс пароля по токену
+
+**Файлы:**
+- `pages/ForgotPassword.tsx` - Страница запроса сброса пароля
+- `pages/ResetPassword.tsx` - Страница установки нового пароля
+- `App.tsx` - Новые маршруты `/forgot-password` и `/reset-password`
+
+**Функционал:**
+- Запрос сброса пароля по email
+- Email валидация
+- Сброс пароля с токеном из URL
+- Password strength requirements (8+ chars, uppercase, lowercase, number)
+- Реал-тайм индикаторы требований к паролю
+- Password visibility toggle
+- Автоматический редирект на login после успеха
+- Обработка expired/invalid tokens
+- Success/error messaging
+
+**Покрытие:** +2 auth endpoints
+
+---
+
+#### 9. Email Verification System
+**Статус:** ✅ Завершено
+**Commit:** `4f78bb4`
+
+**Интегрированные endpoints:**
+- ✅ `GET /api/auth/verify-email` - Верификация email по токену
+- ✅ `POST /api/auth/send-verification-email` - Отправка письма верификации
+
+**Файлы:**
+- `pages/EmailVerification.tsx` - Страница верификации email
+- `pages/Profile.tsx` - Добавлен статус верификации и кнопка отправки
+- `App.tsx` - Новый маршрут `/verify-email`
+
+**Функционал:**
+- Автоматическая верификация при переходе по ссылке
+- 4 состояния: verifying, success, error, invalid
+- Verification status badge в Profile (Verified/Not verified)
+- Email verification card для неверифицированных пользователей
+- Кнопка отправки verification email
+- Автоматический редирект после успешной верификации
+- Token extraction из URL query params
+- Helpful error messages с troubleshooting tips
+
+**Покрытие:** +2 auth endpoints
+
+---
+
+#### 10. Booking Details Page
+**Статус:** ✅ Завершено
+**Commit:** `5989f08`
+
+**Интегрированные endpoints:**
+- ✅ `GET /api/bookings/:id` - Детальная информация о бронировании
+
+**Файлы:**
+- `pages/BookingDetails.tsx` - Страница деталей бронирования
+- `pages/MyBookings.tsx` - Добавлена кнопка "View Details"
+- `App.tsx` - Новый маршрут `/bookings/:id`
+
+**Функционал:**
+- Comprehensive booking information display
+- Hotel/Flight details с изображениями
+- Check-in/Check-out dates с расчетом количества ночей
+- Guest и room information
+- Payment information и breakdown
+- Status indicators (CONFIRMED, PENDING, CANCELLED, COMPLETED)
+- Cancel booking functionality
+- Booking metadata (ID, created, updated dates)
+- Action buttons (Download invoice, Email confirmation - placeholders)
+- Help card с ссылкой на support
+- Responsive grid layout
+- Navigation from My Bookings page
+
+**Покрытие:** +1 booking endpoint
+
+---
+
 ## 📈 СТАТИСТИКА ИНТЕГРАЦИИ
 
 ### Backend Endpoints Coverage
 
 | Группа | Всего | Использ. | Не использ. | % Покрытия | Изменение |
 |--------|-------|----------|-------------|------------|-----------|
-| **Auth** | 15 | 6 | 9 | 40% | ↑ +27% |
+| **Auth** | 15 | 10 | 5 | 67% | ↑ +54% |
 | **Hotels** | 2 | 1 | 1 | 50% | - |
 | **Flights** | 2 | 1 | 1 | 50% | - |
-| **Bookings** | 5 | 3 | 2 | 60% | ↑ +60% |
+| **Bookings** | 5 | 4 | 1 | 80% | ↑ +80% |
 | **Favorites** | 4 | 4 | 0 | 100% | ↑ +100% |
 | **Price Alerts** | 4 | 4 | 0 | 100% | ↑ +100% |
 | **Affiliate** | 14 | 3 | 11 | 21% | - |
 | **Admin** | 15 | 4 | 11 | 27% | - |
-| **ИТОГО** | **61** | **26** | **35** | **43%** | **↑ +25%** |
+| **ИТОГО** | **61** | **31** | **30** | **51%** | **↑ +33%** |
 
 **Прогресс:**
 - Начало: 18% (11/61 endpoints)
-- Сейчас: **43%** (26/61 endpoints)
-- **Улучшение: +138%**
+- Сейчас: **51%** (31/61 endpoints)
+- **Улучшение: +182%**
 
 ---
 
@@ -222,9 +309,13 @@
 |----------|---------|---------------------|--------|
 | Login | `/login` | POST /api/auth/login | ✅ Работает |
 | Register | `/register` | POST /api/auth/register | ✅ Работает |
+| Forgot Password | `/forgot-password` | POST /api/auth/forgot-password | ✅ Полностью |
+| Reset Password | `/reset-password` | POST /api/auth/reset-password | ✅ Полностью |
+| Email Verification | `/verify-email` | GET /api/auth/verify-email | ✅ Полностью |
 | Dashboard | `/dashboard` | Multiple endpoints | ✅ Полностью |
-| Profile | `/profile` | GET/PUT /api/auth/me | ✅ Полностью |
+| Profile | `/profile` | GET/PUT /api/auth/me + Email verification | ✅ Полностью |
 | My Bookings | `/bookings` | Bookings API | ✅ Полностью |
+| Booking Details | `/bookings/:id` | GET /api/bookings/:id | ✅ Полностью |
 | Favorites | `/favorites` | Favorites API | ✅ Полностью |
 | Price Alerts | `/price-alerts` | Price Alerts API | ✅ Полностью |
 | Settings | `/settings` | Password API | ✅ Полностью |
@@ -297,7 +388,7 @@
 
 ## 📦 КОММИТЫ
 
-Всего создано **8 коммитов** с интеграциями:
+Всего создано **12 коммитов** с интеграциями:
 
 1. `70bd375` - HttpOnly cookies + CSRF adaptation
 2. `00014e0` - Bookings & Favorites backend APIs
@@ -307,6 +398,10 @@
 6. `d2da781` - Favorites on HotelDetails
 7. `7106451` - Booking creation on Checkout
 8. `5a143c0` - Dashboard with backend integration
+9. `08b5dd1` - Password recovery flow (Forgot/Reset password)
+10. `4f78bb4` - Email verification system
+11. `5989f08` - Booking Details page
+12. `e9d8cc8` - README documentation update
 
 Все коммиты запушены в ветку: **`claude/project-audit-6mhyP`**
 
@@ -321,17 +416,24 @@
 - Вход с remember me
 - Автоматический logout
 - Session management
+- **Password recovery (forgot/reset password)**
+- **Email verification system**
 
 ✅ **Управление профилем**
 - Просмотр и редактирование
 - Смена пароля
 - Account information
+- **Email verification status indicator**
+- **Send verification email button**
 
 ✅ **Бронирования**
 - Просмотр всех бронирований
 - Создание новых
 - Отмена существующих
 - Фильтрация и статусы
+- **Детальный просмотр бронирования**
+- **Comprehensive booking information**
+- **Payment breakdown**
 
 ✅ **Избранное**
 - Добавление отелей
@@ -355,36 +457,37 @@
 
 ## 🔄 РЕКОМЕНДАЦИИ ДЛЯ ДАЛЬНЕЙШЕГО РАЗВИТИЯ
 
-### Приоритет 3: Дополнительные фичи
+### Приоритет 4: Дополнительные фичи
 
 #### 1. Reviews System
 - Создание отзывов на отели
 - Рейтинги
 - Модерация отзывов
+- Требует backend endpoints
 
 #### 2. Affiliate Program
 - Реферальная система
 - Комиссии
 - Payouts
+- Backend endpoints уже существуют (14 endpoints)
 
 #### 3. Admin Panel
 - Управление пользователями
 - Аналитика
 - Модерация контента
+- Backend endpoints уже существуют (15 endpoints)
 
-#### 4. Password Recovery
-- Forgot password flow
-- Email verification
-- Reset password
-
-#### 5. Social Authentication
+#### 4. Social Authentication
 - Google OAuth
+- Facebook OAuth
 - Автоматическая регистрация
+- Backend endpoints частично готовы
 
-#### 6. Extended Booking Features
-- Partial bookings (GET /bookings/:id)
+#### 5. Extended Booking Features
 - Booking modifications (PATCH /bookings/:id)
-- Booking history
+- Booking history filtering
+- Export booking data
+- PDF invoice generation
 
 ---
 
@@ -411,11 +514,17 @@
 
 **Статус:** ✅ **ГОТОВ К ПРОДАКШЕНУ**
 
-**Покрытие backend API:** 43% (26/61 endpoints) - все ключевые пользовательские функции интегрированы
+**Покрытие backend API:** **51%** (31/61 endpoints) - все ключевые пользовательские функции интегрированы
 
-**Безопасность:** ✅ HttpOnly cookies + CSRF protection + Authentication guards
+**Новые достижения:**
+- ✅ Authentication endpoints: 67% (10/15) - password recovery + email verification
+- ✅ Booking endpoints: 80% (4/5) - детальный просмотр бронирований
+- ✅ 4 новые страницы: ForgotPassword, ResetPassword, EmailVerification, BookingDetails
+- ✅ 5 новых маршрутов в приложении
 
-**Качество кода:** ✅ TypeScript + Proper error handling + Loading states
+**Безопасность:** ✅ HttpOnly cookies + CSRF protection + Authentication guards + Email verification
+
+**Качество кода:** ✅ TypeScript + Proper error handling + Loading states + Comprehensive validation
 
 ---
 
