@@ -31,7 +31,7 @@ import notificationsRoutes from './routes/notifications.routes.js';
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
 import helmetMiddleware from './middleware/helmet.middleware.js';
-import morganMiddleware from './middleware/logger.middleware.js';
+import morganMiddleware, { requestLogger } from './middleware/logger.middleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
 import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
@@ -63,6 +63,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
 app.use(morganMiddleware);
+app.use(requestLogger); // Enhanced logging for slow/failed requests
 
 // Affiliate tracking middleware (track clicks and set cookies)
 app.use(trackAffiliateClick);

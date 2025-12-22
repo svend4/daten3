@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
+import { searchFlights as searchFlightsTravelpayouts } from '../services/travelpayouts.service.js';
 
 /**
  * Search for flights
@@ -13,7 +14,7 @@ export const searchFlights = async (req: Request, res: Response) => {
       departDate,
       returnDate,
       passengers,
-      cabinClass
+      currency
     } = req.query;
 
     // Validation
@@ -26,65 +27,34 @@ export const searchFlights = async (req: Request, res: Response) => {
 
     logger.info(`Flight search: ${origin} → ${destination} on ${departDate}`);
 
-    // TODO: Integrate with flight search API (Aviasales, Skyscanner, Amadeus)
-    // For now, return mock data structure
-
-    const mockFlights = [
-      {
-        id: 'FL001',
-        airline: 'Aeroflot',
-        origin: origin as string,
-        destination: destination as string,
-        departDate: departDate as string,
-        returnDate: returnDate || null,
-        departTime: '10:30',
-        arriveTime: '14:45',
-        duration: '4h 15m',
-        stops: 0,
-        price: {
-          amount: 12500,
-          currency: 'RUB'
-        },
-        cabinClass: cabinClass || 'economy',
-        availableSeats: 15,
-        bookingClass: 'Y'
-      },
-      {
-        id: 'FL002',
-        airline: 'S7 Airlines',
-        origin: origin as string,
-        destination: destination as string,
-        departDate: departDate as string,
-        returnDate: returnDate || null,
-        departTime: '15:00',
-        arriveTime: '19:20',
-        duration: '4h 20m',
-        stops: 0,
-        price: {
-          amount: 11800,
-          currency: 'RUB'
-        },
-        cabinClass: cabinClass || 'economy',
-        availableSeats: 8,
-        bookingClass: 'Y'
-      }
-    ];
+    // Search flights via Travelpayouts API
+    const result = await searchFlightsTravelpayouts({
+      origin: origin as string,
+      destination: destination as string,
+      departDate: departDate as string,
+      returnDate: returnDate as string | undefined,
+      adults: passengers ? parseInt(passengers as string) : 1,
+      currency: (currency as string) || 'usd',
+      limit: 30
+    });
 
     res.json({
-      success: true,
+      success: result.success,
       data: {
-        flights: mockFlights,
+        flights: result.flights,
         searchParams: {
           origin,
           destination,
           departDate,
           returnDate,
-          passengers: passengers || 1,
-          cabinClass: cabinClass || 'economy'
+          passengers: passengers || 1
         },
-        count: mockFlights.length
+        count: result.count
       },
-      message: 'Flight search results (mock data - API integration pending)'
+      ...(result.usingMockData && {
+        message: 'Using mock data - Travelpayouts API unavailable',
+        error: result.error
+      })
     });
   } catch (error: any) {
     logger.error('Error searching flights:', error);
