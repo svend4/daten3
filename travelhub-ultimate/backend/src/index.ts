@@ -34,6 +34,7 @@ import helmetMiddleware from './middleware/helmet.middleware.js';
 import morganMiddleware from './middleware/logger.middleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
 import { rateLimiters } from './middleware/rateLimit.middleware.js';
+import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
 
 // Services
 import { searchHotels } from './services/travelpayouts.service.js';
@@ -62,6 +63,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
 app.use(morganMiddleware);
+
+// Affiliate tracking middleware (track clicks and set cookies)
+app.use(trackAffiliateClick);
 
 // Health check endpoints (Railway checks /api/health)
 app.get('/health', (req, res) => {
