@@ -21,6 +21,10 @@ import { getWebSocketStats } from '../services/websocket.service.js';
 import { getFileUploadStats, resetFileUploadStats } from '../middleware/fileUpload.middleware.js';
 import { getDataExportStats, resetDataExportStats } from '../services/dataExport.service.js';
 import { getWebhookStats, resetWebhookStats } from '../services/webhook.service.js';
+import { getMessageQueueStats, resetMessageQueueStats } from '../services/messageQueue.service.js';
+import { getBackgroundJobsStats, resetBackgroundJobsStats } from '../services/backgroundJobs.service.js';
+import { getAdvancedHealthCheckStats, resetAdvancedHealthCheckStats, runAllHealthChecks } from '../middleware/advancedHealthCheck.middleware.js';
+import { getDeduplicationStats, resetDeduplicationStats, clearDeduplicationCache } from '../middleware/requestDeduplication.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -528,6 +532,10 @@ export const metricsDashboard = (req: Request, res: Response) => {
         fileUpload: getFileUploadStats(),
         dataExport: getDataExportStats(),
         webhooks: getWebhookStats(),
+        messageQueue: getMessageQueueStats(),
+        backgroundJobs: getBackgroundJobsStats(),
+        advancedHealthCheck: getAdvancedHealthCheckStats(),
+        deduplication: getDeduplicationStats(),
       },
       system: {
         memory: {
@@ -1158,6 +1166,248 @@ export const resetWebhookMetricsEndpoint = (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to reset webhook statistics',
+    });
+  }
+};
+
+/**
+ * Message Queue statistics endpoint
+ * GET /api/health/message-queue
+ * Returns message queue statistics
+ */
+export const messageQueueMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getMessageQueueStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting message queue stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve message queue statistics',
+    });
+  }
+};
+
+/**
+ * Reset message queue statistics endpoint
+ * POST /api/health/message-queue/reset
+ * Admin only - resets message queue tracking
+ */
+export const resetMessageQueueMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetMessageQueueStats();
+
+    logger.info('Message queue stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Message queue statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting message queue stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset message queue statistics',
+    });
+  }
+};
+
+/**
+ * Background Jobs statistics endpoint
+ * GET /api/health/background-jobs
+ * Returns background jobs statistics
+ */
+export const backgroundJobsMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getBackgroundJobsStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting background jobs stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve background jobs statistics',
+    });
+  }
+};
+
+/**
+ * Reset background jobs statistics endpoint
+ * POST /api/health/background-jobs/reset
+ * Admin only - resets background jobs tracking
+ */
+export const resetBackgroundJobsMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetBackgroundJobsStats();
+
+    logger.info('Background jobs stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Background jobs statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting background jobs stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset background jobs statistics',
+    });
+  }
+};
+
+/**
+ * Advanced health check endpoint
+ * GET /api/health/advanced
+ * Returns comprehensive health check with all dependencies
+ */
+export const advancedHealthCheckEndpoint = async (req: Request, res: Response) => {
+  try {
+    const healthCheck = await runAllHealthChecks();
+
+    const statusCode = healthCheck.status === 'unhealthy' ? 503 : 200;
+
+    res.status(statusCode).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      ...healthCheck,
+    });
+  } catch (error: any) {
+    logger.error('Error running advanced health check:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to run advanced health check',
+    });
+  }
+};
+
+/**
+ * Advanced health check statistics endpoint
+ * GET /api/health/advanced-health-check
+ * Returns advanced health check statistics
+ */
+export const advancedHealthCheckMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getAdvancedHealthCheckStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting advanced health check stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve advanced health check statistics',
+    });
+  }
+};
+
+/**
+ * Reset advanced health check statistics endpoint
+ * POST /api/health/advanced-health-check/reset
+ * Admin only - resets advanced health check tracking
+ */
+export const resetAdvancedHealthCheckMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetAdvancedHealthCheckStats();
+
+    logger.info('Advanced health check stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Advanced health check statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting advanced health check stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset advanced health check statistics',
+    });
+  }
+};
+
+/**
+ * Request deduplication statistics endpoint
+ * GET /api/health/deduplication
+ * Returns request deduplication statistics
+ */
+export const deduplicationMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getDeduplicationStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting deduplication stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve deduplication statistics',
+    });
+  }
+};
+
+/**
+ * Reset deduplication statistics endpoint
+ * POST /api/health/deduplication/reset
+ * Admin only - resets deduplication tracking
+ */
+export const resetDeduplicationMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetDeduplicationStats();
+
+    logger.info('Deduplication stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Deduplication statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting deduplication stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset deduplication statistics',
+    });
+  }
+};
+
+/**
+ * Clear deduplication cache endpoint
+ * POST /api/health/deduplication/clear
+ * Admin only - clears all deduplication cache
+ */
+export const clearDeduplicationCacheEndpoint = async (req: Request, res: Response) => {
+  try {
+    await clearDeduplicationCache();
+
+    logger.info('Deduplication cache cleared', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Deduplication cache has been cleared',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error clearing deduplication cache:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear deduplication cache',
     });
   }
 };

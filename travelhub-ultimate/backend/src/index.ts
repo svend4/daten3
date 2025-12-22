@@ -57,6 +57,8 @@ import timeoutMiddleware from './middleware/timeout.middleware.js';
 import { redisService } from './services/redis.service.js';
 import { initializeCronJobs } from './services/cron.service.js';
 import { websocketService } from './services/websocket.service.js';
+import { messageQueueService } from './services/messageQueue.service.js';
+import { backgroundJobsService } from './services/backgroundJobs.service.js';
 
 // Audit logging
 import { startAuditLogFlushing, stopAuditLogFlushing } from './middleware/auditLog.middleware.js';
@@ -266,6 +268,12 @@ async function startServer() {
     // Load API keys from Redis
     await loadApiKeys();
 
+    // Initialize message queue
+    await messageQueueService.initialize();
+
+    // Initialize background jobs
+    await backgroundJobsService.initialize();
+
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
@@ -361,12 +369,22 @@ async function gracefulShutdown(signal: string) {
     websocketService.disconnect();
     logger.info('✓ WebSocket disconnected');
 
-    // Step 4: Disconnect from Prisma
+    // Step 4: Shutdown background jobs
+    logger.info('Shutting down background jobs...');
+    await backgroundJobsService.shutdown();
+    logger.info('✓ Background jobs shut down');
+
+    // Step 5: Close message queue
+    logger.info('Closing message queue...');
+    await messageQueueService.close();
+    logger.info('✓ Message queue closed');
+
+    // Step 6: Disconnect from Prisma
     logger.info('Disconnecting from Prisma...');
     await prisma.$disconnect();
     logger.info('✓ Prisma disconnected');
 
-    // Step 5: Stop audit log flushing
+    // Step 7: Stop audit log flushing
     logger.info('Stopping audit log flushing...');
     await stopAuditLogFlushing();
     logger.info('✓ Audit logs flushed');

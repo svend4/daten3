@@ -42,6 +42,16 @@ import {
   resetDataExportMetricsEndpoint,
   webhookMetrics,
   resetWebhookMetricsEndpoint,
+  messageQueueMetrics,
+  resetMessageQueueMetricsEndpoint,
+  backgroundJobsMetrics,
+  resetBackgroundJobsMetricsEndpoint,
+  advancedHealthCheckEndpoint,
+  advancedHealthCheckMetrics,
+  resetAdvancedHealthCheckMetricsEndpoint,
+  deduplicationMetrics,
+  resetDeduplicationMetricsEndpoint,
+  clearDeduplicationCacheEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
@@ -341,6 +351,76 @@ router.get('/webhooks', webhookMetrics);
  * @access  Admin only
  */
 router.post('/webhooks/reset', authenticate, requireAdmin, resetWebhookMetricsEndpoint);
+
+/**
+ * @route   GET /health/message-queue
+ * @desc    Message Queue statistics
+ * @access  Public
+ */
+router.get('/message-queue', messageQueueMetrics);
+
+/**
+ * @route   POST /health/message-queue/reset
+ * @desc    Reset message queue statistics
+ * @access  Admin only
+ */
+router.post('/message-queue/reset', authenticate, requireAdmin, resetMessageQueueMetricsEndpoint);
+
+/**
+ * @route   GET /health/background-jobs
+ * @desc    Background Jobs statistics
+ * @access  Public
+ */
+router.get('/background-jobs', backgroundJobsMetrics);
+
+/**
+ * @route   POST /health/background-jobs/reset
+ * @desc    Reset background jobs statistics
+ * @access  Admin only
+ */
+router.post('/background-jobs/reset', authenticate, requireAdmin, resetBackgroundJobsMetricsEndpoint);
+
+/**
+ * @route   GET /health/advanced
+ * @desc    Advanced health check with all dependencies
+ * @access  Public
+ */
+router.get('/advanced', advancedHealthCheckEndpoint);
+
+/**
+ * @route   GET /health/advanced-health-check
+ * @desc    Advanced health check statistics
+ * @access  Public
+ */
+router.get('/advanced-health-check', advancedHealthCheckMetrics);
+
+/**
+ * @route   POST /health/advanced-health-check/reset
+ * @desc    Reset advanced health check statistics
+ * @access  Admin only
+ */
+router.post('/advanced-health-check/reset', authenticate, requireAdmin, resetAdvancedHealthCheckMetricsEndpoint);
+
+/**
+ * @route   GET /health/deduplication
+ * @desc    Request deduplication statistics
+ * @access  Public
+ */
+router.get('/deduplication', deduplicationMetrics);
+
+/**
+ * @route   POST /health/deduplication/reset
+ * @desc    Reset deduplication statistics
+ * @access  Admin only
+ */
+router.post('/deduplication/reset', authenticate, requireAdmin, resetDeduplicationMetricsEndpoint);
+
+/**
+ * @route   POST /health/deduplication/clear
+ * @desc    Clear deduplication cache
+ * @access  Admin only
+ */
+router.post('/deduplication/clear', authenticate, requireAdmin, clearDeduplicationCacheEndpoint);
 
 /**
  * @route   GET /health/dashboard
