@@ -3,6 +3,8 @@ import { redisService } from '../services/redis.service.js';
 import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import { getPerformanceMetrics } from '../middleware/logger.middleware.js';
+import { getErrorMetrics, resetErrorMetrics } from '../middleware/errorHandler.middleware.js';
+import { getResponseTimeStats, resetResponseTimeStats } from '../middleware/responseTime.middleware.js';
 
 interface ServiceStatus {
   status: string;
@@ -187,6 +189,102 @@ export const performanceMetrics = (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve performance metrics',
+    });
+  }
+};
+
+/**
+ * Error metrics endpoint
+ * GET /api/health/errors
+ * Returns comprehensive error tracking metrics
+ */
+export const errorMetrics = (req: Request, res: Response) => {
+  try {
+    const metrics = getErrorMetrics();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      metrics,
+    });
+  } catch (error: any) {
+    logger.error('Error getting error metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve error metrics',
+    });
+  }
+};
+
+/**
+ * Reset error metrics endpoint
+ * POST /api/health/errors/reset
+ * Admin only - resets error tracking metrics
+ */
+export const resetErrorMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetErrorMetrics();
+
+    logger.info('Error metrics reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Error metrics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting error metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset error metrics',
+    });
+  }
+};
+
+/**
+ * Response time statistics endpoint
+ * GET /api/health/response-times
+ * Returns detailed response time distribution and statistics
+ */
+export const responseTimeMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getResponseTimeStats();
+
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting response time stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve response time statistics',
+    });
+  }
+};
+
+/**
+ * Reset response time statistics endpoint
+ * POST /api/health/response-times/reset
+ * Admin only - resets response time tracking
+ */
+export const resetResponseTimeMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetResponseTimeStats();
+
+    logger.info('Response time stats reset', { adminId: (req as any).user?.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Response time statistics have been reset',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error resetting response time stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset response time statistics',
     });
   }
 };
