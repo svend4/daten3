@@ -24,6 +24,7 @@ import favoritesRoutes from './routes/favorites.routes.js';
 import priceAlertsRoutes from './routes/priceAlerts.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import flightsRoutes from './routes/flights.routes.js';
+import carsRoutes from './routes/cars.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
@@ -166,6 +167,7 @@ app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/flights', flightsRoutes);
+app.use('/api/cars', carsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationsRoutes);
 
@@ -187,6 +189,7 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       hotels: '/api/hotels/search',
       flights: '/api/flights',
+      cars: '/api/cars',
       payment: '/api/payment',
       notifications: '/api/notifications',
       analytics: '/api/analytics',
