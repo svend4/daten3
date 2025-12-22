@@ -21,6 +21,7 @@ import EmailVerification from './pages/EmailVerification';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings';
+import BookingDetails from './pages/BookingDetails';
 import Favorites from './pages/Favorites';
 import PriceAlerts from './pages/PriceAlerts';
 import Settings from './pages/Settings';
@@ -94,6 +95,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/bookings" element={<MyBookings />} />
+          <Route path="/bookings/:id" element={<BookingDetails />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/price-alerts" element={<PriceAlerts />} />
           <Route path="/settings" element={<Settings />} />
