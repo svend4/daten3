@@ -63,6 +63,11 @@ import {
   cspMetrics,
   resetCSPMetricsEndpoint,
   cspViolationReport,
+  multiTenancyMetrics,
+  resetMultiTenancyMetricsEndpoint,
+  clearTenantCacheEndpoint,
+  graphqlMetrics,
+  resetGraphQLMetricsEndpoint,
   metricsDashboard,
 } from '../controllers/health.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
@@ -510,12 +515,4 @@ router.post('/csp/reset', authenticate, requireAdmin, resetCSPMetricsEndpoint);
  * @access  Public (for browser reporting)
  */
 router.post('/csp/report', cspViolationReport);
-
-/**
- * @route   GET /health/dashboard
- * @desc    Comprehensive metrics dashboard (all metrics in one response)
- * @access  Public
- */
-router.get('/dashboard', metricsDashboard);
-
-export default router;
+ *  

@@ -30,6 +30,8 @@ import { getDistributedTracingStats, resetDistributedTracingStats } from '../mid
 import { getSSEStats, resetSSEStats } from '../services/sse.service.js';
 import { getCDNStats, resetCDNStats } from '../middleware/cdn.middleware.js';
 import { getCSPStats, resetCSPStats, handleCSPViolation } from '../middleware/csp.middleware.js';
+import { getMultiTenancyStats, resetMultiTenancyStats, clearTenantCache } from '../middleware/multiTenancy.middleware.js';
+import { getGraphQLStats, resetGraphQLStats } from '../graphql/server.js';
 
 interface ServiceStatus {
   status: string;
@@ -546,6 +548,8 @@ export const metricsDashboard = (req: Request, res: Response) => {
         sse: getSSEStats(),
         cdn: getCDNStats(),
         csp: getCSPStats(),
+        multiTenancy: getMultiTenancyStats(),
+        graphql: getGraphQLStats(),
       },
       system: {
         memory: {
@@ -1552,3 +1556,64 @@ export const resetCSPMetricsEndpoint = (req: Request, res: Response) => {
  * POST /api/health/csp/report
  */
 export const cspViolationReport = handleCSPViolation;
+
+/**
+ * Multi-tenancy statistics endpoint
+ * GET /api/health/tenancy
+ */
+export const multiTenancyMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getMultiTenancyStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting multi-tenancy stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve multi-tenancy statistics' });
+  }
+};
+
+export const resetMultiTenancyMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetMultiTenancyStats();
+    logger.info('Multi-tenancy stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'Multi-tenancy statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting multi-tenancy stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset multi-tenancy statistics' });
+  }
+};
+
+export const clearTenantCacheEndpoint = (req: Request, res: Response) => {
+  try {
+    clearTenantCache();
+    logger.info('Tenant cache cleared', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'Tenant cache has been cleared', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error clearing tenant cache:', error);
+    res.status(500).json({ success: false, error: 'Failed to clear tenant cache' });
+  }
+};
+
+/**
+ * GraphQL statistics endpoint
+ * GET /api/health/graphql
+ */
+export const graphqlMetrics = (req: Request, res: Response) => {
+  try {
+    const stats = getGraphQLStats();
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), stats });
+  } catch (error: any) {
+    logger.error('Error getting GraphQL stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve GraphQL statistics' });
+  }
+};
+
+export const resetGraphQLMetricsEndpoint = (req: Request, res: Response) => {
+  try {
+    resetGraphQLStats();
+    logger.info('GraphQL stats reset', { adminId: (req as any).user?.id });
+    res.status(200).json({ success: true, message: 'GraphQL statistics have been reset', timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error('Error resetting GraphQL stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to reset GraphQL statistics' });
+  }
+};
