@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 
 // Load environment variables first
 dotenv.config();
@@ -59,6 +60,9 @@ import logger from './utils/logger.js';
 const app = express();
 const PORT = config.server.port;
 
+// Store HTTP server instance for graceful shutdown
+let httpServer: any = null;
+
 // ============================================
 // MIDDLEWARE SETUP
 // ============================================
@@ -79,6 +83,20 @@ app.use(cookieParser());
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Response compression (gzip/brotli)
+app.use(compression({
+  filter: (req, res) => {
+    // Don't compress responses if client doesn't support it
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression for all responses
+    return compression.filter(req, res);
+  },
+  level: 6, // Compression level (0-9, 6 is default and good balance)
+  threshold: 1024, // Only compress responses larger than 1KB
+}));
 
 // Logging middleware
 app.use(morganMiddleware);
@@ -215,8 +233,8 @@ async function startServer() {
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
 
-    // Start HTTP server
-    app.listen(PORT, () => {
+    // Start HTTP server and store instance
+    httpServer = app.listen(PORT, () => {
       logger.info('═══════════════════════════════════════════════════');
       logger.info('🚀 TravelHub Ultimate API Server');
       logger.info('═══════════════════════════════════════════════════');
@@ -258,26 +276,75 @@ async function startServer() {
 // Start the server
 startServer();
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully...');
-  await redisService.disconnect();
-  process.exit(0);
-});
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
 
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down gracefully...');
-  await redisService.disconnect();
-  process.exit(0);
-});
+/**
+ * Graceful shutdown handler
+ * Ensures all connections are closed properly before exit
+ */
+async function gracefulShutdown(signal: string) {
+  logger.info(`${signal} received, initiating graceful shutdown...`);
+
+  // Set shutdown timeout (30 seconds)
+  const shutdownTimeout = setTimeout(() => {
+    logger.error('Shutdown timeout exceeded, forcing exit');
+    process.exit(1);
+  }, 30000);
+
+  try {
+    // Step 1: Stop accepting new connections
+    if (httpServer) {
+      logger.info('Closing HTTP server...');
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((err: any) => {
+          if (err) {
+            logger.error('Error closing HTTP server:', err);
+            reject(err);
+          } else {
+            logger.info('✓ HTTP server closed');
+            resolve();
+          }
+        });
+      });
+    }
+
+    // Step 2: Disconnect from Redis
+    logger.info('Disconnecting from Redis...');
+    await redisService.disconnect();
+    logger.info('✓ Redis disconnected');
+
+    // Step 3: Disconnect from Prisma
+    logger.info('Disconnecting from Prisma...');
+    await prisma.$disconnect();
+    logger.info('✓ Prisma disconnected');
+
+    // Step 4: Clear shutdown timeout
+    clearTimeout(shutdownTimeout);
+
+    logger.info('✅ Graceful shutdown completed successfully');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during graceful shutdown:', error);
+    clearTimeout(shutdownTimeout);
+    process.exit(1);
+  }
+}
+
+// Handle shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('💥 Uncaught Exception:', error);
-  process.exit(1);
+  logger.error('Stack:', error.stack);
+  gracefulShutdown('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason) => {
-  logger.error('💥 Unhandled Rejection:', reason);
-  process.exit(1);
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('💥 Unhandled Rejection at:', promise);
+  logger.error('Reason:', reason);
+  gracefulShutdown('unhandledRejection');
 });
