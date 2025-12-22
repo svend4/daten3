@@ -28,8 +28,13 @@ interface BookingData {
 class CommissionService {
   /**
    * Process conversion (booking) and distribute commissions
+   * TODO: Requires AffiliateConversion model to be added to Prisma schema
    */
   async processConversion(bookingData: BookingData): Promise<any> {
+    logger.warn('processConversion is not implemented - requires AffiliateConversion model');
+    return null;
+
+    /* TODO: Uncomment when AffiliateConversion model is added to schema
     try {
       const {
         userId,
@@ -83,13 +88,12 @@ class CommissionService {
         where: {
           affiliateId: sourceAffiliate.id,
           converted: false,
-          clickedAt: {
+          createdAt: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
           }
         },
         data: {
-          converted: true,
-          conversionId: conversion.id
+          converted: true
         }
       });
 
@@ -98,16 +102,22 @@ class CommissionService {
       logger.error('Process conversion error:', error);
       throw error;
     }
+    */
   }
 
   /**
    * Distribute commissions through the referral chain
+   * TODO: Requires AffiliateSettings and AffiliateConversion models to be added to Prisma schema
    */
   async distributeCommissions(
     affiliate: any,
     conversion: any,
     bookingAmount: number
   ): Promise<any[]> {
+    logger.warn('distributeCommissions is not implemented - requires AffiliateSettings model');
+    return [];
+
+    /* TODO: Uncomment when AffiliateSettings and AffiliateConversion models are added
     try {
       // Get commission settings
       const settings = await prisma.affiliateSettings.findFirst();
@@ -133,14 +143,11 @@ class CommissionService {
         const rate = rates[level - 1];
         const commissionAmount = (bookingAmount * rate) / 100;
 
-        // Create commission
+        // Create commission (Note: conversionId field does not exist in Commission model)
         const commission = await prisma.commission.create({
           data: {
             affiliateId: currentAffiliate.id,
-            conversionId: conversion.id,
-            level,
-            baseAmount: bookingAmount,
-            rate,
+            type: 'booking',
             amount: commissionAmount,
             currency: conversion.currency,
             status: settings.autoApprove ? 'approved' : 'pending'
@@ -200,6 +207,7 @@ class CommissionService {
       logger.error('Distribute commissions error:', error);
       throw error;
     }
+    */
   }
 
   /**
@@ -227,8 +235,13 @@ class CommissionService {
   /**
    * Auto-approve commissions after holding period
    * Should be called by cron job
+   * TODO: Requires AffiliateSettings model to be added to Prisma schema
    */
   async autoApproveCommissions(): Promise<number> {
+    logger.warn('autoApproveCommissions is not implemented - requires AffiliateSettings model');
+    return 0;
+
+    /* TODO: Uncomment when AffiliateSettings model is added
     try {
       const settings = await prisma.affiliateSettings.findFirst();
 
@@ -261,6 +274,7 @@ class CommissionService {
       logger.error('Auto approve commissions error:', error);
       throw error;
     }
+    */
   }
 
   /**
@@ -268,7 +282,7 @@ class CommissionService {
    */
   async processPayout(payoutId: string): Promise<any> {
     try {
-      const payout = await prisma.affiliatePayout.findUnique({
+      const payout = await prisma.payout.findUnique({
         where: { id: payoutId },
         include: {
           affiliate: true
@@ -284,7 +298,7 @@ class CommissionService {
       }
 
       // Update status
-      await prisma.affiliatePayout.update({
+      await prisma.payout.update({
         where: { id: payoutId },
         data: {
           status: 'processing',
@@ -329,7 +343,7 @@ class CommissionService {
       }
 
       // Complete payout
-      const completedPayout = await prisma.affiliatePayout.update({
+      const completedPayout = await prisma.payout.update({
         where: { id: payoutId },
         data: {
           status: 'completed',
@@ -350,7 +364,7 @@ class CommissionService {
       logger.error('Process payout error:', error);
 
       // Mark payout as failed
-      await prisma.affiliatePayout.update({
+      await prisma.payout.update({
         where: { id: payoutId },
         data: {
           status: 'failed'
@@ -422,6 +436,7 @@ class CommissionService {
 
   /**
    * Get commission statistics
+   * TODO: Requires AffiliateConversion model to be added to Prisma schema
    */
   async getCommissionStats(affiliateId: string): Promise<{
     totalConversions: number;
@@ -435,18 +450,12 @@ class CommissionService {
         where: { affiliateId }
       });
 
-      // Get conversions
-      const conversions = await prisma.affiliateConversion.findMany({
-        where: { affiliateId }
-      });
-
-      const totalConversions = conversions.length;
-
-      // Get commissions
+      // Get commissions (using commissions as proxy for conversions)
       const commissions = await prisma.commission.findMany({
         where: { affiliateId }
       });
 
+      const totalConversions = commissions.length;
       const totalCommission = commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
       const averageCommission = totalConversions > 0 ? totalCommission / totalConversions : 0;
       const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
