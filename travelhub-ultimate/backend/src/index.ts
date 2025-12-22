@@ -37,6 +37,7 @@ import recommendationsRoutes from './routes/recommendations.routes.js';
 import loyaltyRoutes from './routes/loyalty.routes.js';
 import groupBookingsRoutes from './routes/groupBookings.routes.js';
 import payoutRoutes from './routes/payout.routes.js';
+import cronRoutes from './routes/cron.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -48,6 +49,7 @@ import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.j
 
 // Services
 import { redisService } from './services/redis.service.js';
+import { initializeCronJobs } from './services/cron.service.js';
 
 // Utils
 import logger from './utils/logger.js';
@@ -149,6 +151,9 @@ app.use('/api/payouts', payoutRoutes);
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
+// Cron job management routes (admin only)
+app.use('/api/admin/cron', cronRoutes);
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
@@ -200,6 +205,9 @@ async function startServer() {
   try {
     // Connect to Redis
     await redisService.connect();
+
+    // Initialize cron jobs for automated tasks
+    initializeCronJobs();
 
     // Start HTTP server
     app.listen(PORT, () => {
