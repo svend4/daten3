@@ -6,20 +6,27 @@ import {
   hotelSearchValidator,
   hotelAutocompleteValidator,
   hotelDetailsValidator,
+  hotelAdvancedFiltersValidator,
 } from '../validators/hotel.validators.js';
 
 const router = express.Router();
 
 /**
  * @route   GET /api/hotels/search
- * @desc    Search for hotels
+ * @desc    Search for hotels with advanced filters
  * @access  Public
  * @params  destination, checkIn, checkOut, adults, children, rooms, currency
+ *          + Advanced filters: priceMin, priceMax, starRating, guestRatingMin, guestRatingMax,
+ *            distanceMax, amenities, propertyTypes, freeCancellation, payAtHotel,
+ *            mealPlans, dealsOnly, wheelchairAccessible, sortBy, sortOrder, page, limit
  */
 router.get(
   '/search',
   rateLimiters.moderate, // 100 requests per 15 minutes
-  hotelSearchValidator,
+  [
+    ...hotelSearchValidator,
+    ...hotelAdvancedFiltersValidator,
+  ],
   validate,
   hotelsController.searchHotels
 );

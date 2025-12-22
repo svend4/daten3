@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import logger from '../utils/logger.js';
 import * as travelpayoutsService from '../services/travelpayouts.service.js';
+import {
+  applyHotelFilters,
+  sortHotels,
+  paginateResults,
+  calculatePriceStats,
+} from '../utils/filterHelpers.js';
 
 /**
  * Search for hotels
@@ -57,7 +63,39 @@ export const searchHotels = async (req: Request, res: Response) => {
     const results = await travelpayoutsService.getHotelResults(searchId);
 
     // Step 4: Format results
-    const formattedResults = travelpayoutsService.formatHotelResults(results, city);
+    let formattedResults = travelpayoutsService.formatHotelResults(results, city);
+
+    // Step 5: Apply advanced filters
+    const filters = {
+      priceMin: req.query.priceMin ? parseFloat(req.query.priceMin as string) : undefined,
+      priceMax: req.query.priceMax ? parseFloat(req.query.priceMax as string) : undefined,
+      starRating: req.query.starRating,
+      guestRatingMin: req.query.guestRatingMin ? parseFloat(req.query.guestRatingMin as string) : undefined,
+      guestRatingMax: req.query.guestRatingMax ? parseFloat(req.query.guestRatingMax as string) : undefined,
+      distanceMax: req.query.distanceMax ? parseFloat(req.query.distanceMax as string) : undefined,
+      amenities: req.query.amenities,
+      propertyTypes: req.query.propertyTypes,
+      freeCancellation: req.query.freeCancellation === 'true',
+      payAtHotel: req.query.payAtHotel === 'true',
+      dealsOnly: req.query.dealsOnly === 'true',
+      wheelchairAccessible: req.query.wheelchairAccessible === 'true',
+    };
+
+    // Apply filters
+    formattedResults = applyHotelFilters(formattedResults, filters);
+
+    // Calculate price statistics
+    const priceStats = calculatePriceStats(formattedResults);
+
+    // Step 6: Sort results
+    const sortBy = (req.query.sortBy as string) || 'price';
+    const sortOrder = (req.query.sortOrder as string) || 'asc';
+    formattedResults = sortHotels(formattedResults, sortBy, sortOrder);
+
+    // Step 7: Paginate results
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+    const paginated = paginateResults(formattedResults, page, limit);
 
     res.json({
       success: true,
@@ -68,8 +106,16 @@ export const searchHotels = async (req: Request, res: Response) => {
           country: city.country,
         },
         searchId,
-        hotels: formattedResults,
-        count: formattedResults.length,
+        hotels: paginated.data,
+        count: paginated.data.length,
+        totalCount: formattedResults.length,
+        pagination: paginated.pagination,
+        priceStats,
+        filters: {
+          applied: Object.keys(filters).filter(key => filters[key as keyof typeof filters] !== undefined),
+          sortBy,
+          sortOrder,
+        },
       },
     });
   } catch (error: any) {
