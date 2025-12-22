@@ -6,11 +6,11 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import { api } from '../utils/api';
-import { logger } from '../utils/logger';
+import { useAuth } from '../store/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,40 +22,18 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await api.post<{
-        success: boolean;
-        message: string;
-        data: {
-          user: {
-            id: string;
-            email: string;
-            name: string;
-            role: string;
-          };
-          accessToken: string;
-          refreshToken: string;
-        };
-      }>('/auth/login', { email, password });
+      // Use AuthContext login which handles httpOnly cookies
+      const result = await login({ email, password });
 
-      if (response.success && response.data) {
-        // Store tokens
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-
-        // Store user data
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      if (result.success) {
         // Navigate to dashboard
+        // Tokens are automatically stored in httpOnly cookies by server
         navigate('/dashboard');
       } else {
-        setError(response.message || 'Login failed. Please try again.');
+        setError(result.error || 'Login failed. Please try again.');
       }
     } catch (err: any) {
-      logger.error('Login failed', err);
-      setError(
-        err.response?.data?.message ||
-        'Invalid email or password. Please try again.'
-      );
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

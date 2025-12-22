@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 
 // Main pages
 import Home from './pages/Home';
@@ -42,13 +43,35 @@ import Terms from './pages/Terms';
 // Error pages
 import NotFound from './pages/NotFound';
 
+// Contexts
+import { AuthProvider } from './store/AuthContext';
+
+// API
+import { api } from './utils/api';
+import { logger } from './utils/logger';
+
 const queryClient = new QueryClient();
 
 function App() {
+  // Initialize API client on app startup
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        await api.initialize();
+        logger.info('Application initialized successfully');
+      } catch (error) {
+        logger.error('Failed to initialize application', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
           {/* Main routes */}
           <Route path="/" element={<Home />} />
           <Route path="/flights" element={<FlightSearch />} />
@@ -91,6 +114,7 @@ function App() {
         </Routes>
         <Toaster position="top-right" />
       </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

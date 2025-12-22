@@ -6,11 +6,11 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import { api } from '../utils/api';
-import { logger } from '../utils/logger';
+import { useAuth } from '../store/AuthContext';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -40,44 +40,23 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await api.post<{
-        success: boolean;
-        message: string;
-        data: {
-          user: {
-            id: string;
-            email: string;
-            name: string;
-            role: string;
-          };
-          accessToken: string;
-          refreshToken: string;
-        };
-      }>('/auth/register', {
-        name: `${formData.firstName} ${formData.lastName}`,
+      // Use AuthContext register which handles httpOnly cookies
+      const result = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
       });
 
-      if (response.success && response.data) {
-        // Store tokens
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-
-        // Store user data
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      if (result.success) {
         // Navigate to dashboard
+        // Tokens are automatically stored in httpOnly cookies by server
         navigate('/dashboard');
       } else {
-        setError(response.message || 'Registration failed. Please try again.');
+        setError(result.error || 'Registration failed. Please try again.');
       }
     } catch (err: any) {
-      logger.error('Registration failed', err);
-      setError(
-        err.response?.data?.message ||
-        'Registration failed. Please try again.'
-      );
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
