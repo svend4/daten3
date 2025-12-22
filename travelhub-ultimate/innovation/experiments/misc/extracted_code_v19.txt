@@ -1,0 +1,12 @@
+1. Перейти: https://partners.skyscanner.net/
+2. Sign Up for Partner Network
+3. Заполнить форму:
+   - Company details
+   - Website
+   - Expected traffic
+4. Dashboard → Create New Project
+5. Request API Access
+6. Выбрать API tier:
+   - Free: 50 calls/min (тестирование)
+   - Paid: Custom (production)
+7. Получить API Key

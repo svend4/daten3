@@ -1,0 +1,9 @@
+1. Login в dashboard
+2. Settings → Profile
+3. Заполнить:
+   - Company name (или личное имя)
+   - Website URL (если есть, если нет - можно временный)
+   - Traffic источники
+   - Monthly visitors (примерный план)
+   - Описание бизнес-модели (кратко)
+4. Save
