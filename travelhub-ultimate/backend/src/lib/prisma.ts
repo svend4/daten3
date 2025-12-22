@@ -12,7 +12,8 @@ export const prisma =
 // Enable database performance monitoring
 if (process.env.ENABLE_DB_PERFORMANCE_MONITORING !== 'false') {
   const queryEventHandler = createQueryEventHandler();
-  prisma.$on('query' as any, queryEventHandler as any);
+  // @ts-ignore - Prisma event typing limitation
+  prisma.$on('query', queryEventHandler);
 }
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

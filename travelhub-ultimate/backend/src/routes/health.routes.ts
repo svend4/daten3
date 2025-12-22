@@ -442,15 +442,6 @@ router.post('/deduplication/reset', authenticate, requireAdmin, resetDeduplicati
 router.post('/deduplication/clear', authenticate, requireAdmin, clearDeduplicationCacheEndpoint);
 
 /**
- * @route   GET /health/dashboard
- * @desc    Comprehensive metrics dashboard (all metrics in one response)
- * @access  Public
- */
-router.get('/dashboard', metricsDashboard);
-
-export default router;
-
-/**
  * @route   GET /health/i18n
  * @desc    i18n statistics
  * @access  Public
