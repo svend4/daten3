@@ -124,7 +124,7 @@ class NotificationService {
       // Get user email
       const user = await prisma.user.findUnique({
         where: { id: data.userId },
-        select: { email: true, name: true }
+        select: { email: true, firstName: true, lastName: true }
       });
 
       if (!user) {
@@ -337,7 +337,8 @@ class NotificationService {
             select: {
               id: true,
               email: true,
-              name: true
+              firstName: true,
+              lastName: true
             }
           }
         }

@@ -255,19 +255,19 @@ export const requestRefund = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if booking is paid
-    if (booking.paymentStatus !== 'paid') {
-      return res.status(400).json({
-        success: false,
-        error: 'Cannot refund unpaid booking'
-      });
-    }
-
     // Check if already refunded
     if (booking.paymentStatus === 'refunded') {
       return res.status(400).json({
         success: false,
         error: 'Booking already refunded'
+      });
+    }
+
+    // Check if booking is paid
+    if (booking.paymentStatus !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot refund unpaid booking'
       });
     }
 
