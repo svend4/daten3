@@ -305,7 +305,8 @@ export const checkPricesAndTrigger = async () => {
           select: {
             id: true,
             email: true,
-            name: true
+            firstName: true,
+            lastName: true
           }
         }
       }
