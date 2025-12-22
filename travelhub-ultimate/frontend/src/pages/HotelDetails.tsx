@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Star, Wifi, Coffee, Car, Users, Check, X } from 'lucide-react';
+import { MapPin, Star, Wifi, Coffee, Car, Users, Check, X, Heart } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
+import { useAuth } from '../store/AuthContext';
+import { api } from '../utils/api';
+import { logger } from '../utils/logger';
 
 const HotelDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   // Demo hotel data
   const hotel = {
@@ -38,6 +45,83 @@ const HotelDetails: React.FC = () => {
     ],
   };
 
+  // Check if hotel is in favorites on mount
+  useEffect(() => {
+    if (isAuthenticated && hotel.id) {
+      checkFavoriteStatus();
+    }
+  }, [isAuthenticated, hotel.id]);
+
+  const checkFavoriteStatus = async () => {
+    try {
+      const response = await api.get<{
+        success: boolean;
+        data: { isFavorite: boolean; favoriteId?: string };
+      }>(`/favorites/check/hotel/${hotel.id}`);
+
+      if (response.success && response.data) {
+        setIsFavorite(response.data.isFavorite);
+        if (response.data.favoriteId) {
+          setFavoriteId(response.data.favoriteId);
+        }
+      }
+    } catch (err: any) {
+      logger.error('Failed to check favorite status', err);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    setFavoriteLoading(true);
+
+    try {
+      if (isFavorite && favoriteId) {
+        // Remove from favorites
+        const response = await api.delete<{
+          success: boolean;
+        }>(`/favorites/${favoriteId}`);
+
+        if (response.success) {
+          setIsFavorite(false);
+          setFavoriteId(null);
+          logger.info('Removed from favorites');
+        }
+      } else {
+        // Add to favorites
+        const response = await api.post<{
+          success: boolean;
+          data: { favorite: { id: string } };
+        }>('/favorites', {
+          type: 'hotel',
+          itemId: hotel.id,
+          itemData: {
+            name: hotel.name,
+            location: hotel.location,
+            rating: hotel.rating,
+            price: hotel.price,
+            currency: 'RUB',
+            image: hotel.images[0],
+          },
+        });
+
+        if (response.success && response.data.favorite) {
+          setIsFavorite(true);
+          setFavoriteId(response.data.favorite.id);
+          logger.info('Added to favorites');
+        }
+      }
+    } catch (err: any) {
+      logger.error('Failed to toggle favorite', err);
+      alert(err.response?.data?.message || 'Failed to update favorites');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   const handleBooking = () => {
     if (selectedRoom) {
       navigate('/checkout', { state: { hotel, roomId: selectedRoom } });
@@ -62,10 +146,27 @@ const HotelDetails: React.FC = () => {
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  {[...Array(hotel.stars)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {[...Array(hotel.stars)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  {/* Favorite Button */}
+                  <button
+                    onClick={handleToggleFavorite}
+                    disabled={favoriteLoading}
+                    className={`p-3 rounded-full transition-all ${
+                      isFavorite
+                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Heart
+                      className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`}
+                    />
+                  </button>
                 </div>
                 <h1 className="text-4xl font-bold text-gray-900 mb-2">{hotel.name}</h1>
                 <div className="flex items-center gap-2 text-gray-600">
