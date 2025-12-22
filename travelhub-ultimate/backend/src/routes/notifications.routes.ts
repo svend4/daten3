@@ -1,9 +1,9 @@
 import express from 'express';
 import { Request, Response } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
-import { notificationService, NotificationType, NotificationPriority } from '../services/notification.service';
-import logger from '../utils/logger';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
+import { notificationService, NotificationType, NotificationPriority } from '../services/notification.service.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 

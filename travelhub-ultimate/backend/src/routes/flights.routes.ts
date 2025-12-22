@@ -1,6 +1,6 @@
 import express from 'express';
-import * as flightsController from '../controllers/flights.controller';
-import { rateLimiters } from '../middleware/rateLimit.middleware';
+import * as flightsController from '../controllers/flights.controller.js';
+import { rateLimiters } from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 
