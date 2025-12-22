@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
+import { commissionService } from '../services/commission.service.js';
+import { getReferralCode } from '../middleware/affiliateTracking.middleware.js';
+import logger from '../utils/logger.js';
 
 /**
  * Bookings Controller
@@ -270,15 +273,24 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     //   });
     // }
 
-    // TODO: Track affiliate conversion if referralCode exists
-    // This would be in the metadata or separate field
-    // if (metadata?.referralCode) {
-    //   await trackConversion({
-    //     bookingId: booking.id,
-    //     referralCode: metadata.referralCode,
-    //     amount: totalPrice
-    //   });
-    // }
+    // Track affiliate conversion if referralCode exists (from cookie or metadata)
+    const referralCode = getReferralCode(req) || metadata?.referralCode;
+    if (referralCode) {
+      try {
+        await commissionService.processConversion({
+          userId: req.user.id,
+          bookingId: booking.id,
+          bookingType: type,
+          bookingAmount: totalPrice,
+          currency,
+          referralCode
+        });
+        logger.info(`Affiliate conversion tracked for booking ${booking.id}`);
+      } catch (error: any) {
+        // Don't fail booking if commission tracking fails
+        logger.error('Commission tracking failed:', error);
+      }
+    }
 
     res.status(201).json({
       success: true,
