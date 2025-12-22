@@ -102,6 +102,7 @@ class CommissionService {
 
   /**
    * Distribute commissions through the referral chain
+   * CORRECTED VERSION: Calculates commission from TravelHub's earnings, not booking amount
    */
   async distributeCommissions(
     affiliate: any,
@@ -116,10 +117,25 @@ class CommissionService {
         throw new Error('Affiliate settings not found');
       }
 
+      // ============================================
+      // STEP 1: Calculate TravelHub's base commission
+      // ============================================
+      // TravelHub receives from Booking.com/Travelpayouts
+      const travelHubBaseCommission = (bookingAmount * settings.baseCommissionRate) / 100;
+
+      logger.info('Base commission calculation', {
+        bookingAmount,
+        baseRate: settings.baseCommissionRate,
+        travelHubCommission: travelHubBaseCommission.toFixed(2)
+      });
+
+      // ============================================
+      // STEP 2: Distribute percentage of TravelHub's commission
+      // ============================================
       const rates = [
-        settings.level1Rate,
-        settings.level2Rate,
-        settings.level3Rate
+        settings.level1Rate, // 50% of TravelHub's commission
+        settings.level2Rate, // 20% of TravelHub's commission
+        settings.level3Rate  // 10% of TravelHub's commission
       ];
 
       const maxLevels = Math.min(settings.maxLevels, rates.length);
@@ -128,10 +144,16 @@ class CommissionService {
       let currentAffiliate = affiliate;
       let level = 1;
       const commissions: any[] = [];
+      let totalPaidToAffiliates = 0;
 
       while (currentAffiliate && level <= maxLevels) {
-        const rate = rates[level - 1];
-        const commissionAmount = (bookingAmount * rate) / 100;
+        const ratePercentage = rates[level - 1]; // percentage of TravelHub's commission
+
+        // Calculate affiliate commission AS PERCENTAGE OF TRAVELHUB'S COMMISSION
+        const affiliateCommission = (travelHubBaseCommission * ratePercentage) / 100;
+
+        // For display: what percentage of booking amount this represents
+        const effectiveRate = (affiliateCommission / bookingAmount) * 100;
 
         // Create commission
         const commission = await prisma.commission.create({
@@ -140,20 +162,23 @@ class CommissionService {
             conversionId: conversion.id,
             level,
             baseAmount: bookingAmount,
-            rate,
-            amount: commissionAmount,
+            rate: effectiveRate, // effective rate from booking amount
+            amount: affiliateCommission,
             currency: conversion.currency,
             status: settings.autoApprove ? 'approved' : 'pending'
           }
         });
 
         commissions.push(commission);
+        totalPaidToAffiliates += affiliateCommission;
 
         logger.info('Commission created', {
           commissionId: commission.id,
           affiliateId: currentAffiliate.id,
           level,
-          amount: commissionAmount
+          rateFromTravelHub: `${ratePercentage}%`,
+          effectiveRateFromBooking: `${effectiveRate.toFixed(2)}%`,
+          amount: affiliateCommission.toFixed(2)
         });
 
         // Update affiliate total earnings
@@ -161,7 +186,7 @@ class CommissionService {
           where: { id: currentAffiliate.id },
           data: {
             totalEarnings: {
-              increment: commissionAmount
+              increment: affiliateCommission
             }
           }
         });
@@ -177,22 +202,29 @@ class CommissionService {
         }
       }
 
-      // Update conversion
-      const totalCommission = commissions.reduce((sum, c) => sum + c.amount, 0);
-      const averageRate = (totalCommission / bookingAmount) * 100;
+      // ============================================
+      // STEP 3: Calculate TravelHub's profit
+      // ============================================
+      const travelHubProfit = travelHubBaseCommission - totalPaidToAffiliates;
+      const profitPercentage = (travelHubProfit / travelHubBaseCommission) * 100;
 
+      logger.info('Commission distribution complete', {
+        conversionId: conversion.id,
+        bookingAmount,
+        travelHubBaseCommission: travelHubBaseCommission.toFixed(2),
+        totalPaidToAffiliates: totalPaidToAffiliates.toFixed(2),
+        travelHubProfit: travelHubProfit.toFixed(2),
+        profitMargin: `${profitPercentage.toFixed(1)}%`,
+        levels: commissions.length
+      });
+
+      // Update conversion
       await prisma.affiliateConversion.update({
         where: { id: conversion.id },
         data: {
-          commissionRate: averageRate,
-          commissionAmount: totalCommission
+          commissionRate: (totalPaidToAffiliates / bookingAmount) * 100,
+          commissionAmount: totalPaidToAffiliates
         }
-      });
-
-      logger.info('Commissions distributed', {
-        conversionId: conversion.id,
-        levels: commissions.length,
-        totalCommission
       });
 
       return commissions;

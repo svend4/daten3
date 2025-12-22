@@ -24,6 +24,7 @@ import favoritesRoutes from './routes/favorites.routes.js';
 import priceAlertsRoutes from './routes/priceAlerts.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import flightsRoutes from './routes/flights.routes.js';
+import hotelsRoutes from './routes/hotels.routes.js';
 import carsRoutes from './routes/cars.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
@@ -42,7 +43,6 @@ import { rateLimiters } from './middleware/rateLimit.middleware.js';
 import { trackAffiliateClick } from './middleware/affiliateTracking.middleware.js';
 
 // Services
-import { searchHotels } from './services/travelpayouts.service.js';
 import { redisService } from './services/redis.service.js';
 
 // Utils
@@ -97,57 +97,6 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-// Hotels search endpoint - accepts POST with search params
-app.post('/api/hotels/search', rateLimiters.moderate, async (req, res) => {
-  try {
-    const searchParams = req.body;
-    console.log('🔍 Hotels search params:', searchParams);
-
-    // Search hotels using Travelpayouts API
-    const results = await searchHotels({
-      destination: searchParams.destination || searchParams.city,
-      checkIn: searchParams.checkIn,
-      checkOut: searchParams.checkOut,
-      adults: searchParams.adults || searchParams.guests || 2,
-      rooms: searchParams.rooms || 1
-    });
-
-    res.json({
-      success: true,
-      message: 'Hotels search successful',
-      data: results
-    });
-  } catch (error: any) {
-    console.error('❌ Hotels search error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Hotel search failed',
-      message: error.message
-    });
-  }
-});
-
-// Flights search endpoint - accepts POST with search params
-app.post('/api/flights/search', rateLimiters.moderate, (req, res) => {
-  const searchParams = req.body;
-  console.log('Flights search params:', searchParams);
-
-  // TODO: Implement actual flight search logic
-  res.json({
-    message: 'Flights search endpoint',
-    params: searchParams,
-    flights: [] // Empty for now, will be populated with real data later
-  });
-});
-
-// Keep GET endpoints for manual testing
-app.get('/api/hotels/search', (req, res) => {
-  res.json({ message: 'Hotels search endpoint (use POST with params)' });
-});
-
-app.get('/api/flights/search', (req, res) => {
-  res.json({ message: 'Flights search endpoint (use POST with params)' });
-});
 
 // ===== API ROUTES =====
 
@@ -162,6 +111,7 @@ app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/flights', flightsRoutes);
+app.use('/api/hotels', hotelsRoutes);
 app.use('/api/cars', carsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationsRoutes);
