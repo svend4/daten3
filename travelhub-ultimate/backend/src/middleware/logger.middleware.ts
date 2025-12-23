@@ -111,7 +111,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
       metrics.errorRequests++;
       endpointMetrics.errors++;
 
-      logger.warn('Request failed', {
+      logger.warn(`Request failed: ${req.method} ${req.url} - Status ${res.statusCode}`, {
         method: req.method,
         url: req.url,
         endpoint,
