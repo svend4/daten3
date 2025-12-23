@@ -1,13 +1,13 @@
 services:
   # Backend API
   - type: web
-    name: travelhub-backend
+    name: daten3-1
     runtime: docker
     dockerfilePath: ./Dockerfile
     rootDir: ./travelhub-ultimate/backend
     region: oregon
     plan: free
-    branch: claude/review-travel-agency-9A4Ks
+    branch: main
     envVars:
       - key: NODE_ENV
         value: production
@@ -26,13 +26,13 @@ services:
 
   # Frontend
   - type: web
-    name: travelhub-frontend
+    name: daten3
     runtime: docker
     dockerfilePath: ./Dockerfile
     rootDir: ./travelhub-ultimate/frontend
     region: oregon
     plan: free
-    branch: claude/review-travel-agency-9A4Ks
+    branch: main
     dockerCommand: serve -s dist -l 3000
     envVars:
       - key: NODE_ENV
