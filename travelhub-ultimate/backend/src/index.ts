@@ -350,7 +350,8 @@ async function startServer() {
     startAuditLogFlushing();
 
     // Start HTTP server and store instance (needed for Apollo Server)
-    httpServer = app.listen(PORT, async () => {
+    // Listen on 0.0.0.0 to allow external connections (required for Render/Railway)
+    httpServer = app.listen(PORT, '0.0.0.0', async () => {
       // Initialize GraphQL Apollo Server
       const apolloServer = createApolloServer(httpServer);
       await apolloServer.start();
