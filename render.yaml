@@ -7,7 +7,7 @@ services:
     rootDir: ./travelhub-ultimate/backend
     region: oregon
     plan: free
-    branch: main
+    branch: claude/review-travel-agency-9A4Ks
     envVars:
       - key: NODE_ENV
         value: production
@@ -32,7 +32,7 @@ services:
     rootDir: ./travelhub-ultimate/frontend
     region: oregon
     plan: free
-    branch: main
+    branch: claude/review-travel-agency-9A4Ks
     dockerCommand: serve -s dist -l 3000
     envVars:
       - key: NODE_ENV

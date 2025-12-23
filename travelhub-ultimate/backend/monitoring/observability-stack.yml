@@ -1,0 +1,165 @@
+version: '3.8'
+
+# Complete Observability Stack
+# Metrics (Prometheus/Grafana) + Tracing (Jaeger) + Logging (Loki)
+
+services:
+  # ============================================
+  # METRICS - Prometheus & Grafana
+  # ============================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: travelhub-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts:/etc/prometheus/alerts
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - observability
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: travelhub-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning/dashboards
+    networks:
+      - observability
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: travelhub-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - observability
+    restart: unless-stopped
+
+  # ============================================
+  # TRACING - Jaeger
+  # ============================================
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: travelhub-jaeger
+    ports:
+      - "5775:5775/udp"   # accept zipkin.thrift over compact thrift protocol
+      - "6831:6831/udp"   # accept jaeger.thrift over compact thrift protocol
+      - "6832:6832/udp"   # accept jaeger.thrift over binary thrift protocol
+      - "5778:5778"       # serve configs
+      - "16686:16686"     # serve frontend
+      - "14268:14268"     # accept jaeger.thrift directly from clients
+      - "14250:14250"     # accept model.proto
+      - "9411:9411"       # Zipkin compatible endpoint
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - observability
+    restart: unless-stopped
+
+  # ============================================
+  # LOGGING - Loki & Promtail
+  # ============================================
+
+  loki:
+    image: grafana/loki:latest
+    container_name: travelhub-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - observability
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: travelhub-promtail
+    volumes:
+      - ./loki/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/log:/var/log
+      - ../logs:/app/logs:ro  # Mount application logs
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - observability
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ============================================
+  # EXPORTERS
+  # ============================================
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: travelhub-node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - observability
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: travelhub-redis-exporter
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis:6379
+    networks:
+      - observability
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: travelhub-postgres-exporter
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://user:password@postgres:5432/travelhub?sslmode=disable
+    networks:
+      - observability
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+  loki-data:
+
+networks:
+  observability:
+    driver: bridge

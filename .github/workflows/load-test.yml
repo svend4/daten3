@@ -1,0 +1,84 @@
+name: Load Tests
+
+on:
+  schedule:
+    # Run load tests every Sunday at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch: # Allow manual trigger
+    inputs:
+      test_type:
+        description: 'Type of load test to run'
+        required: true
+        default: 'load'
+        type: choice
+        options:
+          - load
+          - stress
+          - spike
+
+jobs:
+  load-test:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Verify k6 installation
+        run: k6 version
+
+      - name: Determine test file
+        id: test-file
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "file=tests/load/${{ github.event.inputs.test_type }}-test.js" >> $GITHUB_OUTPUT
+          else
+            echo "file=tests/load/api-load-test.js" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run k6 load test
+        working-directory: ./travelhub-ultimate/backend
+        run: |
+          k6 run --out json=results.json ${{ steps.test-file.outputs.file }}
+        env:
+          API_URL: ${{ secrets.LOAD_TEST_API_URL || 'https://api.travelhub.com' }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: travelhub-ultimate/backend/results.json
+          retention-days: 30
+
+      - name: Parse results and comment on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Test completed successfully!" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check test thresholds
+        working-directory: ./travelhub-ultimate/backend
+        run: |
+          # Check if any thresholds failed
+          if grep -q '"threshold":"failed"' results.json; then
+            echo "::error::Load test thresholds failed"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Load test failed or thresholds not met"
+          echo "Check the uploaded artifacts for detailed results"

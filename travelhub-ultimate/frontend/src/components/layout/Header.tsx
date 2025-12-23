@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom';
 import { User, Menu, X, Heart, Bell, Globe, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../store/AuthContext';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Get authentication state from context
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Track scroll position for header shadow
   useEffect(() => {
@@ -32,14 +36,11 @@ export default function Header() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [mobileMenuOpen, userMenuOpen]);
 
-  // Mock user state (replace with actual auth later)
-  const isAuthenticated = false; // TODO: Get from auth context
   const unreadNotifications = 3;
 
   const navLinks = [
-    { name: 'Отели', href: '/hotels/search', icon: '🏨' },
-    { name: 'Авиабилеты', href: '/flights/search', icon: '✈️' },
-    { name: 'Аренда авто', href: '/cars', icon: '🚗' },
+    { name: 'Отели', href: '/hotels', icon: '🏨' },
+    { name: 'Авиабилеты', href: '/flights', icon: '✈️' },
     { name: 'Мои поездки', href: '/bookings', icon: '🎒' }
   ];
 
@@ -131,8 +132,10 @@ export default function Header() {
                   {userMenuOpen && (
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 animate-fadeIn">
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-semibold text-gray-900">Иван Петров</p>
-                        <p className="text-sm text-gray-500">ivan@example.com</p>
+                        <p className="font-semibold text-gray-900">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">{user?.email}</p>
                       </div>
                       <Link
                         to="/dashboard"
@@ -159,7 +162,10 @@ export default function Header() {
                         Партнерская программа
                       </Link>
                       <div className="border-t border-gray-100 mt-2 pt-2">
-                        <button className="block w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-red-600">
+                        <button
+                          onClick={() => logout()}
+                          className="block w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-red-600"
+                        >
                           Выйти
                         </button>
                       </div>
@@ -262,7 +268,10 @@ export default function Header() {
                     <span className="font-medium text-gray-700">Партнерская программа</span>
                   </Link>
                   <div className="border-t border-gray-200 my-2"></div>
-                  <button className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors w-full text-left text-red-600">
+                  <button
+                    onClick={() => logout()}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors w-full text-left text-red-600"
+                  >
                     <span className="text-xl">🚪</span>
                     <span className="font-medium">Выйти</span>
                   </button>

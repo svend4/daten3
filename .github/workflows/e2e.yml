@@ -1,0 +1,110 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run E2E tests nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: travelhub_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: travelhub-ultimate/backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./travelhub-ultimate/backend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./travelhub-ultimate/backend
+        run: npx playwright install --with-deps
+
+      - name: Run database migrations
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/travelhub_test
+
+      - name: Start API server
+        working-directory: ./travelhub-ultimate/backend
+        run: |
+          npm run build
+          npm run start &
+          # Wait for the API health endpoint to respond before running tests
+          for i in {1..20}; do
+            if curl -fs http://localhost:5000/health >/dev/null 2>&1; then
+              echo "API server is up!"
+              break
+            fi
+            echo "Waiting for API server... ($i/20)"
+            sleep 2
+          done
+        env:
+          NODE_ENV: test
+          PORT: 5000
+          DATABASE_URL: postgresql://test:test@localhost:5432/travelhub_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-key-for-ci
+
+      - name: Run E2E tests
+        working-directory: ./travelhub-ultimate/backend
+        run: npm run test:e2e
+        env:
+          API_URL: http://localhost:5000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: travelhub-ultimate/backend/playwright-report/
+          retention-days: 7
+
+      - name: Upload Playwright trace
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: travelhub-ultimate/backend/test-results/
+          retention-days: 7
