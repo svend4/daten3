@@ -136,7 +136,9 @@ const Login: React.FC = () => {
                 type="button"
                 onClick={() => {
                   // Redirect to Google OAuth endpoint
-                  window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/google`;
+                  // Remove '/api' from base URL since we need to access /api/auth/google
+                  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:3000';
+                  window.location.href = `${baseUrl}/api/auth/google`;
                 }}
                 className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
