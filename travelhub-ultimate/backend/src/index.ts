@@ -108,8 +108,21 @@ app.use((req, res, next) => {
   const originalJson = res.json.bind(res);
   const originalSend = res.send.bind(res);
   const originalStatus = res.status.bind(res);
+  const originalWriteHead = res.writeHead.bind(res);
   let responseSent = false;
   let isInternalCall = false;
+
+  // Track all attempts to write headers
+  (res as any).writeHead = function(...args: any[]) {
+    if (responseSent) {
+      const errorDetails = `URL: ${req.method} ${req.url} | StatusCode: ${args[0]}`;
+      logger.error(`❌ writeHead called after response sent: ${errorDetails}`);
+      console.error(`❌ writeHead called after response sent: ${errorDetails}`);
+      console.trace('writeHead stack trace:');
+      return res;
+    }
+    return originalWriteHead(...args);
+  };
 
   res.json = function(body) {
     if (responseSent && !isInternalCall) {
