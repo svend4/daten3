@@ -324,13 +324,27 @@ export const resolvers = {
       const user = requireAuth(context);
 
       try {
+        // Parse details to extract specific fields
+        const details = input.details || {};
+
         const booking = await prisma.booking.create({
           data: {
             userId: user.id,
             type: input.type,
             status: 'pending',
-            details: input.details,
+            itemId: details.itemId || 'unknown',
+            itemName: details.itemName || 'Unknown Item',
+            itemImage: details.itemImage,
+            checkIn: details.checkIn ? new Date(details.checkIn) : undefined,
+            checkOut: details.checkOut ? new Date(details.checkOut) : undefined,
+            departDate: details.departDate ? new Date(details.departDate) : undefined,
+            returnDate: details.returnDate ? new Date(details.returnDate) : undefined,
+            guests: details.guests || 1,
+            rooms: details.rooms,
             totalPrice: input.totalPrice,
+            currency: details.currency || 'RUB',
+            specialRequests: details.specialRequests,
+            metadata: input.details, // Store full details in metadata
           },
         });
 
@@ -369,9 +383,16 @@ export const resolvers = {
           });
         }
 
+        // Map details to metadata if present
+        const updateData: any = { ...input };
+        if (input.details) {
+          updateData.metadata = input.details;
+          delete updateData.details;
+        }
+
         const booking = await prisma.booking.update({
           where: { id },
-          data: input,
+          data: updateData,
         });
 
         logger.info('Booking updated via GraphQL', { bookingId: id, userId: user.id });
@@ -494,6 +515,14 @@ export const resolvers = {
         logger.error('GraphQL Booking.user resolver error:', error);
         return null;
       }
+    },
+
+    /**
+     * Resolve booking's details (maps to metadata field in Prisma)
+     */
+    details: (parent: any) => {
+      // Return metadata as details for GraphQL compatibility
+      return parent.metadata || {};
     },
   },
 };
