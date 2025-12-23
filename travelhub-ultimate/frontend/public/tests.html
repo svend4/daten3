@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Тесты - TravelHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .test-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: block;
+        }
+
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-card h2 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .icon {
+            font-size: 1.5em;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тесты</h1>
+        <p class="subtitle">Выберите тест для проверки функциональности</p>
+
+        <div class="test-grid">
+            <a href="/FINAL_CORS_TEST.html" class="test-card">
+                <h2><span class="icon">🔗</span> CORS Test (Final)</h2>
+                <p>Финальный тест CORS подключения между фронтендом и бэкендом. Проверяет Health Check, CORS Headers и CSRF Token.</p>
+            </a>
+
+            <a href="/test-cors-production.html" class="test-card">
+                <h2><span class="icon">🌐</span> CORS Production Test</h2>
+                <p>Продакшн тест CORS с подробными инструкциями по устранению неполадок. Интерактивный интерфейс.</p>
+            </a>
+
+            <a href="/test-frontend-backend-connection.html" class="test-card">
+                <h2><span class="icon">🔌</span> Frontend-Backend Connection</h2>
+                <p>Полный тест подключения фронтенда к бэкенду. Проверяет все эндпоинты API и CSRF токены.</p>
+            </a>
+
+            <a href="/mobile-test.html" class="test-card">
+                <h2><span class="icon">📱</span> Mobile Test</h2>
+                <p>Тест мобильной версии приложения. Проверяет адаптивность и функциональность на мобильных устройствах.</p>
+            </a>
+
+            <a href="/health.html" class="test-card">
+                <h2><span class="icon">❤️</span> Health Check</h2>
+                <p>Простая проверка доступности бэкенда. Быстрый статус проверки.</p>
+            </a>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Доступные тесты:</h3>
+            <ul>
+                <li><strong>FINAL_CORS_TEST.html</strong> - Рекомендуется для быстрой проверки CORS</li>
+                <li><strong>test-cors-production.html</strong> - Подробный тест с troubleshooting</li>
+                <li><strong>test-frontend-backend-connection.html</strong> - Полный тест всех API эндпоинтов</li>
+                <li><strong>mobile-test.html</strong> - Тест мобильной версии</li>
+                <li><strong>health.html</strong> - Базовая проверка доступности</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <h3>🔍 Как использовать:</h3>
+            <ul>
+                <li>Все тесты запускаются автоматически при открытии</li>
+                <li>Результаты отображаются на странице</li>
+                <li>При ошибках показываются инструкции по исправлению</li>
+                <li>Тесты работают только с production URL</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px; border-left-color: #28a745;">
+            <h3>✅ Репозиторий: svend4/daten3</h3>
+            <ul>
+                <li>Все тесты доступны онлайн</li>
+                <li>Обновляются автоматически при деплое</li>
+                <li>Права доступа: 644 (читаемые для всех)</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
