@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🧪 CORS Test - Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .test-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-button:active {
+            transform: scale(0.98);
+        }
+
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ddd;
+        }
+
+        .test-item.pending {
+            border-left-color: #ff9800;
+        }
+
+        .test-item.passed {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .test-item.failed {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .test-item h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .test-item p {
+            color: #666;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .summary {
+            background: #667eea;
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .summary.success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .summary.failure {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 CORS Test</h1>
+        <p class="subtitle">Тест подключения Frontend → Backend</p>
+
+        <button class="test-button" id="runTest" onclick="runTests()">
+            🚀 Запустить тест
+        </button>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p style="text-align: center; color: #667eea; font-weight: bold;">Выполняется тестирование...</p>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const BACKEND = 'https://daten3-1.onrender.com';
+        const FRONTEND = 'https://daten3.onrender.com';
+
+        async function runTests() {
+            const button = document.getElementById('runTest');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            button.disabled = true;
+            loading.classList.remove('hidden');
+            results.innerHTML = '';
+
+            let testsPassed = 0;
+            const testsTotal = 3;
+
+            // TEST 1: Health Check
+            const test1 = document.createElement('div');
+            test1.className = 'test-item pending';
+            test1.innerHTML = '<h3>⏳ ТЕСТ 1: Health Check</h3><p>Проверка доступности backend...</p>';
+            results.appendChild(test1);
+
+            try {
+                const response = await fetch(`${BACKEND}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    test1.className = 'test-item passed';
+                    test1.innerHTML = `
+                        <h3>✅ ТЕСТ 1: Health Check - ПРОЙДЕН</h3>
+                        <p>Status: ${response.status}</p>
+                        <p>Backend доступен!</p>
+                    `;
+                    testsPassed++;
+                } else {
+                    test1.className = 'test-item failed';
+                    test1.innerHTML = `
+                        <h3>❌ ТЕСТ 1: Health Check - ПРОВАЛЕН</h3>
+                        <p>Status: ${response.status}</p>
+                    `;
+                }
+            } catch (error) {
+                test1.className = 'test-item failed';
+                test1.innerHTML = `
+                    <h3>❌ ТЕСТ 1: Health Check - ПРОВАЛЕН</h3>
+                    <p>Ошибка: ${error.message}</p>
+                    <p>Backend недоступен или спит</p>
+                `;
+            }
+
+            // TEST 2: CORS Headers
+            const test2 = document.createElement('div');
+            test2.className = 'test-item pending';
+            test2.innerHTML = '<h3>⏳ ТЕСТ 2: CORS Headers</h3><p>Проверка CORS настроек...</p>';
+            results.appendChild(test2);
+
+            try {
+                const response = await fetch(`${BACKEND}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                const corsOrigin = response.headers.get('access-control-allow-origin');
+                const corsCredentials = response.headers.get('access-control-allow-credentials');
+
+                if (corsOrigin === FRONTEND && corsCredentials === 'true') {
+                    test2.className = 'test-item passed';
+                    test2.innerHTML = `
+                        <h3>✅ ТЕСТ 2: CORS Headers - ПРОЙДЕН</h3>
+                        <p>CORS Origin: ${corsOrigin}</p>
+                        <p>Credentials: ${corsCredentials}</p>
+                    `;
+                    testsPassed++;
+                } else {
+                    test2.className = 'test-item failed';
+                    test2.innerHTML = `
+                        <h3>❌ ТЕСТ 2: CORS Headers - ПРОВАЛЕН</h3>
+                        <p>CORS Origin: ${corsOrigin || 'null'}</p>
+                        <p>Ожидается: ${FRONTEND}</p>
+                        <p>Credentials: ${corsCredentials || 'null'}</p>
+                    `;
+                }
+            } catch (error) {
+                test2.className = 'test-item failed';
+                test2.innerHTML = `
+                    <h3>❌ ТЕСТ 2: CORS Headers - ПРОВАЛЕН</h3>
+                    <p>Ошибка: ${error.message}</p>
+                `;
+            }
+
+            // TEST 3: CSRF Token
+            const test3 = document.createElement('div');
+            test3.className = 'test-item pending';
+            test3.innerHTML = '<h3>⏳ ТЕСТ 3: CSRF Token</h3><p>Получение токена...</p>';
+            results.appendChild(test3);
+
+            try {
+                const response = await fetch(`${BACKEND}/api/csrf-token`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.csrfToken) {
+                        test3.className = 'test-item passed';
+                        test3.innerHTML = `
+                            <h3>✅ ТЕСТ 3: CSRF Token - ПРОЙДЕН</h3>
+                            <p>Token получен: ${data.csrfToken.substring(0, 20)}...</p>
+                        `;
+                        testsPassed++;
+                    } else {
+                        test3.className = 'test-item failed';
+                        test3.innerHTML = `
+                            <h3>❌ ТЕСТ 3: CSRF Token - ПРОВАЛЕН</h3>
+                            <p>Токен не найден в ответе</p>
+                        `;
+                    }
+                } else {
+                    test3.className = 'test-item failed';
+                    test3.innerHTML = `
+                        <h3>❌ ТЕСТ 3: CSRF Token - ПРОВАЛЕН</h3>
+                        <p>Status: ${response.status}</p>
+                    `;
+                }
+            } catch (error) {
+                test3.className = 'test-item failed';
+                test3.innerHTML = `
+                    <h3>❌ ТЕСТ 3: CSRF Token - ПРОВАЛЕН</h3>
+                    <p>Ошибка: ${error.message}</p>
+                `;
+            }
+
+            // Summary
+            const summary = document.createElement('div');
+            if (testsPassed === testsTotal) {
+                summary.className = 'summary success';
+                summary.innerHTML = `
+                    🎉 ВСЁ РАБОТАЕТ!<br>
+                    <div style="font-size: 0.9em; margin-top: 10px;">
+                        ${testsPassed}/${testsTotal} тестов пройдено<br>
+                        Frontend успешно подключен к Backend!
+                    </div>
+                `;
+            } else {
+                summary.className = 'summary failure';
+                summary.innerHTML = `
+                    ❌ Обнаружены проблемы<br>
+                    <div style="font-size: 0.9em; margin-top: 10px;">
+                        ${testsPassed}/${testsTotal} тестов пройдено
+                    </div>
+                `;
+
+                const infoBox = document.createElement('div');
+                infoBox.className = 'info-box';
+                infoBox.innerHTML = `
+                    <h4>📋 Что проверить:</h4>
+                    <ul>
+                        <li>FRONTEND_URL установлен в Render Dashboard?</li>
+                        <li>Значение: https://daten3.onrender.com</li>
+                        <li>Backend передеплоен после добавления переменной?</li>
+                        <li>Backend не спит? (Render Free Tier)</li>
+                    </ul>
+                `;
+                results.appendChild(infoBox);
+            }
+            results.appendChild(summary);
+
+            loading.classList.add('hidden');
+            button.disabled = false;
+            button.textContent = '🔄 Запустить ещё раз';
+        }
+
+        // Auto-run on page load
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>
