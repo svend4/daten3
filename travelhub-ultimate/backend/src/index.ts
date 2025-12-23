@@ -321,11 +321,21 @@ async function startServer() {
     // Load API keys from Redis
     await loadApiKeys();
 
-    // Initialize message queue
-    await messageQueueService.initialize();
+    // Initialize message queue (optional - requires Redis)
+    try {
+      await messageQueueService.initialize();
+    } catch (error: any) {
+      logger.warn('Message Queue Service not initialized:', error.message);
+      logger.info('ℹ️  Message Queue features disabled (requires Redis)');
+    }
 
-    // Initialize background jobs
-    await backgroundJobsService.initialize();
+    // Initialize background jobs (optional - requires message queue)
+    try {
+      await backgroundJobsService.initialize();
+    } catch (error: any) {
+      logger.warn('Background Jobs Service not initialized:', error.message);
+      logger.info('ℹ️  Background Jobs features disabled (requires Redis)');
+    }
 
     // Initialize cron jobs for automated tasks
     initializeCronJobs();
@@ -456,13 +466,21 @@ async function gracefulShutdown(signal: string) {
 
     // Step 5: Shutdown background jobs
     logger.info('Shutting down background jobs...');
-    await backgroundJobsService.shutdown();
-    logger.info('✓ Background jobs shut down');
+    try {
+      await backgroundJobsService.shutdown();
+      logger.info('✓ Background jobs shut down');
+    } catch (error: any) {
+      logger.warn('Background jobs shutdown skipped:', error.message);
+    }
 
     // Step 6: Close message queue
     logger.info('Closing message queue...');
-    await messageQueueService.close();
-    logger.info('✓ Message queue closed');
+    try {
+      await messageQueueService.close();
+      logger.info('✓ Message queue closed');
+    } catch (error: any) {
+      logger.warn('Message queue close skipped:', error.message);
+    }
 
     // Step 7: Disconnect from Prisma
     logger.info('Disconnecting from Prisma...');

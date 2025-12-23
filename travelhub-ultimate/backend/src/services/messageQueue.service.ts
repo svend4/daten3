@@ -398,6 +398,18 @@ class MessageQueueService {
    * Get service statistics
    */
   getStats() {
+    if (!this.initialized) {
+      return {
+        initialized: false,
+        totalJobsAdded: 0,
+        totalJobsCompleted: 0,
+        totalJobsFailed: 0,
+        byQueue: {},
+        byJobType: {},
+        recentJobs: [],
+      };
+    }
+
     const byQueue: Record<string, any> = {};
     for (const [name, queueStats] of stats.byQueue.entries()) {
       byQueue[name] = { ...queueStats };
@@ -409,6 +421,7 @@ class MessageQueueService {
     }
 
     return {
+      initialized: true,
       totalJobsAdded: stats.totalJobsAdded,
       totalJobsCompleted: stats.totalJobsCompleted,
       totalJobsFailed: stats.totalJobsFailed,
@@ -550,6 +563,11 @@ class MessageQueueService {
    * Close all queues and workers
    */
   async close(): Promise<void> {
+    if (!this.initialized) {
+      logger.debug('Message Queue Service not initialized, nothing to close');
+      return;
+    }
+
     logger.info('Closing Message Queue Service...');
 
     // Close workers
