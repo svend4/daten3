@@ -12,6 +12,7 @@
     "start:safe": "node start-safe.mjs",
     "start:render": "node start-render.mjs",
     "start:direct": "node dist/index.js",
+    "postinstall": "npx prisma generate",
     "test": "vitest",
     "test:unit": "vitest tests/unit/",
     "test:integration": "vitest tests/integration/",
