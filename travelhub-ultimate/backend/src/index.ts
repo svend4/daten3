@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 
 // Load environment variables first
+// Trigger redeploy with latest fixes
 dotenv.config();
 
 // Validate environment variables
