@@ -103,66 +103,6 @@ let httpServer: any = null;
 // MIDDLEWARE SETUP
 // ============================================
 
-// DEBUG: Track responses to catch double-send errors
-app.use((req, res, next) => {
-  const originalJson = res.json.bind(res);
-  const originalSend = res.send.bind(res);
-  const originalStatus = res.status.bind(res);
-  const originalWriteHead = res.writeHead.bind(res);
-  let responseSent = false;
-  let isInternalCall = false;
-
-  // Track all attempts to write headers
-  (res as any).writeHead = function(...args: any[]) {
-    if (responseSent) {
-      const errorDetails = `URL: ${req.method} ${req.url} | StatusCode: ${args[0]}`;
-      logger.error(`❌ writeHead called after response sent: ${errorDetails}`);
-      console.error(`❌ writeHead called after response sent: ${errorDetails}`);
-      console.trace('writeHead stack trace:');
-      return res;
-    }
-    // @ts-ignore - Using apply to avoid spread type issues
-    return originalWriteHead.apply(res, args);
-  };
-
-  res.json = function(body) {
-    if (responseSent && !isInternalCall) {
-      const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
-      logger.error(`❌ DOUBLE RESPONSE DETECTED (json): ${errorDetails}`);
-      console.error(`❌ DOUBLE RESPONSE DETECTED (json): ${errorDetails}`);
-      throw new Error(`Cannot send response twice - ${errorDetails}`);
-    }
-    responseSent = true;
-    isInternalCall = true; // Allow json to call send internally
-    const result = originalJson(body);
-    isInternalCall = false;
-    return result;
-  };
-
-  res.send = function(body) {
-    if (responseSent && !isInternalCall) {
-      const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
-      logger.error(`❌ DOUBLE RESPONSE DETECTED (send): ${errorDetails}`);
-      console.error(`❌ DOUBLE RESPONSE DETECTED (send): ${errorDetails}`);
-      throw new Error(`Cannot send response twice - ${errorDetails}`);
-    }
-    if (!isInternalCall) {
-      responseSent = true;
-    }
-    return originalSend(body);
-  };
-
-  res.status = function(code) {
-    const result = originalStatus(code);
-    // Override send/json on the returned object too
-    result.json = res.json.bind(result);
-    result.send = res.send.bind(result);
-    return result;
-  };
-
-  next();
-});
-
 // Request tracking middleware (must be first)
 app.use(requestIdMiddleware);  // Assign unique ID to each request
 app.use(responseTimeMiddleware); // Measure response time
@@ -325,47 +265,35 @@ app.use('/api/admin/cron', cronRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
-  try {
-    logger.info(`Root route handler called: ${req.method} ${req.url}`);
-    console.log(`Root route - BEFORE res.json() - headersSent: ${res.headersSent}`);
-
-    res.json({
-      name: 'TravelHub Ultimate API',
-      version: '1.0.0',
-      status: 'running',
-      documentation: '/api-docs',
-      endpoints: {
-        health: '/api/health',
-        metrics: '/metrics',
-        auth: '/api/auth',
-        hotels: '/api/hotels/search',
-        flights: '/api/flights',
-        cars: '/api/cars',
-        payment: '/api/payment',
-        notifications: '/api/notifications',
-        analytics: '/api/analytics',
-        affiliate: '/api/affiliate',
-        bookings: '/api/bookings',
-        favorites: '/api/favorites',
-        priceAlerts: '/api/price-alerts',
-        reviews: '/api/reviews',
-        currency: '/api/currency',
-        reports: '/api/reports',
-        recommendations: '/api/recommendations',
-        loyalty: '/api/loyalty',
-        groupBookings: '/api/group-bookings',
-        payouts: '/api/payouts',
-        admin: '/api/admin'
-      }
-    });
-
-    console.log(`Root route - AFTER res.json() - headersSent: ${res.headersSent}`);
-    logger.info(`Root route response sent successfully - headersSent: ${res.headersSent}`);
-  } catch (error) {
-    logger.error(`Root route ERROR: ${error}`);
-    console.error(`Root route caught error:`, error);
-    throw error;
-  }
+  res.json({
+    name: 'TravelHub Ultimate API',
+    version: '1.0.0',
+    status: 'running',
+    documentation: '/api-docs',
+    endpoints: {
+      health: '/api/health',
+      metrics: '/metrics',
+      auth: '/api/auth',
+      hotels: '/api/hotels/search',
+      flights: '/api/flights',
+      cars: '/api/cars',
+      payment: '/api/payment',
+      notifications: '/api/notifications',
+      analytics: '/api/analytics',
+      affiliate: '/api/affiliate',
+      bookings: '/api/bookings',
+      favorites: '/api/favorites',
+      priceAlerts: '/api/price-alerts',
+      reviews: '/api/reviews',
+      currency: '/api/currency',
+      reports: '/api/reports',
+      recommendations: '/api/recommendations',
+      loyalty: '/api/loyalty',
+      groupBookings: '/api/group-bookings',
+      payouts: '/api/payouts',
+      admin: '/api/admin'
+    }
+  });
 });
 
 // ============================================
