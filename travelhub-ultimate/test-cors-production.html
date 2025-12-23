@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Production Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .test-section {
+            margin-bottom: 20px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .test-item.testing {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .test-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .test-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .test-details {
+            font-size: 13px;
+            color: #555;
+            margin-top: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary.error {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .summary.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 CORS Production Test</h1>
+        <p class="subtitle">Проверка подключения Frontend → Backend</p>
+
+        <button onclick="runTests()" id="testBtn">Запустить тест</button>
+
+        <div id="results"></div>
+        <div id="summary"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://daten3-1.onrender.com';
+        const FRONTEND_URL = 'https://daten3.onrender.com';
+
+        async function runTests() {
+            document.getElementById('testBtn').disabled = true;
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+
+            const tests = [
+                { name: 'Health Check', fn: testHealth },
+                { name: 'CORS Headers', fn: testCORS },
+                { name: 'CSRF Token', fn: testCSRF },
+            ];
+
+            let passed = 0;
+            let failed = 0;
+
+            for (const test of tests) {
+                const result = await runTest(test.name, test.fn);
+                if (result.success) passed++;
+                else failed++;
+            }
+
+            showSummary(passed, failed);
+            document.getElementById('testBtn').disabled = false;
+        }
+
+        async function runTest(name, testFn) {
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item testing';
+            testItem.innerHTML = `<div class="test-name">⏳ ${name}</div><div>Выполняется...</div>`;
+            document.getElementById('results').appendChild(testItem);
+
+            try {
+                const result = await testFn();
+                if (result.success) {
+                    testItem.className = 'test-item success';
+                    testItem.innerHTML = `
+                        <div class="test-name">✅ ${name}</div>
+                        <div>${result.message}</div>
+                        ${result.details ? `<div class="test-details">${result.details}</div>` : ''}
+                    `;
+                    return { success: true };
+                } else {
+                    testItem.className = 'test-item error';
+                    testItem.innerHTML = `
+                        <div class="test-name">❌ ${name}</div>
+                        <div>${result.message}</div>
+                        ${result.details ? `<div class="test-details">${result.details}</div>` : ''}
+                    `;
+                    return { success: false };
+                }
+            } catch (error) {
+                testItem.className = 'test-item error';
+                testItem.innerHTML = `
+                    <div class="test-name">❌ ${name}</div>
+                    <div>Ошибка: ${error.message}</div>
+                `;
+                return { success: false };
+            }
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return {
+                        success: false,
+                        message: `Backend вернул статус ${response.status}`,
+                        details: await response.text()
+                    };
+                }
+
+                const data = await response.json();
+                return {
+                    success: true,
+                    message: 'Backend отвечает',
+                    details: JSON.stringify(data, null, 2)
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    message: 'Не удалось подключиться к backend',
+                    details: error.message
+                };
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Origin': FRONTEND_URL
+                    }
+                });
+
+                const corsHeader = response.headers.get('access-control-allow-origin');
+                const credentialsHeader = response.headers.get('access-control-allow-credentials');
+
+                if (!corsHeader) {
+                    return {
+                        success: false,
+                        message: 'CORS заголовки отсутствуют!',
+                        details: `Backend не возвращает Access-Control-Allow-Origin.\nПроверьте переменную FRONTEND_URL на backend.`
+                    };
+                }
+
+                if (corsHeader !== FRONTEND_URL && corsHeader !== '*') {
+                    return {
+                        success: false,
+                        message: 'CORS настроен неправильно!',
+                        details: `Ожидаемый origin: ${FRONTEND_URL}\nПолученный origin: ${corsHeader}`
+                    };
+                }
+
+                return {
+                    success: true,
+                    message: 'CORS настроен корректно',
+                    details: `Access-Control-Allow-Origin: ${corsHeader}\nAccess-Control-Allow-Credentials: ${credentialsHeader}`
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    message: 'Ошибка CORS',
+                    details: error.message
+                };
+            }
+        }
+
+        async function testCSRF() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/csrf-token`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    return {
+                        success: false,
+                        message: `CSRF endpoint вернул ${response.status}`,
+                        details: await response.text()
+                    };
+                }
+
+                const data = await response.json();
+                if (!data.data || !data.data.csrfToken) {
+                    return {
+                        success: false,
+                        message: 'CSRF токен не получен',
+                        details: JSON.stringify(data, null, 2)
+                    };
+                }
+
+                return {
+                    success: true,
+                    message: 'CSRF токен получен',
+                    details: `Token: ${data.data.csrfToken.substring(0, 30)}...`
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    message: 'Ошибка получения CSRF токена',
+                    details: error.message
+                };
+            }
+        }
+
+        function showSummary(passed, failed) {
+            const total = passed + failed;
+            const summaryDiv = document.getElementById('summary');
+
+            let className = 'summary';
+            let emoji = '✅';
+            let message = 'Все тесты пройдены!';
+
+            if (failed > 0) {
+                className = 'summary error';
+                emoji = '❌';
+                message = 'Есть проблемы с подключением!';
+            } else {
+                className = 'summary success';
+            }
+
+            summaryDiv.className = className;
+            summaryDiv.innerHTML = `
+                <h3>${emoji} Результаты</h3>
+                <p style="margin-top: 10px;">${message}</p>
+                <p style="margin-top: 10px;">
+                    <strong>Пройдено:</strong> ${passed}/${total}<br>
+                    <strong>Провалено:</strong> ${failed}/${total}
+                </p>
+                ${failed > 0 ? `
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
+                    <p style="font-size: 13px; color: #666;">
+                        <strong>Решение:</strong><br>
+                        1. Откройте Render Dashboard<br>
+                        2. Backend Service → Environment<br>
+                        3. Добавьте: FRONTEND_URL = https://daten3.onrender.com<br>
+                        4. Сохраните и подождите передеплоя
+                    </p>
+                ` : ''}
+            `;
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>
