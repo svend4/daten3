@@ -36,7 +36,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./travelhub-ultimate/backend
-        run: npm test -- --run --reporter=verbose
+        run: npm run test:unit -- --run --reporter=verbose
         env:
           NODE_ENV: test
 
@@ -87,7 +87,7 @@ jobs:
 
       - name: Run integration tests
         working-directory: ./travelhub-ultimate/backend
-        run: npm test -- --run --reporter=verbose src/__tests__/integration/
+        run: npm run test:integration -- --run --reporter=verbose
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://travelhub_test:test_password@localhost:5432/travelhub_test
