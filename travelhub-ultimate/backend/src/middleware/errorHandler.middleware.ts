@@ -101,10 +101,6 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  // DEBUG: Log headersSent status
-  logger.error(`Error handler called - headersSent: ${res.headersSent} | URL: ${req.method} ${req.url} | Error: ${err.message}`);
-  console.error(`Error handler - headersSent: ${res.headersSent} | URL: ${req.method} ${req.url}`);
-
   // Skip if headers already sent (prevents "Cannot set headers after they are sent" error)
   if (res.headersSent) {
     logger.warn('Headers already sent, cannot send error response', {
