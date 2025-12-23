@@ -289,6 +289,11 @@ const Settings: React.FC = () => {
             </div>
 
             <div className="space-y-4">
+              <p className="text-gray-600">
+                Additional security features will be available soon. Currently, you can change your password above.
+              </p>
+
+              {/* TODO: Implement these security features
               <div className="flex items-center justify-between py-4 border-b">
                 <div>
                   <h3 className="font-semibold text-gray-900">Two-Factor Authentication</h3>
@@ -296,8 +301,8 @@ const Settings: React.FC = () => {
                     Add an extra layer of security to your account
                   </p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
+                <Button variant="outline" size="sm">
+                  Enable 2FA
                 </Button>
               </div>
 
@@ -308,8 +313,8 @@ const Settings: React.FC = () => {
                     Manage your active login sessions
                   </p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
+                <Button variant="outline" size="sm">
+                  Manage Sessions
                 </Button>
               </div>
 
@@ -320,10 +325,11 @@ const Settings: React.FC = () => {
                     View recent login activity on your account
                   </p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
+                <Button variant="outline" size="sm">
+                  View History
                 </Button>
               </div>
+              */}
             </div>
           </Card>
 
