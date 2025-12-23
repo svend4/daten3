@@ -133,6 +133,13 @@ class MessageQueueService {
   private initialized = false;
 
   /**
+   * Check if service is initialized
+   */
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  /**
    * Initialize message queue service
    */
   async initialize(): Promise<void> {
