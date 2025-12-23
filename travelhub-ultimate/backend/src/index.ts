@@ -501,13 +501,32 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.error('💥 Uncaught Exception:', error);
-  logger.error('Stack:', error.stack);
-  gracefulShutdown('uncaughtException');
+  logger.error('💥 Uncaught Exception:', error.message || error);
+  logger.error('Stack:', error.stack || 'No stack trace available');
+  logger.error('Error details:', {
+    name: error.name,
+    message: error.message,
+    code: (error as any).code,
+  });
+
+  // Don't exit immediately - log and continue in production
+  // This prevents server crashes from transient errors
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('⚠️  Continuing despite uncaught exception in production');
+    logger.warn('This error should be fixed to prevent instability');
+  } else {
+    gracefulShutdown('uncaughtException');
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('💥 Unhandled Rejection at:', promise);
   logger.error('Reason:', reason);
-  gracefulShutdown('unhandledRejection');
+
+  // Don't exit immediately in production
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('⚠️  Continuing despite unhandled rejection in production');
+  } else {
+    gracefulShutdown('unhandledRejection');
+  }
 });
