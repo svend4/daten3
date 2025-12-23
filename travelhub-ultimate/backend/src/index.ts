@@ -121,7 +121,8 @@ app.use((req, res, next) => {
       console.trace('writeHead stack trace:');
       return res;
     }
-    return originalWriteHead(...args);
+    // @ts-ignore - Using apply to avoid spread type issues
+    return originalWriteHead.apply(res, args);
   };
 
   res.json = function(body) {
