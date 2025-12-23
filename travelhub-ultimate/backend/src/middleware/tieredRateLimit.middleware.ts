@@ -152,7 +152,35 @@ const createTierRateLimiter = (
         // @ts-ignore - RedisStore type definitions may vary
         client: redisClient,
         prefix: `tier_rl:${tier.toLowerCase()}:`,
-        sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+        // universal wrapper: support node-redis v4 (sendCommand) and ioredis (call)
+        // @ts-ignore
+        sendCommand: (...args: string[]) => {
+          const anyClient = redisClient as any;
+
+          if (typeof anyClient.sendCommand === 'function') {
+            // node-redis v4: try array or spread
+            try {
+              return anyClient.sendCommand(args);
+            } catch {
+              return anyClient.sendCommand(...args);
+            }
+          }
+
+          if (typeof anyClient.call === 'function') {
+            // ioredis
+            return anyClient.call(...args);
+          }
+
+          if (typeof anyClient.send === 'function') {
+            return anyClient.send(...args);
+          }
+
+          if (typeof anyClient.execute === 'function') {
+            return anyClient.execute(...args);
+          }
+
+          throw new Error('Unsupported redis client: missing sendCommand/call/send/execute');
+        },
       }),
     }),
     skip: (req: Request) => {
