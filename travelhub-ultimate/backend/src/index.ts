@@ -108,26 +108,32 @@ app.use((req, res, next) => {
   const originalSend = res.send.bind(res);
   const originalStatus = res.status.bind(res);
   let responseSent = false;
+  let isInternalCall = false;
 
   res.json = function(body) {
-    if (responseSent) {
+    if (responseSent && !isInternalCall) {
       const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
-      logger.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
-      console.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      logger.error(`❌ DOUBLE RESPONSE DETECTED (json): ${errorDetails}`);
+      console.error(`❌ DOUBLE RESPONSE DETECTED (json): ${errorDetails}`);
       throw new Error(`Cannot send response twice - ${errorDetails}`);
     }
     responseSent = true;
-    return originalJson(body);
+    isInternalCall = true; // Allow json to call send internally
+    const result = originalJson(body);
+    isInternalCall = false;
+    return result;
   };
 
   res.send = function(body) {
-    if (responseSent) {
+    if (responseSent && !isInternalCall) {
       const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
-      logger.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
-      console.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      logger.error(`❌ DOUBLE RESPONSE DETECTED (send): ${errorDetails}`);
+      console.error(`❌ DOUBLE RESPONSE DETECTED (send): ${errorDetails}`);
       throw new Error(`Cannot send response twice - ${errorDetails}`);
     }
-    responseSent = true;
+    if (!isInternalCall) {
+      responseSent = true;
+    }
     return originalSend(body);
   };
 
