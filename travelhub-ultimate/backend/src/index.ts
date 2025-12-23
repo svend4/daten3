@@ -42,6 +42,7 @@ import cronRoutes from './routes/cron.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
 import gatewayRoutes from './routes/gateway.routes.js';
 import serviceMeshRoutes from './routes/serviceMesh.routes.js';
+import metricsRoutes from './routes/metrics.routes.js';
 
 // Middleware
 import corsMiddleware from './middleware/cors.middleware.js';
@@ -55,6 +56,7 @@ import responseTimeMiddleware from './middleware/responseTime.middleware.js';
 import apiVersionMiddleware from './middleware/apiVersion.middleware.js';
 import sanitizationMiddleware from './middleware/sanitization.middleware.js';
 import timeoutMiddleware from './middleware/timeout.middleware.js';
+import metricsMiddleware from './middleware/metrics.middleware.js';
 
 // Services
 import { redisService } from './services/redis.service.js';
@@ -103,6 +105,7 @@ let httpServer: any = null;
 // Request tracking middleware (must be first)
 app.use(requestIdMiddleware);  // Assign unique ID to each request
 app.use(responseTimeMiddleware); // Measure response time
+app.use(metricsMiddleware);     // Collect Prometheus metrics
 
 // API versioning middleware (early in chain)
 app.use(apiVersionMiddleware);  // Extract and validate API version
@@ -175,12 +178,15 @@ app.use(serviceMeshMiddleware);
 app.use(trackAffiliateClick);
 
 // ============================================
-// HEALTH CHECK ENDPOINTS
+// HEALTH CHECK & METRICS ENDPOINTS
 // ============================================
 
 // Health check routes (Railway, K8s probes, monitoring)
 app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
+
+// Prometheus metrics endpoint
+app.use('/metrics', metricsRoutes);
 
 // ============================================
 // API DOCUMENTATION (Swagger)
@@ -265,6 +271,7 @@ app.get('/', (req, res) => {
     documentation: '/api-docs',
     endpoints: {
       health: '/api/health',
+      metrics: '/metrics',
       auth: '/api/auth',
       hotels: '/api/hotels/search',
       flights: '/api/flights',

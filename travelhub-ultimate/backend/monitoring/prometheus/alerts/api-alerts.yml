@@ -1,0 +1,183 @@
+# API Alerting Rules for TravelHub
+
+groups:
+  - name: api_alerts
+    interval: 30s
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Slow Response Time Alert
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow API response time"
+          description: "95th percentile response time is {{ $value }}s (threshold: 1s)"
+
+      # Very Slow Response Time Alert
+      - alert: VerySlowResponseTime
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Very slow API response time"
+          description: "99th percentile response time is {{ $value }}s (threshold: 3s)"
+
+      # API Down Alert
+      - alert: APIDown
+        expr: up{job="travelhub-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "TravelHub API is down"
+          description: "API has been down for more than 2 minutes"
+
+      # High Request Rate
+      - alert: HighRequestRate
+        expr: |
+          sum(rate(http_requests_total[5m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "High request rate detected"
+          description: "Request rate is {{ $value }} req/s (threshold: 1000 req/s)"
+
+      # Database Connection Issues
+      - alert: LowDatabaseConnections
+        expr: database_connections_active < 1
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "No active database connections"
+          description: "Database connections dropped to {{ $value }}"
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(database_query_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile query time is {{ $value }}s (threshold: 0.5s)"
+
+      # Low Cache Hit Rate
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(cache_hits_total[5m]))
+            /
+            (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))
+          ) < 0.5
+        for: 15m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      # High Queue Size
+      - alert: HighQueueSize
+        expr: queue_size > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "High queue size"
+          description: "Queue {{$labels.queue}} has {{ $value }} items (threshold: 1000)"
+
+      # Failed Queue Jobs
+      - alert: HighQueueFailureRate
+        expr: |
+          (
+            sum(rate(queue_jobs_total{status="failed"}[5m]))
+            /
+            sum(rate(queue_jobs_total[5m]))
+          ) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "High queue job failure rate"
+          description: "Queue job failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # External API Issues
+      - alert: ExternalAPIFailures
+        expr: |
+          (
+            sum(rate(external_api_calls_total{status!="success"}[5m]))
+            /
+            sum(rate(external_api_calls_total[5m]))
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          category: external
+        annotations:
+          summary: "High external API failure rate"
+          description: "External API {{$labels.api}} failure rate is {{ $value | humanizePercentage }} (threshold: 20%)"
+
+      # Memory Usage Alert
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes
+            /
+            (1024 * 1024 * 1024)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}GB (threshold: 2GB)"
+
+      # CPU Usage Alert
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
