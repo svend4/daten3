@@ -93,6 +93,7 @@ export const responseTimeMiddleware = (
       headerSet = true;
     }
 
+    // @ts-ignore - TypeScript doesn't like apply with any[] args
     return originalWriteHead.apply(res, args);
   };
 
