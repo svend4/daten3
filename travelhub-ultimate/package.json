@@ -1,0 +1,33 @@
+{
+  "name": "travelhub-ultimate",
+  "version": "1.0.0",
+  "description": "TravelHub Ultimate - Modern travel aggregation platform",
+  "private": true,
+  "scripts": {
+    "test:connection": "node test-backend-connection.js",
+    "test:connection:local": "node test-backend-connection.js --local",
+    "test:connection:prod": "node test-backend-connection.js --prod",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "test:all": "npm run test:connection && npm run test:frontend && npm run test:backend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
