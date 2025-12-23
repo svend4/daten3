@@ -102,6 +102,54 @@ let httpServer: any = null;
 // MIDDLEWARE SETUP
 // ============================================
 
+// DEBUG: Track responses to catch double-send errors
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  const originalSend = res.send.bind(res);
+  const originalStatus = res.status.bind(res);
+  let responseSent = false;
+
+  res.json = function(body) {
+    if (responseSent) {
+      logger.error('❌ DOUBLE RESPONSE DETECTED:', {
+        url: req.url,
+        method: req.method,
+        path: req.path,
+        route: (req as any).route?.path,
+      });
+      throw new Error('Cannot send response twice');
+    }
+    responseSent = true;
+    logger.debug('Response sent:', { url: req.url, method: req.method });
+    return originalJson(body);
+  };
+
+  res.send = function(body) {
+    if (responseSent) {
+      logger.error('❌ DOUBLE RESPONSE DETECTED:', {
+        url: req.url,
+        method: req.method,
+        path: req.path,
+        route: (req as any).route?.path,
+      });
+      throw new Error('Cannot send response twice');
+    }
+    responseSent = true;
+    logger.debug('Response sent:', { url: req.url, method: req.method });
+    return originalSend(body);
+  };
+
+  res.status = function(code) {
+    const result = originalStatus(code);
+    // Override send/json on the returned object too
+    result.json = res.json.bind(result);
+    result.send = res.send.bind(result);
+    return result;
+  };
+
+  next();
+});
+
 // Request tracking middleware (must be first)
 app.use(requestIdMiddleware);  // Assign unique ID to each request
 app.use(responseTimeMiddleware); // Measure response time
