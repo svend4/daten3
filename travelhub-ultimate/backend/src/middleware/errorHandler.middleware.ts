@@ -101,6 +101,12 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  // Skip if headers already sent (prevents "Cannot set headers after they are sent" error)
+  if (res.headersSent) {
+    logger.warn('Headers already sent, cannot send error response');
+    return next(err);
+  }
+
   err.statusCode = err.statusCode || err.status || 500;
   err.status = err.status || 'error';
 

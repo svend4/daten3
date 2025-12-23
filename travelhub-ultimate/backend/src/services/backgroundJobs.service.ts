@@ -267,6 +267,12 @@ class BackgroundJobsService {
       return;
     }
 
+    // Skip if message queue service is not initialized
+    if (!messageQueueService.isInitialized()) {
+      logger.debug(`Skipping background job "${jobName}" - Message Queue Service not available`);
+      return;
+    }
+
     const startTime = Date.now();
 
     try {
