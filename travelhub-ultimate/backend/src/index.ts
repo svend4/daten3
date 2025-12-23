@@ -304,35 +304,47 @@ app.use('/api/admin/cron', cronRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({
-    name: 'TravelHub Ultimate API',
-    version: '1.0.0',
-    status: 'running',
-    documentation: '/api-docs',
-    endpoints: {
-      health: '/api/health',
-      metrics: '/metrics',
-      auth: '/api/auth',
-      hotels: '/api/hotels/search',
-      flights: '/api/flights',
-      cars: '/api/cars',
-      payment: '/api/payment',
-      notifications: '/api/notifications',
-      analytics: '/api/analytics',
-      affiliate: '/api/affiliate',
-      bookings: '/api/bookings',
-      favorites: '/api/favorites',
-      priceAlerts: '/api/price-alerts',
-      reviews: '/api/reviews',
-      currency: '/api/currency',
-      reports: '/api/reports',
-      recommendations: '/api/recommendations',
-      loyalty: '/api/loyalty',
-      groupBookings: '/api/group-bookings',
-      payouts: '/api/payouts',
-      admin: '/api/admin'
-    }
-  });
+  try {
+    logger.info(`Root route handler called: ${req.method} ${req.url}`);
+    console.log(`Root route - BEFORE res.json() - headersSent: ${res.headersSent}`);
+
+    res.json({
+      name: 'TravelHub Ultimate API',
+      version: '1.0.0',
+      status: 'running',
+      documentation: '/api-docs',
+      endpoints: {
+        health: '/api/health',
+        metrics: '/metrics',
+        auth: '/api/auth',
+        hotels: '/api/hotels/search',
+        flights: '/api/flights',
+        cars: '/api/cars',
+        payment: '/api/payment',
+        notifications: '/api/notifications',
+        analytics: '/api/analytics',
+        affiliate: '/api/affiliate',
+        bookings: '/api/bookings',
+        favorites: '/api/favorites',
+        priceAlerts: '/api/price-alerts',
+        reviews: '/api/reviews',
+        currency: '/api/currency',
+        reports: '/api/reports',
+        recommendations: '/api/recommendations',
+        loyalty: '/api/loyalty',
+        groupBookings: '/api/group-bookings',
+        payouts: '/api/payouts',
+        admin: '/api/admin'
+      }
+    });
+
+    console.log(`Root route - AFTER res.json() - headersSent: ${res.headersSent}`);
+    logger.info(`Root route response sent successfully - headersSent: ${res.headersSent}`);
+  } catch (error) {
+    logger.error(`Root route ERROR: ${error}`);
+    console.error(`Root route caught error:`, error);
+    throw error;
+  }
 });
 
 // ============================================
