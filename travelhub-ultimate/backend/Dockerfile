@@ -33,14 +33,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev
-
-# Copy Prisma schema and migrations
+# Copy Prisma schema BEFORE npm ci (needed for postinstall hook)
 COPY prisma ./prisma/
 
-# Generate Prisma Client (production)
-RUN npx prisma generate
+# Install production dependencies only (will run postinstall -> prisma generate)
+RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
