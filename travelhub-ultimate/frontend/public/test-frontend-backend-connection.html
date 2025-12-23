@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend-Backend Connection Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            color: #444;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .test-item.testing {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .test-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .test-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .test-status {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .test-details {
+            font-size: 12px;
+            color: #555;
+            margin-top: 8px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .summary h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .status-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-icon.pending {
+            background: #ffc107;
+        }
+
+        .status-icon.success {
+            background: #28a745;
+        }
+
+        .status-icon.error {
+            background: #dc3545;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Frontend-Backend Connection Test</h1>
+        <p class="subtitle">Comprehensive testing suite for TravelHub API connectivity</p>
+
+        <div class="controls">
+            <button id="testLocalBtn" onclick="runTests('local')">Test Local Backend</button>
+            <button id="testProdBtn" onclick="runTests('prod')">Test Production Backend</button>
+            <button id="testBothBtn" onclick="runTests('both')">Test Both</button>
+        </div>
+
+        <div>
+            <label for="customUrl" style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Custom Backend URL:</label>
+            <input
+                type="text"
+                id="customUrl"
+                class="url-input"
+                placeholder="https://your-backend.com/api"
+            />
+            <button onclick="runTests('custom')">Test Custom URL</button>
+        </div>
+
+        <div id="testResults"></div>
+        <div id="summary"></div>
+    </div>
+
+    <script>
+        const LOCAL_URL = 'http://localhost:3000/api';
+        const PROD_URL = 'https://daten3-1.onrender.com/api';
+
+        let testStats = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            running: false
+        };
+
+        async function runTests(mode) {
+            if (testStats.running) {
+                alert('Tests are already running!');
+                return;
+            }
+
+            testStats = { total: 0, passed: 0, failed: 0, running: true };
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+
+            const urls = [];
+            if (mode === 'local' || mode === 'both') {
+                urls.push({ url: LOCAL_URL, label: 'Local Backend' });
+            }
+            if (mode === 'prod' || mode === 'both') {
+                urls.push({ url: PROD_URL, label: 'Production Backend' });
+            }
+            if (mode === 'custom') {
+                const customUrl = document.getElementById('customUrl').value.trim();
+                if (customUrl) {
+                    urls.push({ url: customUrl, label: 'Custom Backend' });
+                } else {
+                    alert('Please enter a custom URL');
+                    testStats.running = false;
+                    document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                    return;
+                }
+            }
+
+            for (const { url, label } of urls) {
+                await runTestSuite(url, label);
+            }
+
+            testStats.running = false;
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            showSummary();
+        }
+
+        async function runTestSuite(baseUrl, label) {
+            const section = createTestSection(label, baseUrl);
+            document.getElementById('testResults').appendChild(section);
+
+            const tests = [
+                { name: 'Health Check', fn: () => testHealthCheck(baseUrl) },
+                { name: 'Root Endpoint', fn: () => testRootEndpoint(baseUrl) },
+                { name: 'CSRF Token', fn: () => testCSRFToken(baseUrl) },
+                { name: 'API Documentation', fn: () => testApiDocs(baseUrl) },
+                { name: 'CORS Headers', fn: () => testCORS(baseUrl) }
+            ];
+
+            for (const test of tests) {
+                await runTest(section, test.name, test.fn);
+            }
+        }
+
+        function createTestSection(label, url) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `
+                <h2>
+                    <span class="status-icon pending"></span>
+                    ${label}
+                </h2>
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">${url}</p>
+                <div class="tests"></div>
+            `;
+            return section;
+        }
+
+        async function runTest(section, name, testFn) {
+            testStats.total++;
+
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item testing';
+            testItem.innerHTML = `
+                <div class="test-name">⏳ ${name}</div>
+                <div class="test-status">Running...</div>
+            `;
+            section.querySelector('.tests').appendChild(testItem);
+
+            try {
+                const result = await testFn();
+                if (result.success) {
+                    testStats.passed++;
+                    testItem.className = 'test-item success';
+                    testItem.innerHTML = `
+                        <div class="test-name">✅ ${name}</div>
+                        <div class="test-status">${result.message}</div>
+                        ${result.details ? `<div class="test-details">${result.details}</div>` : ''}
+                    `;
+                } else {
+                    testStats.failed++;
+                    testItem.className = 'test-item error';
+                    testItem.innerHTML = `
+                        <div class="test-name">❌ ${name}</div>
+                        <div class="test-status">${result.message}</div>
+                        ${result.details ? `<div class="test-details">${result.details}</div>` : ''}
+                    `;
+                }
+            } catch (error) {
+                testStats.failed++;
+                testItem.className = 'test-item error';
+                testItem.innerHTML = `
+                    <div class="test-name">❌ ${name}</div>
+                    <div class="test-status">Error: ${error.message}</div>
+                `;
+            }
+
+            updateSectionStatus(section);
+        }
+
+        function updateSectionStatus(section) {
+            const tests = section.querySelectorAll('.test-item');
+            const allPassed = Array.from(tests).every(t => t.classList.contains('success'));
+            const anyFailed = Array.from(tests).some(t => t.classList.contains('error'));
+
+            const icon = section.querySelector('.status-icon');
+            if (allPassed) {
+                icon.className = 'status-icon success';
+            } else if (anyFailed) {
+                icon.className = 'status-icon error';
+            }
+        }
+
+        async function testHealthCheck(baseUrl) {
+            const response = await fetch(`${baseUrl}/health`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    message: `Status: ${response.status}`,
+                    details: JSON.stringify(data, null, 2)
+                };
+            } else {
+                return {
+                    success: false,
+                    message: `Status: ${response.status}`,
+                    details: await response.text()
+                };
+            }
+        }
+
+        async function testRootEndpoint(baseUrl) {
+            const url = baseUrl.replace('/api', '');
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    message: `${data.name} v${data.version}`,
+                    details: JSON.stringify(data, null, 2)
+                };
+            } else {
+                return {
+                    success: false,
+                    message: `Status: ${response.status}`,
+                    details: await response.text()
+                };
+            }
+        }
+
+        async function testCSRFToken(baseUrl) {
+            const response = await fetch(`${baseUrl}/auth/csrf-token`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.data && data.data.csrfToken) {
+                    return {
+                        success: true,
+                        message: 'CSRF token received',
+                        details: `Token: ${data.data.csrfToken.substring(0, 30)}...`
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: 'No CSRF token in response',
+                        details: JSON.stringify(data, null, 2)
+                    };
+                }
+            } else {
+                return {
+                    success: false,
+                    message: `Status: ${response.status}`,
+                    details: await response.text()
+                };
+            }
+        }
+
+        async function testApiDocs(baseUrl) {
+            const url = baseUrl.replace('/api', '/api-docs.json');
+            const response = await fetch(url, {
+                method: 'GET'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    message: `Swagger ${data.openapi || data.swagger}`,
+                    details: `Info: ${data.info.title} v${data.info.version}`
+                };
+            } else {
+                return {
+                    success: false,
+                    message: `Status: ${response.status}`,
+                    details: await response.text()
+                };
+            }
+        }
+
+        async function testCORS(baseUrl) {
+            const response = await fetch(`${baseUrl}/health`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            const corsHeader = response.headers.get('access-control-allow-origin');
+            const credentialsHeader = response.headers.get('access-control-allow-credentials');
+
+            if (corsHeader) {
+                return {
+                    success: true,
+                    message: 'CORS configured correctly',
+                    details: `Origin: ${corsHeader}\nCredentials: ${credentialsHeader}`
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'CORS headers not found'
+                };
+            }
+        }
+
+        function showSummary() {
+            const successRate = testStats.total > 0
+                ? Math.round((testStats.passed / testStats.total) * 100)
+                : 0;
+
+            const summaryHtml = `
+                <div class="summary">
+                    <h3>📊 Test Summary</h3>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <div class="stat-value" style="color: #2196f3;">${testStats.total}</div>
+                            <div class="stat-label">Total Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" style="color: #28a745;">${testStats.passed}</div>
+                            <div class="stat-label">Passed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" style="color: #dc3545;">${testStats.failed}</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" style="color: ${successRate >= 80 ? '#28a745' : successRate >= 50 ? '#ffc107' : '#dc3545'};">
+                                ${successRate}%
+                            </div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('summary').innerHTML = summaryHtml;
+        }
+    </script>
+</body>
+</html>

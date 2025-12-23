@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📱 TravelHub Mobile Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .config-box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .config-box h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 5px;
+    }
+
+    button {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 18px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 12px;
+      width: 100%;
+      margin: 10px 0;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      background: #16a34a;
+    }
+
+    .test {
+      background: white;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 4px solid #eab308;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .test.success {
+      border-left-color: #22c55e;
+    }
+
+    .test.error {
+      border-left-color: #ef4444;
+    }
+
+    .test.pending {
+      border-left-color: #eab308;
+    }
+
+    .test h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .test p {
+      color: #666;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .test code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+    }
+
+    .summary {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .summary.success {
+      border: 3px solid #22c55e;
+    }
+
+    .summary.error {
+      border: 3px solid #ef4444;
+    }
+
+    .summary h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .summary p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .info p {
+      color: #1e40af;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 TravelHub Mobile Test</h1>
+
+    <div class="info">
+      <p><strong>ℹ️ Инструкция:</strong> Введите ваши URL из Railway и нажмите "Запустить тесты"</p>
+    </div>
+
+    <div class="config-box">
+      <h2>⚙️ Настройки URL</h2>
+
+      <div class="input-group">
+        <label for="frontendUrl">🏠 Frontend URL:</label>
+        <input
+          type="text"
+          id="frontendUrl"
+          placeholder="https://daten3-travel.up.railway.app"
+          value="https://daten3-travel.up.railway.app"
+        >
+        <div class="hint">Ваш Frontend domain из Railway</div>
+      </div>
+
+      <div class="input-group">
+        <label for="backendUrl">🔌 Backend URL:</label>
+        <input
+          type="text"
+          id="backendUrl"
+          placeholder="https://ваш-backend.up.railway.app"
+          value=""
+        >
+        <div class="hint">Ваш Backend domain из Railway (БЕЗ /api)</div>
+      </div>
+    </div>
+
+    <button onclick="runTests()" id="testBtn">🧪 Запустить тесты</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    // Загрузить сохранённые URL из localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedFrontend = localStorage.getItem('frontendUrl');
+      const savedBackend = localStorage.getItem('backendUrl');
+
+      if (savedFrontend) {
+        document.getElementById('frontendUrl').value = savedFrontend;
+      }
+      if (savedBackend) {
+        document.getElementById('backendUrl').value = savedBackend;
+      }
+    });
+
+    async function runTests() {
+      const results = document.getElementById('results');
+      const btn = document.getElementById('testBtn');
+
+      // Получить URL из полей ввода
+      const frontendUrl = document.getElementById('frontendUrl').value.trim();
+      const backendUrl = document.getElementById('backendUrl').value.trim();
+
+      // Валидация
+      if (!frontendUrl || !backendUrl) {
+        results.innerHTML = `
+          <div class="test error">
+            <h3>❌ Ошибка</h3>
+            <p>Пожалуйста, заполните оба URL!</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Сохранить в localStorage
+      localStorage.setItem('frontendUrl', frontendUrl);
+      localStorage.setItem('backendUrl', backendUrl);
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Тестирование...';
+
+      results.innerHTML = '<div class="spinner"></div>';
+
+      const tests = [];
+
+      // Test 1: Frontend availability
+      try {
+        const r = await fetch(frontendUrl);
+        if (r.ok) {
+          tests.push({
+            name: 'Frontend доступность',
+            status: 'success',
+            message: 'Сайт загружается',
+            detail: `HTTP ${r.status}`
+          });
+        } else {
+          tests.push({
+            name: 'Frontend доступность',
+            status: 'error',
+            message: `HTTP ${r.status} ${r.statusText}`,
+            detail: frontendUrl
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Frontend доступность',
+          status: 'error',
+          message: 'Не удалось подключиться',
+          detail: e.message
+        });
+      }
+
+      // Test 2: Backend Health
+      try {
+        const r = await fetch(backendUrl + '/health');
+        const data = await r.json();
+        if (data.status === 'ok') {
+          tests.push({
+            name: 'Backend Health',
+            status: 'success',
+            message: `Uptime: ${Math.floor(data.uptime)}s`,
+            detail: data.timestamp
+          });
+        } else {
+          tests.push({
+            name: 'Backend Health',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Backend Health',
+          status: 'error',
+          message: 'Ошибка подключения',
+          detail: e.message
+        });
+      }
+
+      // Test 3: API Health
+      try {
+        const r = await fetch(backendUrl + '/api/health');
+        const data = await r.json();
+        if (data.status === 'ok') {
+          tests.push({
+            name: 'API Health',
+            status: 'success',
+            message: 'API работает',
+            detail: 'CORS настроен'
+          });
+        } else {
+          tests.push({
+            name: 'API Health',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'API Health',
+          status: 'error',
+          message: 'CORS ошибка или нет подключения',
+          detail: e.message
+        });
+      }
+
+      // Test 4: Hotels API (POST)
+      try {
+        const r = await fetch(backendUrl + '/api/hotels/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city: 'Москва', checkIn: '2025-12-25' })
+        });
+        const data = await r.json();
+        if (data.message || data.hotels !== undefined) {
+          tests.push({
+            name: 'Hotels API (POST)',
+            status: 'success',
+            message: data.message || 'Endpoint работает',
+            detail: `Hotels: ${data.hotels ? data.hotels.length : 0}`
+          });
+        } else {
+          tests.push({
+            name: 'Hotels API (POST)',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Hotels API (POST)',
+          status: 'error',
+          message: 'Ошибка запроса',
+          detail: e.message
+        });
+      }
+
+      // Test 5: Flights API (POST)
+      try {
+        const r = await fetch(backendUrl + '/api/flights/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: 'Москва', to: 'Париж' })
+        });
+        const data = await r.json();
+        if (data.message || data.flights !== undefined) {
+          tests.push({
+            name: 'Flights API (POST)',
+            status: 'success',
+            message: data.message || 'Endpoint работает',
+            detail: `Flights: ${data.flights ? data.flights.length : 0}`
+          });
+        } else {
+          tests.push({
+            name: 'Flights API (POST)',
+            status: 'error',
+            message: 'Неожиданный ответ',
+            detail: JSON.stringify(data)
+          });
+        }
+      } catch (e) {
+        tests.push({
+          name: 'Flights API (POST)',
+          status: 'error',
+          message: 'Ошибка запроса',
+          detail: e.message
+        });
+      }
+
+      // Display results
+      results.innerHTML = tests.map(t => `
+        <div class="test ${t.status}">
+          <h3>
+            ${t.status === 'success' ? '✅' : '❌'}
+            ${t.name}
+          </h3>
+          <p><strong>${t.message}</strong></p>
+          <p><code>${t.detail}</code></p>
+        </div>
+      `).join('');
+
+      // Summary
+      const successCount = tests.filter(t => t.status === 'success').length;
+      const totalCount = tests.length;
+      const allSuccess = successCount === totalCount;
+
+      results.innerHTML += `
+        <div class="summary ${allSuccess ? 'success' : 'error'}">
+          <h2>${allSuccess ? '🎉' : '⚠️'} Результат</h2>
+          <p><strong>${successCount} из ${totalCount} тестов пройдено</strong></p>
+          <p>${allSuccess
+            ? 'Все компоненты работают корректно!'
+            : 'Некоторые компоненты требуют настройки'
+          }</p>
+        </div>
+      `;
+
+      // Показать использованные URL
+      results.innerHTML += `
+        <div class="config-box">
+          <h2>📝 Протестированные URL:</h2>
+          <p style="font-size: 12px; color: #666; word-break: break-all;">
+            <strong>Frontend:</strong> ${frontendUrl}<br>
+            <strong>Backend:</strong> ${backendUrl}
+          </p>
+        </div>
+      `;
+
+      btn.disabled = false;
+      btn.textContent = '🔄 Запустить тесты снова';
+    }
+  </script>
+</body>
+</html>
