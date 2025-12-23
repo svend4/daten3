@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import SearchWidget from '../components/features/SearchWidget';
+import SearchWidgetExtended from '../components/features/SearchWidgetExtended';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'flights' | 'hotels' | 'cars'>('hotels');
+  const navigate = useNavigate();
 
   const popularDestinations = [
     {
@@ -130,6 +131,15 @@ export default function Home() {
     { value: '24/7', label: 'Поддержка' }
   ];
 
+  // Handle search submission
+  const handleSearch = (params: any) => {
+    if (params.type === 'flights') {
+      navigate('/flights', { state: { searchParams: params } });
+    } else if (params.type === 'hotels') {
+      navigate('/hotels', { state: { searchParams: params } });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
@@ -199,7 +209,10 @@ export default function Home() {
                   </button>
                 </div>
 
-                <SearchWidget />
+                <SearchWidgetExtended
+                  onSearch={handleSearch}
+                  type={activeTab}
+                />
               </div>
             </div>
           </div>
@@ -246,7 +259,7 @@ export default function Home() {
               {popularDestinations.map((destination, index) => (
                 <Link
                   key={index}
-                  to={`/hotels/search?destination=${destination.city}`}
+                  to={`/hotels?destination=${destination.city}`}
                   className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
                 >
                   <div className="relative h-64 overflow-hidden">
@@ -275,7 +288,7 @@ export default function Home() {
 
             <div className="text-center mt-12">
               <Link
-                to="/hotels/search"
+                to="/hotels"
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
               >
                 Посмотреть все направления
