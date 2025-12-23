@@ -510,6 +510,11 @@ process.on('uncaughtException', (error) => {
     code: (error as any).code,
   });
 
+  // Try to capture more context about where this error came from
+  console.error('Full error object:', error);
+  console.error('Error keys:', Object.keys(error));
+  console.trace('Call stack at uncaughtException handler:');
+
   // Don't exit immediately - log and continue in production
   // This prevents server crashes from transient errors
   if (process.env.NODE_ENV === 'production') {
