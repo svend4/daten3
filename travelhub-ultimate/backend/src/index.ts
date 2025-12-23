@@ -312,46 +312,62 @@ app.use(errorHandler);
 // Initialize services before starting server
 async function startServer() {
   try {
-    // Connect to Redis
-    await redisService.connect();
-
-    // Initialize feature flags
-    await initializeFeatureFlags();
-
-    // Load API keys from Redis
-    await loadApiKeys();
-
-    // Initialize message queue (optional - requires Redis)
-    try {
-      await messageQueueService.initialize();
-    } catch (error: any) {
-      logger.warn('Message Queue Service not initialized:', error.message);
-      logger.info('ℹ️  Message Queue features disabled (requires Redis)');
-    }
-
-    // Initialize background jobs (optional - requires message queue)
-    try {
-      await backgroundJobsService.initialize();
-    } catch (error: any) {
-      logger.warn('Background Jobs Service not initialized:', error.message);
-      logger.info('ℹ️  Background Jobs features disabled (requires Redis)');
-    }
-
-    // Initialize cron jobs for automated tasks
-    initializeCronJobs();
-
-    // Initialize i18n (internationalization)
-    await initializeI18n();
-
-    // Initialize service mesh
-    await serviceMesh.initialize();
-
-    // Start audit log flushing
-    startAuditLogFlushing();
-
-    // Start HTTP server and store instance (needed for Apollo Server)
+    // Start HTTP server FIRST so health checks work immediately
     // Listen on 0.0.0.0 to allow external connections (required for Render/Railway)
     httpServer = app.listen(PORT, '0.0.0.0', async () => {
+      logger.info('═══════════════════════════════════════════════════');
+      logger.info('🚀 HTTP Server listening (health checks available)');
+      logger.info('═══════════════════════════════════════════════════');
+      logger.info(`📍 Port: ${PORT}`);
+      logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info('');
+      logger.info('⏳ Initializing services in background...');
+      logger.info('');
+
+      // Now initialize services in background (HTTP already responding)
+      try {
+        // Connect to Redis
+        await redisService.connect();
+
+        // Initialize feature flags
+        await initializeFeatureFlags();
+
+        // Load API keys from Redis
+        await loadApiKeys();
+
+        // Initialize message queue (optional - requires Redis)
+        try {
+          await messageQueueService.initialize();
+        } catch (error: any) {
+          logger.warn('Message Queue Service not initialized:', error.message);
+          logger.info('ℹ️  Message Queue features disabled (requires Redis)');
+        }
+
+        // Initialize background jobs (optional - requires message queue)
+        try {
+          await backgroundJobsService.initialize();
+        } catch (error: any) {
+          logger.warn('Background Jobs Service not initialized:', error.message);
+          logger.info('ℹ️  Background Jobs features disabled (requires Redis)');
+        }
+
+        // Initialize cron jobs for automated tasks
+        initializeCronJobs();
+
+        // Initialize i18n (internationalization)
+        await initializeI18n();
+
+        // Initialize service mesh
+        await serviceMesh.initialize();
+
+        // Start audit log flushing
+        startAuditLogFlushing();
+      } catch (initError: any) {
+        logger.error('Error during service initialization:', initError);
+        logger.warn('⚠️  Some services may not be available');
+      }
+
+      // Initialize GraphQL Apollo Server (after HTTP is listening)
       // Initialize GraphQL Apollo Server
       const apolloServer = createApolloServer(httpServer);
       await apolloServer.start();
@@ -366,45 +382,19 @@ async function startServer() {
         })
       );
 
-      logger.info('GraphQL Server initialized at /graphql');
+      logger.info('✅ GraphQL Server initialized at /graphql');
+
       // Initialize WebSocket after HTTP server starts
       websocketService.initialize(httpServer);
+      logger.info('✅ WebSocket initialized');
 
       // Initialize SSE service
       sseService.initialize();
+      logger.info('✅ SSE Service initialized');
+
+      logger.info('');
       logger.info('═══════════════════════════════════════════════════');
-      logger.info('🚀 TravelHub Ultimate API Server');
-      logger.info('═══════════════════════════════════════════════════');
-      logger.info(`📍 Port: ${PORT}`);
-      logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info('');
-      logger.info('📚 API Documentation:');
-      logger.info(`   Swagger UI:   http://localhost:${PORT}/api-docs`);
-      logger.info('');
-      logger.info('📡 API Endpoints:');
-      logger.info(`   Auth:          http://localhost:${PORT}/api/auth`);
-      logger.info(`   Hotels:        http://localhost:${PORT}/api/hotels/search`);
-      logger.info(`   Flights:       http://localhost:${PORT}/api/flights`);
-      logger.info(`   Payment:       http://localhost:${PORT}/api/payment`);
-      logger.info(`   Notifications: http://localhost:${PORT}/api/notifications`);
-      logger.info(`   Analytics:     http://localhost:${PORT}/api/analytics`);
-      logger.info(`   Affiliate:     http://localhost:${PORT}/api/affiliate`);
-      logger.info(`   Bookings:      http://localhost:${PORT}/api/bookings`);
-      logger.info(`   Favorites:     http://localhost:${PORT}/api/favorites`);
-      logger.info(`   Price Alerts:  http://localhost:${PORT}/api/price-alerts`);
-      logger.info(`   Reviews:       http://localhost:${PORT}/api/reviews`);
-      logger.info(`   Currency:      http://localhost:${PORT}/api/currency`);
-      logger.info(`   Reports:       http://localhost:${PORT}/api/reports`);
-      logger.info(`   Recommendations: http://localhost:${PORT}/api/recommendations`);
-      logger.info(`   Loyalty:       http://localhost:${PORT}/api/loyalty`);
-      logger.info(`   Group Bookings: http://localhost:${PORT}/api/group-bookings`);
-      logger.info(`   Payouts:       http://localhost:${PORT}/api/payouts`);
-      logger.info(`   Admin:         http://localhost:${PORT}/api/admin`);
-      logger.info('');
-      logger.info('🎯 GraphQL API:');
-      logger.info(`   GraphQL:       http://localhost:${PORT}/graphql`);
-      logger.info('');
-      logger.info('✅ Server is ready to accept connections');
+      logger.info('✅ TravelHub Ultimate - All services ready!');
       logger.info('═══════════════════════════════════════════════════');
     });
   } catch (error) {
