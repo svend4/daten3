@@ -76,15 +76,32 @@ export const responseTimeMiddleware = (
   // Start high-resolution timer
   const start = process.hrtime.bigint();
 
-  // Hook into response finish event
+  // Override writeHead to inject header before it's sent
+  const originalWriteHead = res.writeHead;
+  let headerSet = false;
+
+  // @ts-ignore - TypeScript doesn't like the function signature override
+  res.writeHead = function(...args: any[]) {
+    if (!headerSet) {
+      // Calculate duration in nanoseconds, then convert to milliseconds
+      const durationNs = process.hrtime.bigint() - start;
+      const durationMs = Number(durationNs) / 1000000; // Convert to ms
+      const duration = Math.round(durationMs * 100) / 100; // Round to 2 decimals
+
+      // Set header before writeHead is called
+      res.setHeader(RESPONSE_TIME_HEADER, `${duration}ms`);
+      headerSet = true;
+    }
+
+    return originalWriteHead.apply(res, args);
+  };
+
+  // Hook into response finish event for statistics tracking only
   res.on('finish', () => {
     // Calculate duration in nanoseconds, then convert to milliseconds
     const durationNs = process.hrtime.bigint() - start;
     const durationMs = Number(durationNs) / 1000000; // Convert to ms
     const duration = Math.round(durationMs * 100) / 100; // Round to 2 decimals
-
-    // Add to response header
-    res.setHeader(RESPONSE_TIME_HEADER, `${duration}ms`);
 
     // Update statistics
     stats.total++;
