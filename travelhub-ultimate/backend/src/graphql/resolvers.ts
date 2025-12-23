@@ -328,7 +328,7 @@ export const resolvers = {
           data: {
             userId: user.id,
             type: input.type,
-            status: 'PENDING',
+            status: 'pending',
             details: input.details,
             totalPrice: input.totalPrice,
           },
@@ -407,7 +407,7 @@ export const resolvers = {
 
         const booking = await prisma.booking.update({
           where: { id },
-          data: { status: 'CANCELLED' },
+          data: { status: 'cancelled' },
         });
 
         logger.info('Booking cancelled via GraphQL', { bookingId: id, userId: user.id });
@@ -469,22 +469,15 @@ export const resolvers = {
 
     /**
      * Resolve user's reviews
+     * TODO: Implement when Review model is added to Prisma schema
      */
     reviews: async (
       parent: any,
       { limit = 10, offset = 0 }: { limit?: number; offset?: number }
     ) => {
-      try {
-        return await prisma.review.findMany({
-          where: { userId: parent.id },
-          take: limit,
-          skip: offset,
-          orderBy: { createdAt: 'desc' },
-        });
-      } catch (error: any) {
-        logger.error('GraphQL User.reviews resolver error:', error);
-        return [];
-      }
+      // Review model not yet implemented
+      logger.warn('Review model not implemented in Prisma schema');
+      return [];
     },
   },
 
