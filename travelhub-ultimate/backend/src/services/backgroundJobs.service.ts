@@ -485,12 +485,25 @@ class BackgroundJobsService {
    * Get service statistics
    */
   getStats() {
+    if (!this.initialized) {
+      return {
+        initialized: false,
+        totalRuns: 0,
+        totalSuccess: 0,
+        totalFailures: 0,
+        byJob: {},
+        recentRuns: [],
+        registeredJobs: [],
+      };
+    }
+
     const byJob: Record<string, any> = {};
     for (const [name, jobStats] of stats.byJob.entries()) {
       byJob[name] = { ...jobStats };
     }
 
     return {
+      initialized: true,
       totalRuns: stats.totalRuns,
       totalSuccess: stats.totalSuccess,
       totalFailures: stats.totalFailures,
@@ -533,6 +546,11 @@ class BackgroundJobsService {
    * Shutdown service
    */
   async shutdown(): Promise<void> {
+    if (!this.initialized) {
+      logger.debug('Background Jobs Service not initialized, nothing to shut down');
+      return;
+    }
+
     logger.info('Shutting down Background Jobs Service...');
     this.stopAllJobs();
     this.initialized = false;
