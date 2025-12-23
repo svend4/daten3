@@ -111,31 +111,23 @@ app.use((req, res, next) => {
 
   res.json = function(body) {
     if (responseSent) {
-      logger.error('❌ DOUBLE RESPONSE DETECTED:', {
-        url: req.url,
-        method: req.method,
-        path: req.path,
-        route: (req as any).route?.path,
-      });
-      throw new Error('Cannot send response twice');
+      const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
+      logger.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      console.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      throw new Error(`Cannot send response twice - ${errorDetails}`);
     }
     responseSent = true;
-    logger.debug('Response sent:', { url: req.url, method: req.method });
     return originalJson(body);
   };
 
   res.send = function(body) {
     if (responseSent) {
-      logger.error('❌ DOUBLE RESPONSE DETECTED:', {
-        url: req.url,
-        method: req.method,
-        path: req.path,
-        route: (req as any).route?.path,
-      });
-      throw new Error('Cannot send response twice');
+      const errorDetails = `URL: ${req.method} ${req.url} | Path: ${req.path} | Route: ${(req as any).route?.path || 'unknown'}`;
+      logger.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      console.error(`❌ DOUBLE RESPONSE DETECTED: ${errorDetails}`);
+      throw new Error(`Cannot send response twice - ${errorDetails}`);
     }
     responseSent = true;
-    logger.debug('Response sent:', { url: req.url, method: req.method });
     return originalSend(body);
   };
 
