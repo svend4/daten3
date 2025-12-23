@@ -144,19 +144,19 @@ app.use(sanitizationMiddleware({
   maxDepth: 10,      // Maximum object depth
 }));
 
-// Response compression (gzip/brotli)
-app.use(compression({
-  filter: (req, res) => {
-    // Don't compress responses if client doesn't support it
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    // Use compression for all responses
-    return compression.filter(req, res);
-  },
-  level: 6, // Compression level (0-9, 6 is default and good balance)
-  threshold: 1024, // Only compress responses larger than 1KB
-}));
+// Response compression (gzip/brotli) - TEMPORARILY DISABLED FOR DEBUGGING
+// app.use(compression({
+//   filter: (req, res) => {
+//     // Don't compress responses if client doesn't support it
+//     if (req.headers['x-no-compression']) {
+//       return false;
+//     }
+//     // Use compression for all responses
+//     return compression.filter(req, res);
+//   },
+//   level: 6, // Compression level (0-9, 6 is default and good balance)
+//   threshold: 1024, // Only compress responses larger than 1KB
+// }));
 
 // Logging middleware
 app.use(morganMiddleware);
