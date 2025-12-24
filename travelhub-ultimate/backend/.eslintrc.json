@@ -21,7 +21,8 @@
     "@typescript-eslint/ban-types": "warn",
     "no-case-declarations": "warn",
     "no-useless-escape": "warn",
-    "no-console": "off"
+    "no-console": "off",
+    "prefer-const": "warn"
   },
   "ignorePatterns": ["dist/", "node_modules/", "*.js", "*.mjs"]
 }
