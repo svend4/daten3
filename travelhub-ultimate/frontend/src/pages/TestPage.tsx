@@ -82,30 +82,30 @@ const TestPage: React.FC = () => {
         credentials: 'include',
       });
 
-      const corsOrigin = response.headers.get('access-control-allow-origin');
-      const corsCredentials = response.headers.get('access-control-allow-credentials');
-
-      if (corsOrigin === FRONTEND_URL && corsCredentials === 'true') {
+      // Браузер не раскрывает CORS headers через headers.get() из-за безопасности
+      // Если запрос успешен и получен ответ - CORS работает!
+      // (Браузер блокирует запросы ДО получения ответа если CORS не настроен)
+      if (response.ok) {
         testResults[1] = {
           name: 'CORS Headers',
           status: 'passed',
-          message: 'CORS настроен правильно',
-          details: `Origin: ${corsOrigin}, Credentials: ${corsCredentials}`,
+          message: 'CORS работает корректно',
+          details: `Запрос успешен (${response.status}). Браузер не заблокировал cross-origin запрос.`,
         };
         passed++;
       } else {
         testResults[1] = {
           name: 'CORS Headers',
           status: 'failed',
-          message: 'CORS настроен неправильно',
-          details: `Origin: ${corsOrigin || 'null'} (ожидается ${FRONTEND_URL}), Credentials: ${corsCredentials || 'null'}`,
+          message: 'Backend вернул ошибку',
+          details: `Status: ${response.status}, но запрос не был заблокирован браузером - CORS работает`,
         };
       }
     } catch (error) {
       testResults[1] = {
         name: 'CORS Headers',
         status: 'failed',
-        message: 'Ошибка при проверке CORS',
+        message: 'CORS блокировка или сетевая ошибка',
         details: error instanceof Error ? error.message : 'Unknown error',
       };
     }
