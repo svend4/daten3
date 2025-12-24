@@ -33,9 +33,9 @@ describe('useFlightSearch', () => {
   const mockSearchParams: FlightSearchParams = {
     origin: 'SVO',
     destination: 'LED',
-    departureDate: '2024-06-15',
-    passengers: 1,
-    cabinClass: 'economy',
+    departDate: '2024-06-15',
+    adults: 1,
+    class: 'economy',
   };
 
   const mockFlights = [
