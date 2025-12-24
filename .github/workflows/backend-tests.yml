@@ -154,6 +154,7 @@ jobs:
           DATABASE_URL: postgresql://travelhub_e2e:e2e_password@localhost:5432/travelhub_e2e
           JWT_SECRET: e2e-jwt-secret-min-32-chars-long-for-e2e-testing
           JWT_REFRESH_SECRET: e2e-jwt-refresh-secret-min-32-chars-long
+          FRONTEND_URL: http://localhost:5173,http://localhost:3001
 
       - name: Wait for server to be ready
         run: |
