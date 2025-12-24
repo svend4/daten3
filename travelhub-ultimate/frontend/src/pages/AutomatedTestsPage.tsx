@@ -438,17 +438,19 @@ const AutomatedTestsPage: React.FC = () => {
           const corsResponse = await fetch(`${BACKEND_URL}/health`, {
             credentials: 'include',
           });
-          const corsOrigin = corsResponse.headers.get('access-control-allow-origin');
-          if (corsOrigin) {
+
+          // Если запрос успешен и получен ответ - CORS работает!
+          // (Браузер блокирует запросы до получения ответа если CORS не настроен)
+          if (corsResponse.ok) {
             passed++;
-            detailsArray.push(`✅ CORS: ${corsOrigin}`);
+            detailsArray.push(`✅ CORS: работает (статус ${corsResponse.status})`);
           } else {
             warnings++;
-            detailsArray.push(`⚠️ CORS: заголовок Access-Control-Allow-Origin отсутствует`);
+            detailsArray.push(`⚠️ Backend вернул статус ${corsResponse.status}`);
           }
         } catch (err) {
           failed++;
-          detailsArray.push(`❌ Backend connectivity: ${err instanceof Error ? err.message : 'Unknown'}`);
+          detailsArray.push(`❌ CORS блокировка или сеть: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
       }
 
