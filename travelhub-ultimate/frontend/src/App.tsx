@@ -50,6 +50,9 @@ import Terms from './pages/Terms';
 // Error pages
 import NotFound from './pages/NotFound';
 
+// Test pages
+import TestPage from './pages/TestPage';
+
 // Contexts
 import { AuthProvider } from './store/AuthContext';
 
@@ -122,6 +125,9 @@ function App() {
           <Route path="/support" element={<Support />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+
+          {/* Test routes */}
+          <Route path="/test" element={<TestPage />} />
 
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />

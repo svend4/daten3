@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест CORS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f0f0f0;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:active {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🧪 Тест CORS</h1>
+        <button onclick="test()">▶ Запустить тест</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function test() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<div class="result">⏳ Тестирование...</div>';
+
+            try {
+                const r = await fetch('https://daten3-1.onrender.com/api/health', {
+                    credentials: 'include'
+                });
+
+                const origin = r.headers.get('access-control-allow-origin');
+                const data = await r.json();
+
+                if (r.ok && origin === 'https://daten3.onrender.com') {
+                    result.innerHTML = `
+                        <div class="result success">
+                            <h2>✅ ВСЁ РАБОТАЕТ!</h2>
+                            <p>Status: ${r.status}</p>
+                            <p>CORS Origin: ${origin}</p>
+                            <p>Backend: ${JSON.stringify(data)}</p>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="result error">
+                            <h2>❌ Проблема</h2>
+                            <p>Status: ${r.status}</p>
+                            <p>CORS Origin: ${origin}</p>
+                            <p>Ожидается: https://daten3.onrender.com</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                result.innerHTML = `
+                    <div class="result error">
+                        <h2>❌ Ошибка</h2>
+                        <p>${e.message}</p>
+                        <p>Backend недоступен или CORS заблокирован</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
