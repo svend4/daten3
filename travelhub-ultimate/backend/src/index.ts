@@ -116,8 +116,11 @@ app.use(helmetMiddleware);
 app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
 
-// CORS Debug middleware (BEFORE CORS to log request headers)
-app.use(corsDebugMiddleware);
+// CORS Debug middleware (only in development - too verbose for production)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(corsDebugMiddleware);
+  logger.info('CORS debug middleware enabled (development mode)');
+}
 
 // CORS middleware
 app.use(corsMiddleware);
