@@ -176,6 +176,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: e2e-jwt-secret-min-32-chars-long-for-e2e-testing
           JWT_REFRESH_SECRET: e2e-jwt-refresh-secret-min-32-chars-long
+          FRONTEND_URL: http://localhost:3001
 
       - name: Wait for server to be ready
         run: |
