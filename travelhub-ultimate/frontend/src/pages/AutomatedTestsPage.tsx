@@ -29,6 +29,7 @@ const AutomatedTestsPage: React.FC = () => {
     warnings: number;
   } | null>(null);
   const [currentTest, setCurrentTest] = useState<string>('');
+  const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
 
   const BACKEND_URL = 'https://daten3-1.onrender.com/api';
 
@@ -370,6 +371,7 @@ const AutomatedTestsPage: React.FC = () => {
     let passed = 0;
     let failed = 0;
     let warnings = 0;
+    const detailsArray: string[] = [];
 
     try {
       // TEST 1: Проверка доступности страницы
@@ -381,8 +383,10 @@ const AutomatedTestsPage: React.FC = () => {
 
       if (response.ok || response.status === 302 || response.status === 401) {
         passed++;
+        detailsArray.push(`✅ Доступность страницы: ${response.status} ${response.statusText || 'OK'}`);
       } else {
         failed++;
+        detailsArray.push(`❌ Доступность страницы: ${response.status} ${response.statusText || 'Error'}`);
       }
 
       // TEST 2: Проверка времени загрузки
@@ -392,13 +396,17 @@ const AutomatedTestsPage: React.FC = () => {
         const loadTime = Date.now() - loadStart;
         if (loadTime < 3000) {
           passed++;
+          detailsArray.push(`✅ Время загрузки: ${loadTime}ms (отлично!)`);
         } else if (loadTime < 5000) {
           warnings++;
+          detailsArray.push(`⚠️ Время загрузки: ${loadTime}ms (медленно)`);
         } else {
           failed++;
+          detailsArray.push(`❌ Время загрузки: ${loadTime}ms (слишком медленно)`);
         }
-      } catch {
+      } catch (err) {
         failed++;
+        detailsArray.push(`❌ Время загрузки: ошибка - ${err instanceof Error ? err.message : 'Unknown'}`);
       }
 
       // TEST 3-5: Проверка связанных API endpoints (если есть)
@@ -408,13 +416,19 @@ const AutomatedTestsPage: React.FC = () => {
           const authResponse = await fetch(`${BACKEND_URL}/users/me`, {
             credentials: 'include',
           });
-          if (authResponse.status === 401 || authResponse.status === 200) {
+          if (authResponse.status === 401) {
+            warnings++;
+            detailsArray.push(`⚠️ Аутентификация: 401 Unauthorized (требуется логин)`);
+          } else if (authResponse.status === 200) {
             passed++;
+            detailsArray.push(`✅ Аутентификация: пользователь авторизован`);
           } else {
             warnings++;
+            detailsArray.push(`⚠️ Аутентификация: неожиданный статус ${authResponse.status}`);
           }
-        } catch {
+        } catch (err) {
           warnings++;
+          detailsArray.push(`⚠️ Аутентификация: ошибка - ${err instanceof Error ? err.message : 'Unknown'}`);
         }
       }
 
@@ -427,11 +441,14 @@ const AutomatedTestsPage: React.FC = () => {
           const corsOrigin = corsResponse.headers.get('access-control-allow-origin');
           if (corsOrigin) {
             passed++;
+            detailsArray.push(`✅ CORS: ${corsOrigin}`);
           } else {
             warnings++;
+            detailsArray.push(`⚠️ CORS: заголовок Access-Control-Allow-Origin отсутствует`);
           }
-        } catch {
+        } catch (err) {
           failed++;
+          detailsArray.push(`❌ Backend connectivity: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
       }
 
@@ -455,7 +472,7 @@ const AutomatedTestsPage: React.FC = () => {
             : status === 'warning'
             ? 'Есть предупреждения'
             : 'Обнаружены ошибки',
-        details: `${passed} passed, ${failed} failed, ${warnings} warnings`,
+        details: detailsArray.join('\n'),
         testsPassed: passed,
         testsFailed: failed,
         duration,
@@ -466,7 +483,7 @@ const AutomatedTestsPage: React.FC = () => {
         ...test,
         status: 'failed',
         message: 'Ошибка при тестировании',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: `❌ Критическая ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`,
         testsPassed: 0,
         testsFailed: test.testsRun || 0,
         duration,
@@ -570,6 +587,18 @@ const AutomatedTestsPage: React.FC = () => {
       default:
         return '⏸️';
     }
+  };
+
+  const toggleExpand = (testId: string) => {
+    setExpandedTests((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(testId)) {
+        newSet.delete(testId);
+      } else {
+        newSet.add(testId);
+      }
+      return newSet;
+    });
   };
 
   const totalTests = testCategories.reduce((acc, cat) => acc + cat.tests.length, 0);
@@ -699,6 +728,7 @@ const AutomatedTestsPage: React.FC = () => {
               <div className="space-y-3">
                 {category.tests.map((test) => {
                   const result = categoryResults.find((r) => r.id === test.id);
+                  const isExpanded = expandedTests.has(test.id);
 
                   return (
                     <div
@@ -706,7 +736,9 @@ const AutomatedTestsPage: React.FC = () => {
                       className={`
                         border-2 rounded-xl p-4 transition-all
                         ${result ? getStatusColor(result.status) : 'border-gray-200 bg-gray-50'}
+                        ${result ? 'cursor-pointer hover:shadow-lg' : ''}
                       `}
+                      onClick={() => result && toggleExpand(test.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -718,18 +750,40 @@ const AutomatedTestsPage: React.FC = () => {
                             <span className="px-2 py-1 bg-white bg-opacity-50 rounded text-xs font-mono">
                               {test.url}
                             </span>
+                            {result && (
+                              <span className="ml-auto text-gray-500">
+                                {isExpanded ? '🔽' : '▶️'}
+                              </span>
+                            )}
                           </div>
 
                           {result && (
                             <>
                               <p className="text-sm font-semibold mb-1">{result.message}</p>
-                              {result.details && (
-                                <p className="text-xs opacity-75">{result.details}</p>
-                              )}
+
+                              {/* Краткая информация всегда видна */}
+                              <p className="text-xs opacity-75">
+                                {result.testsPassed} passed, {result.testsFailed} failed, {(result.testsRun || 0) - (result.testsPassed || 0) - (result.testsFailed || 0)} warnings
+                              </p>
+
                               {result.duration && (
                                 <p className="text-xs opacity-75 mt-1">
                                   ⏱️ Время выполнения: {result.duration}ms
                                 </p>
+                              )}
+
+                              {/* Подробные детали раскрываются при клике */}
+                              {isExpanded && result.details && (
+                                <div className="mt-3 p-3 bg-white bg-opacity-70 rounded-lg border border-opacity-30">
+                                  <p className="text-xs font-semibold mb-2">📋 Подробные результаты:</p>
+                                  <div className="space-y-1">
+                                    {result.details.split('\n').map((line, idx) => (
+                                      <p key={idx} className="text-xs font-mono whitespace-pre-wrap">
+                                        {line}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
                             </>
                           )}
