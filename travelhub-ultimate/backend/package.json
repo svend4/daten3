@@ -14,9 +14,8 @@
     "start:direct": "node dist/index.js",
     "postinstall": "npx prisma generate",
     "test": "vitest",
-
-
-    
+    "test:unit": "vitest tests/unit/",
+    "test:integration": "vitest tests/integration/",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
