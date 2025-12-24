@@ -56,6 +56,10 @@ jobs:
         working-directory: ./travelhub-ultimate/backend
         run: npm ci
 
+      - name: Generate Prisma Client
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma generate
+
       - name: Install Playwright browsers
         working-directory: ./travelhub-ultimate/backend
         run: npx playwright install --with-deps

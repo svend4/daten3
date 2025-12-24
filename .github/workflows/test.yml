@@ -30,6 +30,10 @@ jobs:
         working-directory: ./travelhub-ultimate/backend
         run: npm ci
 
+      - name: Generate Prisma Client
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma generate
+
       - name: Run unit tests
         working-directory: ./travelhub-ultimate/backend
         run: npm run test:unit
@@ -87,6 +91,10 @@ jobs:
       - name: Install dependencies
         working-directory: ./travelhub-ultimate/backend
         run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma generate
 
       - name: Run database migrations
         working-directory: ./travelhub-ultimate/backend
@@ -153,6 +161,16 @@ jobs:
       - name: Install dependencies
         working-directory: ./travelhub-ultimate/backend
         run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: ./travelhub-ultimate/backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/travelhub_test
 
       - name: Run tests with coverage
         working-directory: ./travelhub-ultimate/backend
