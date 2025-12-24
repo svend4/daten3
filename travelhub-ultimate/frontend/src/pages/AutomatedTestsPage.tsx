@@ -601,6 +601,15 @@ const AutomatedTestsPage: React.FC = () => {
     });
   };
 
+  const expandAll = () => {
+    const allTestIds = results.map((r) => r.id);
+    setExpandedTests(new Set(allTestIds));
+  };
+
+  const collapseAll = () => {
+    setExpandedTests(new Set());
+  };
+
   const totalTests = testCategories.reduce((acc, cat) => acc + cat.tests.length, 0);
 
   return (
@@ -634,15 +643,32 @@ const AutomatedTestsPage: React.FC = () => {
             </button>
 
             {results.length > 0 && !isRunning && (
-              <button
-                onClick={() => {
-                  setResults([]);
-                  setSummary(null);
-                }}
-                className="px-6 py-4 rounded-xl font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all"
-              >
-                🔄 Очистить результаты
-              </button>
+              <>
+                <button
+                  onClick={expandAll}
+                  className="px-6 py-4 rounded-xl font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-all"
+                >
+                  🔽 Раскрыть все
+                </button>
+
+                <button
+                  onClick={collapseAll}
+                  className="px-6 py-4 rounded-xl font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-all"
+                >
+                  ▶️ Свернуть все
+                </button>
+
+                <button
+                  onClick={() => {
+                    setResults([]);
+                    setSummary(null);
+                    setExpandedTests(new Set());
+                  }}
+                  className="px-6 py-4 rounded-xl font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all"
+                >
+                  🔄 Очистить результаты
+                </button>
+              </>
             )}
           </div>
 
