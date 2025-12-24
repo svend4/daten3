@@ -52,6 +52,7 @@ import NotFound from './pages/NotFound';
 
 // Test pages
 import TestPage from './pages/TestPage';
+import AutomatedTestsPage from './pages/AutomatedTestsPage';
 
 // Contexts
 import { AuthProvider } from './store/AuthContext';
@@ -128,6 +129,7 @@ function App() {
 
           {/* Test routes */}
           <Route path="/test" element={<TestPage />} />
+          <Route path="/automated-tests" element={<AutomatedTestsPage />} />
 
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />
