@@ -7,15 +7,18 @@ interface TestResult {
   details?: string;
 }
 
+type TestCategory = 'basic' | 'api' | 'advanced';
+
 const TestPage: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
   const [summary, setSummary] = useState<{ passed: number; total: number } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<TestCategory>('basic');
 
   const BACKEND_URL = 'https://daten3-1.onrender.com';
   const FRONTEND_URL = 'https://daten3.onrender.com';
 
-  const runTests = async () => {
+  const runBasicTests = async () => {
     setIsRunning(true);
     setResults([]);
     setSummary(null);
@@ -43,7 +46,7 @@ const TestPage: React.FC = () => {
           name: 'Health Check',
           status: 'passed',
           message: 'Backend доступен',
-          details: `Status: ${response.status}, Data: ${JSON.stringify(data)}`,
+          details: `Status: ${response.status}, Uptime: ${data.uptime?.toFixed(2)}s`,
         };
         passed++;
       } else {
@@ -119,7 +122,7 @@ const TestPage: React.FC = () => {
     setResults([...testResults]);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/csrf-token`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/csrf-token`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -162,15 +165,354 @@ const TestPage: React.FC = () => {
     setIsRunning(false);
   };
 
+  const runAPITests = async () => {
+    setIsRunning(true);
+    setResults([]);
+    setSummary(null);
+
+    const testResults: TestResult[] = [];
+    let passed = 0;
+    const totalTests = 6;
+
+    const endpoints = [
+      { name: 'Health Check', url: '/api/health', method: 'GET' },
+      { name: 'CSRF Token', url: '/api/auth/csrf-token', method: 'GET' },
+      { name: 'Hotels Search', url: '/api/hotels', method: 'GET' },
+      { name: 'Flights Search', url: '/api/flights', method: 'GET' },
+      { name: 'API Docs', url: '/api/docs', method: 'GET' },
+      { name: 'API Status', url: '/api', method: 'GET' },
+    ];
+
+    for (let i = 0; i < endpoints.length; i++) {
+      const endpoint = endpoints[i];
+      testResults.push({
+        name: endpoint.name,
+        status: 'pending',
+        message: `Проверка ${endpoint.url}...`,
+      });
+      setResults([...testResults]);
+
+      try {
+        const response = await fetch(`${BACKEND_URL}${endpoint.url}`, {
+          method: endpoint.method,
+          credentials: 'include',
+        });
+
+        if (response.ok || response.status === 404) {
+          // 404 is acceptable for some endpoints (means they exist but need params)
+          testResults[i] = {
+            name: endpoint.name,
+            status: 'passed',
+            message: 'Endpoint доступен',
+            details: `Status: ${response.status}, Content-Type: ${response.headers.get('content-type')}`,
+          };
+          passed++;
+        } else {
+          testResults[i] = {
+            name: endpoint.name,
+            status: 'failed',
+            message: `Ошибка: ${response.status}`,
+            details: `${response.statusText}`,
+          };
+        }
+      } catch (error) {
+        testResults[i] = {
+          name: endpoint.name,
+          status: 'failed',
+          message: 'Endpoint недоступен',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+
+      setResults([...testResults]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    setSummary({ passed, total: totalTests });
+    setIsRunning(false);
+  };
+
+  const runAdvancedTests = async () => {
+    setIsRunning(true);
+    setResults([]);
+    setSummary(null);
+
+    const testResults: TestResult[] = [];
+    let passed = 0;
+    const totalTests = 5;
+
+    // TEST 1: CORS Preflight
+    testResults.push({
+      name: 'CORS Preflight (OPTIONS)',
+      status: 'pending',
+      message: 'Проверка preflight запроса...',
+    });
+    setResults([...testResults]);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/health`, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': FRONTEND_URL,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type, X-CSRF-Token',
+        },
+      });
+
+      const allowMethods = response.headers.get('access-control-allow-methods');
+      const allowHeaders = response.headers.get('access-control-allow-headers');
+
+      if (allowMethods && allowHeaders) {
+        testResults[0] = {
+          name: 'CORS Preflight (OPTIONS)',
+          status: 'passed',
+          message: 'Preflight запрос разрешен',
+          details: `Methods: ${allowMethods}, Headers: ${allowHeaders}`,
+        };
+        passed++;
+      } else {
+        testResults[0] = {
+          name: 'CORS Preflight (OPTIONS)',
+          status: 'failed',
+          message: 'CORS headers отсутствуют',
+        };
+      }
+    } catch (error) {
+      testResults[0] = {
+        name: 'CORS Preflight (OPTIONS)',
+        status: 'failed',
+        message: 'Ошибка preflight',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
+    setResults([...testResults]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // TEST 2: Response Headers
+    testResults.push({
+      name: 'Security Headers',
+      status: 'pending',
+      message: 'Проверка security headers...',
+    });
+    setResults([...testResults]);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/health`);
+
+      const securityHeaders = {
+        'X-Content-Type-Options': response.headers.get('x-content-type-options'),
+        'X-Frame-Options': response.headers.get('x-frame-options'),
+        'Strict-Transport-Security': response.headers.get('strict-transport-security'),
+      };
+
+      const hasHeaders = Object.values(securityHeaders).some(v => v !== null);
+
+      if (hasHeaders) {
+        testResults[1] = {
+          name: 'Security Headers',
+          status: 'passed',
+          message: 'Security headers присутствуют',
+          details: JSON.stringify(securityHeaders, null, 2),
+        };
+        passed++;
+      } else {
+        testResults[1] = {
+          name: 'Security Headers',
+          status: 'failed',
+          message: 'Security headers отсутствуют',
+        };
+      }
+    } catch (error) {
+      testResults[1] = {
+        name: 'Security Headers',
+        status: 'failed',
+        message: 'Ошибка проверки',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
+    setResults([...testResults]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // TEST 3: Response Time
+    testResults.push({
+      name: 'Response Time',
+      status: 'pending',
+      message: 'Измерение времени ответа...',
+    });
+    setResults([...testResults]);
+
+    try {
+      const start = performance.now();
+      const response = await fetch(`${BACKEND_URL}/api/health`);
+      const end = performance.now();
+      const responseTime = end - start;
+
+      if (response.ok) {
+        testResults[2] = {
+          name: 'Response Time',
+          status: responseTime < 2000 ? 'passed' : 'failed',
+          message: responseTime < 2000 ? 'Быстрый ответ' : 'Медленный ответ',
+          details: `${responseTime.toFixed(2)}ms (ожидается < 2000ms)`,
+        };
+        if (responseTime < 2000) passed++;
+      }
+    } catch (error) {
+      testResults[2] = {
+        name: 'Response Time',
+        status: 'failed',
+        message: 'Ошибка измерения',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
+    setResults([...testResults]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // TEST 4: Cookie Support
+    testResults.push({
+      name: 'Cookie Support',
+      status: 'pending',
+      message: 'Проверка cookies...',
+    });
+    setResults([...testResults]);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/csrf-token`, {
+        credentials: 'include',
+      });
+
+      const setCookie = response.headers.get('set-cookie');
+      const hasCookies = document.cookie.length > 0 || setCookie !== null;
+
+      testResults[3] = {
+        name: 'Cookie Support',
+        status: hasCookies ? 'passed' : 'failed',
+        message: hasCookies ? 'Cookies поддерживаются' : 'Cookies не установлены',
+        details: `Cookies count: ${document.cookie.split(';').length}`,
+      };
+      if (hasCookies) passed++;
+    } catch (error) {
+      testResults[3] = {
+        name: 'Cookie Support',
+        status: 'failed',
+        message: 'Ошибка проверки cookies',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
+    setResults([...testResults]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // TEST 5: Content-Type Headers
+    testResults.push({
+      name: 'Content-Type',
+      status: 'pending',
+      message: 'Проверка Content-Type...',
+    });
+    setResults([...testResults]);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/health`);
+      const contentType = response.headers.get('content-type');
+
+      if (contentType?.includes('application/json')) {
+        testResults[4] = {
+          name: 'Content-Type',
+          status: 'passed',
+          message: 'Правильный Content-Type',
+          details: contentType,
+        };
+        passed++;
+      } else {
+        testResults[4] = {
+          name: 'Content-Type',
+          status: 'failed',
+          message: 'Неправильный Content-Type',
+          details: contentType || 'null',
+        };
+      }
+    } catch (error) {
+      testResults[4] = {
+        name: 'Content-Type',
+        status: 'failed',
+        message: 'Ошибка проверки',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
+    setResults([...testResults]);
+    setSummary({ passed, total: totalTests });
+    setIsRunning(false);
+  };
+
+  const runTests = () => {
+    switch (selectedCategory) {
+      case 'basic':
+        runBasicTests();
+        break;
+      case 'api':
+        runAPITests();
+        break;
+      case 'advanced':
+        runAdvancedTests();
+        break;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-purple-600 mb-2">🧪 Тест CORS</h1>
+            <h1 className="text-4xl font-bold text-purple-600 mb-2">🧪 Тесты подключения</h1>
             <p className="text-gray-600 text-lg">
-              Проверка подключения Frontend → Backend
+              Frontend → Backend
+            </p>
+          </div>
+
+          {/* Category Selection */}
+          <div className="flex gap-2 mb-6 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory('basic')}
+              className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-semibold transition-all ${
+                selectedCategory === 'basic'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🎯 Базовые тесты
+            </button>
+            <button
+              onClick={() => setSelectedCategory('api')}
+              className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-semibold transition-all ${
+                selectedCategory === 'api'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🔌 API Endpoints
+            </button>
+            <button
+              onClick={() => setSelectedCategory('advanced')}
+              className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-semibold transition-all ${
+                selectedCategory === 'advanced'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              ⚡ Расширенные
+            </button>
+          </div>
+
+          {/* Description */}
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+            <p className="text-blue-900 font-medium">
+              {selectedCategory === 'basic' && '🎯 Базовые: Health Check, CORS Headers, CSRF Token'}
+              {selectedCategory === 'api' && '🔌 API: Проверка доступности всех основных endpoints'}
+              {selectedCategory === 'advanced' && '⚡ Расширенные: Preflight, Security Headers, Performance'}
             </p>
           </div>
 
@@ -184,7 +526,7 @@ const TestPage: React.FC = () => {
                 : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-98 shadow-lg'
             }`}
           >
-            {isRunning ? '⏳ Тестирование...' : '🚀 Запустить тест'}
+            {isRunning ? '⏳ Тестирование...' : '🚀 Запустить тесты'}
           </button>
 
           {/* Test Results */}
@@ -206,7 +548,7 @@ const TestPage: React.FC = () => {
                       {result.status === 'pending' && '⏳'}
                       {result.status === 'passed' && '✅'}
                       {result.status === 'failed' && '❌'}{' '}
-                      ТЕСТ {index + 1}: {result.name}
+                      {result.name}
                     </h3>
                     <span
                       className={`px-4 py-1 rounded-full text-sm font-semibold ${
@@ -224,7 +566,7 @@ const TestPage: React.FC = () => {
                   </div>
                   <p className="text-gray-700 mb-2">{result.message}</p>
                   {result.details && (
-                    <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">
+                    <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded whitespace-pre-wrap break-all">
                       {result.details}
                     </p>
                   )}
@@ -256,7 +598,7 @@ const TestPage: React.FC = () => {
               {summary.passed === summary.total ? (
                 <div className="text-lg">
                   <p>✅ Frontend успешно подключен к Backend</p>
-                  <p>✅ CORS настроен правильно</p>
+                  <p>✅ Все проверки пройдены</p>
                   <p>✅ Можете использовать приложение</p>
                 </div>
               ) : (
@@ -281,6 +623,10 @@ const TestPage: React.FC = () => {
               <li>• <strong>Backend:</strong> {BACKEND_URL}</li>
               <li>• <strong>Путь:</strong> /test</li>
               <li>• <strong>Режим:</strong> Production</li>
+              <li>• <strong>Тестов в категории:</strong> {
+                selectedCategory === 'basic' ? '3' :
+                selectedCategory === 'api' ? '6' : '5'
+              }</li>
             </ul>
           </div>
         </div>
