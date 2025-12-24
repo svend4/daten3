@@ -411,9 +411,9 @@ const AutomatedTestsPage: React.FC = () => {
 
       // TEST 3-5: Проверка связанных API endpoints (если есть)
       if (test.category === 'user' || test.category === 'admin' || test.category === 'affiliate') {
-        // Проверка /api/users/me для защищенных страниц
+        // Проверка /api/auth/me для защищенных страниц
         try {
-          const authResponse = await fetch(`${BACKEND_URL}/users/me`, {
+          const authResponse = await fetch(`${BACKEND_URL}/auth/me`, {
             credentials: 'include',
           });
           if (authResponse.status === 401) {
