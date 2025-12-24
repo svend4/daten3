@@ -94,10 +94,18 @@ const matchOriginPattern = (origin: string, pattern: string): boolean => {
 // CORS options with enhanced validation
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
+    console.log('🔍 CORS REQUEST RECEIVED:', {
+      origin: origin || 'NO ORIGIN',
+      timestamp: new Date().toISOString(),
+      allowedOrigins: allowedOrigins,
+    });
+
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
     // Return frontend URL to ensure CORS headers are set
     if (!origin) {
-      const frontendUrl = process.env.FRONTEND_URL || allowedOrigins[0];
+      // Use first allowed origin (NOT the raw env var which is comma-separated!)
+      const frontendUrl = allowedOrigins[0];
+      console.log('❌ No origin in request, using frontendUrl:', frontendUrl);
       logger.info('CORS: Request with no origin, using frontend URL', {
         frontendUrl,
         category: 'no-origin'
@@ -107,6 +115,7 @@ const corsOptions: cors.CorsOptions = {
 
     // Check if origin is in allowed list (with pattern matching)
     if (isOriginAllowed(origin)) {
+      console.log('✅ Origin ALLOWED:', origin);
       logger.debug('CORS allowed', { origin, category: 'allowed' });
       return callback(null, true);
     }
@@ -121,12 +130,14 @@ const corsOptions: cors.CorsOptions = {
         /10\.\d+\.\d+\.\d+/.test(origin);    // Private network
 
       if (isLocalhost) {
+        console.log('✅ Origin ALLOWED (dev localhost):', origin);
         logger.debug('CORS allowed (dev localhost/local)', { origin, category: 'dev-local' });
         return callback(null, true);
       }
     }
 
     // Block the request with detailed logging
+    console.log('🚫 Origin BLOCKED:', origin, 'Allowed:', allowedOrigins);
     logger.warn('CORS request blocked', {
       origin,
       allowedOrigins,
