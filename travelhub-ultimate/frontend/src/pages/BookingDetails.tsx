@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo, useId } from 'react';
 import {
   Calendar,
   MapPin,
@@ -47,6 +47,9 @@ interface Booking {
   updatedAt: string;
 }
 
+/**
+ * Booking details page - displays full booking info and actions.
+ */
 const BookingDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -57,16 +60,15 @@ const BookingDetails: React.FC = () => {
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [success, setSuccess] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && id) {
-      fetchBookingDetails();
-    } else if (!authLoading && !isAuthenticated) {
-      setLoading(false);
-    }
-  }, [authLoading, isAuthenticated, id]);
+  // Unique IDs for accessibility
+  const headingId = useId();
+  const errorId = useId();
+  const successId = useId();
+  const modalTitleId = useId();
 
-  const fetchBookingDetails = async () => {
+  const fetchBookingDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -80,24 +82,40 @@ const BookingDetails: React.FC = () => {
         setBooking(response.data.booking);
         logger.info('Booking details loaded', { bookingId: id });
       } else {
-        setError('Booking not found');
+        setError('Бронирование не найдено');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
       logger.error('Failed to fetch booking details', err);
-      setError(err.response?.data?.message || 'Failed to load booking details');
+      setError(apiError.response?.data?.message || 'Не удалось загрузить детали бронирования');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleCancelBooking = async () => {
-    if (!booking || !window.confirm('Are you sure you want to cancel this booking?')) {
-      return;
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && id) {
+      fetchBookingDetails();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
     }
+  }, [authLoading, isAuthenticated, id, fetchBookingDetails]);
+
+  const handleOpenCancelModal = useCallback(() => {
+    setShowCancelModal(true);
+  }, []);
+
+  const handleCloseCancelModal = useCallback(() => {
+    setShowCancelModal(false);
+  }, []);
+
+  const handleConfirmCancel = useCallback(async () => {
+    if (!booking) return;
 
     setCancelling(true);
     setError('');
     setSuccess('');
+    setShowCancelModal(false);
 
     try {
       const response = await api.delete<{
@@ -106,25 +124,31 @@ const BookingDetails: React.FC = () => {
       }>(`/bookings/${booking.id}`);
 
       if (response.success) {
-        setSuccess('Booking cancelled successfully');
-        // Refresh booking details
+        setSuccess('Бронирование успешно отменено');
         await fetchBookingDetails();
         logger.info('Booking cancelled', { bookingId: booking.id });
-
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(response.message || 'Failed to cancel booking');
+        setError(response.message || 'Не удалось отменить бронирование');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
       logger.error('Failed to cancel booking', err);
-      setError(err.response?.data?.message || 'Failed to cancel booking');
+      setError(apiError.response?.data?.message || 'Не удалось отменить бронирование');
     } finally {
       setCancelling(false);
     }
-  };
+  }, [booking, fetchBookingDetails]);
 
-  const getStatusColor = (status: string) => {
+  const handleGoToBookings = useCallback(() => {
+    navigate('/bookings');
+  }, [navigate]);
+
+  const handleGoToSupport = useCallback(() => {
+    navigate('/support');
+  }, [navigate]);
+
+  const getStatusColor = useCallback((status: string): string => {
     switch (status) {
       case 'CONFIRMED':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -137,33 +161,87 @@ const BookingDetails: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
+  }, []);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
       case 'CONFIRMED':
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5" aria-hidden="true" />;
       case 'PENDING':
-        return <Clock className="w-5 h-5" />;
+        return <Clock className="w-5 h-5" aria-hidden="true" />;
       case 'CANCELLED':
-        return <XCircle className="w-5 h-5" />;
+        return <XCircle className="w-5 h-5" aria-hidden="true" />;
       case 'COMPLETED':
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5" aria-hidden="true" />;
       default:
-        return <AlertCircle className="w-5 h-5" />;
+        return <AlertCircle className="w-5 h-5" aria-hidden="true" />;
     }
-  };
+  }, []);
+
+  const getStatusText = useCallback((status: string): string => {
+    switch (status) {
+      case 'CONFIRMED':
+        return 'Подтверждено';
+      case 'PENDING':
+        return 'В ожидании';
+      case 'CANCELLED':
+        return 'Отменено';
+      case 'COMPLETED':
+        return 'Завершено';
+      default:
+        return status;
+    }
+  }, []);
+
+  const formatDate = useCallback((dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }, []);
+
+  const formatDateTime = useCallback((dateString: string): string => {
+    return new Date(dateString).toLocaleString('ru-RU');
+  }, []);
+
+  const getNightsText = useCallback((count: number): string => {
+    if (count === 1) return 'ночь';
+    if (count >= 2 && count <= 4) return 'ночи';
+    return 'ночей';
+  }, []);
+
+  const getGuestsText = useCallback((count: number): string => {
+    if (count === 1) return 'гость';
+    if (count >= 2 && count <= 4) return 'гостя';
+    return 'гостей';
+  }, []);
+
+  const getRoomsText = useCallback((count: number): string => {
+    if (count === 1) return 'номер';
+    if (count >= 2 && count <= 4) return 'номера';
+    return 'номеров';
+  }, []);
 
   // Loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Загрузка">
           <Container>
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading booking details...</p>
+            <div
+              className="text-center py-12"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div
+                className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"
+                aria-hidden="true"
+              />
+              <p className="mt-4 text-gray-600">Загрузка деталей бронирования...</p>
             </div>
           </Container>
         </main>
@@ -177,15 +255,15 @@ const BookingDetails: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Требуется авторизация">
           <Container>
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
+            <Card className="p-12 text-center" role="alert">
+              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Требуется авторизация</h2>
               <p className="text-gray-600 mb-6">
-                You need to be logged in to view booking details.
+                Для просмотра деталей бронирования необходимо войти в систему.
               </p>
-              <Button href="/login">Go to Login</Button>
+              <Button href="/login">Войти</Button>
             </Card>
           </Container>
         </main>
@@ -199,13 +277,13 @@ const BookingDetails: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Ошибка">
           <Container>
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Not Found</h2>
+            <Card className="p-12 text-center" role="alert">
+              <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" aria-hidden="true" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Бронирование не найдено</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <Button onClick={() => navigate('/bookings')}>Back to My Bookings</Button>
+              <Button onClick={handleGoToBookings}>Вернуться к бронированиям</Button>
             </Card>
           </Container>
         </main>
@@ -226,25 +304,34 @@ const BookingDetails: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main
+        className="flex-grow bg-gray-50 py-12"
+        role="main"
+        aria-label="Детали бронирования"
+      >
         <Container>
           {/* Back Button */}
-          <div className="mb-6">
+          <nav className="mb-6" aria-label="Навигация">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/bookings')}
+              onClick={handleGoToBookings}
               icon={<ArrowLeft className="w-4 h-4" />}
             >
-              Back to My Bookings
+              К моим бронированиям
             </Button>
-          </div>
+          </nav>
 
           {/* Success Message */}
           {success && (
-            <Card className="p-4 mb-6 bg-green-50 border-green-200">
+            <Card
+              id={successId}
+              className="p-4 mb-6 bg-green-50 border-green-200"
+              role="status"
+              aria-live="polite"
+            >
               <div className="flex items-center gap-2 text-green-800">
-                <CheckCircle className="w-5 h-5" />
+                <CheckCircle className="w-5 h-5" aria-hidden="true" />
                 <span>{success}</span>
               </div>
             </Card>
@@ -252,29 +339,40 @@ const BookingDetails: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <Card className="p-4 mb-6 bg-red-50 border-red-200">
+            <Card
+              id={errorId}
+              className="p-4 mb-6 bg-red-50 border-red-200"
+              role="alert"
+              aria-live="assertive"
+            >
               <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="w-5 h-5" />
+                <AlertCircle className="w-5 h-5" aria-hidden="true" />
                 <span>{error}</span>
               </div>
             </Card>
           )}
 
           {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-start justify-between mb-4">
+          <header className="mb-6">
+            <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Details</h1>
+                <h1 id={headingId} className="text-3xl font-bold text-gray-900 mb-2">
+                  Детали бронирования
+                </h1>
                 <p className="text-gray-600 text-lg">
-                  Reference: <span className="font-mono font-semibold">{booking.bookingReference}</span>
+                  Номер: <span className="font-mono font-semibold">{booking.bookingReference}</span>
                 </p>
               </div>
-              <div className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 ${getStatusColor(booking.status)}`}>
+              <div
+                className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 ${getStatusColor(booking.status)}`}
+                role="status"
+                aria-label={`Статус: ${getStatusText(booking.status)}`}
+              >
                 {getStatusIcon(booking.status)}
-                <span className="font-semibold">{booking.status}</span>
+                <span className="font-semibold">{getStatusText(booking.status)}</span>
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main Content */}
@@ -283,12 +381,12 @@ const BookingDetails: React.FC = () => {
               <Card className="p-6">
                 <div className="flex items-center gap-3 mb-6">
                   {booking.type === 'HOTEL' ? (
-                    <HotelIcon className="w-6 h-6 text-primary-600" />
+                    <HotelIcon className="w-6 h-6 text-primary-600" aria-hidden="true" />
                   ) : (
-                    <Plane className="w-6 h-6 text-primary-600" />
+                    <Plane className="w-6 h-6 text-primary-600" aria-hidden="true" />
                   )}
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {booking.type === 'HOTEL' ? 'Hotel Details' : 'Flight Details'}
+                    {booking.type === 'HOTEL' ? 'Информация об отеле' : 'Информация о рейсе'}
                   </h2>
                 </div>
 
@@ -296,8 +394,9 @@ const BookingDetails: React.FC = () => {
                   <div className="mb-6 rounded-lg overflow-hidden">
                     <img
                       src={booking.itemDetails.imageUrl}
-                      alt={booking.itemDetails.name || 'Booking'}
+                      alt={booking.itemDetails.name || 'Бронирование'}
                       className="w-full h-64 object-cover"
+                      loading="lazy"
                     />
                   </div>
                 )}
@@ -312,7 +411,7 @@ const BookingDetails: React.FC = () => {
                   )}
                   {booking.itemDetails?.location && (
                     <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="w-5 h-5" />
+                      <MapPin className="w-5 h-5" aria-hidden="true" />
                       <span>{booking.itemDetails.location}</span>
                     </div>
                   )}
@@ -321,103 +420,93 @@ const BookingDetails: React.FC = () => {
 
               {/* Booking Information */}
               <Card className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Booking Information</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Информация о бронировании</h3>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+                  <dl className="space-y-4">
                     <div>
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm font-medium">Check-in</span>
-                      </div>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(booking.checkIn).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
+                      <dt className="flex items-center gap-2 text-gray-600 mb-1">
+                        <Calendar className="w-4 h-4" aria-hidden="true" />
+                        <span className="text-sm font-medium">Дата заезда</span>
+                      </dt>
+                      <dd className="font-semibold text-gray-900">
+                        <time dateTime={booking.checkIn}>{formatDate(booking.checkIn)}</time>
+                      </dd>
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm font-medium">Check-out</span>
-                      </div>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(booking.checkOut).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {nights} {nights === 1 ? 'night' : 'nights'}
-                      </p>
+                      <dt className="flex items-center gap-2 text-gray-600 mb-1">
+                        <Calendar className="w-4 h-4" aria-hidden="true" />
+                        <span className="text-sm font-medium">Дата выезда</span>
+                      </dt>
+                      <dd className="font-semibold text-gray-900">
+                        <time dateTime={booking.checkOut}>{formatDate(booking.checkOut)}</time>
+                      </dd>
+                      <dd className="text-sm text-gray-600 mt-1">
+                        {nights} {getNightsText(nights)}
+                      </dd>
                     </div>
-                  </div>
+                  </dl>
 
-                  <div className="space-y-4">
+                  <dl className="space-y-4">
                     <div>
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <Users className="w-4 h-4" />
-                        <span className="text-sm font-medium">Guests</span>
-                      </div>
-                      <p className="font-semibold text-gray-900">
-                        {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}
-                      </p>
+                      <dt className="flex items-center gap-2 text-gray-600 mb-1">
+                        <Users className="w-4 h-4" aria-hidden="true" />
+                        <span className="text-sm font-medium">Гости</span>
+                      </dt>
+                      <dd className="font-semibold text-gray-900">
+                        {booking.guests} {getGuestsText(booking.guests)}
+                      </dd>
                     </div>
 
                     {booking.rooms && (
                       <div>
-                        <div className="flex items-center gap-2 text-gray-600 mb-1">
-                          <HotelIcon className="w-4 h-4" />
-                          <span className="text-sm font-medium">Rooms</span>
-                        </div>
-                        <p className="font-semibold text-gray-900">
-                          {booking.rooms} {booking.rooms === 1 ? 'room' : 'rooms'}
-                        </p>
+                        <dt className="flex items-center gap-2 text-gray-600 mb-1">
+                          <HotelIcon className="w-4 h-4" aria-hidden="true" />
+                          <span className="text-sm font-medium">Номера</span>
+                        </dt>
+                        <dd className="font-semibold text-gray-900">
+                          {booking.rooms} {getRoomsText(booking.rooms)}
+                        </dd>
                       </div>
                     )}
-                  </div>
+                  </dl>
                 </div>
               </Card>
 
               {/* Payment Information */}
               <Card className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Payment Information</h3>
-                <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Информация об оплате</h3>
+                <dl className="space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b">
-                    <span className="text-gray-600">Payment Method</span>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-gray-500" />
+                    <dt className="text-gray-600">Способ оплаты</dt>
+                    <dd className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-gray-500" aria-hidden="true" />
                       <span className="font-medium text-gray-900 capitalize">
                         {booking.paymentMethod.replace('_', ' ')}
                       </span>
-                    </div>
+                    </dd>
                   </div>
 
                   <div className="flex items-center justify-between pb-3 border-b">
-                    <span className="text-gray-600">Payment Status</span>
-                    <span className="font-medium text-gray-900 capitalize">{booking.paymentStatus}</span>
+                    <dt className="text-gray-600">Статус оплаты</dt>
+                    <dd className="font-medium text-gray-900 capitalize">{booking.paymentStatus}</dd>
                   </div>
 
                   <div className="flex items-center justify-between text-lg pt-2">
-                    <span className="font-semibold text-gray-900">Total Amount</span>
-                    <span className="font-bold text-primary-600">
-                      {booking.totalPrice.toLocaleString('en-US')} {booking.currency}
-                    </span>
+                    <dt className="font-semibold text-gray-900">Итого</dt>
+                    <dd className="font-bold text-primary-600">
+                      {booking.totalPrice.toLocaleString('ru-RU')} {booking.currency}
+                    </dd>
                   </div>
-                </div>
+                </dl>
               </Card>
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <aside className="space-y-6" aria-label="Действия и информация">
               {/* Actions Card */}
               <Card className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Actions</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Действия</h3>
                 <div className="space-y-3">
                   <Button
                     fullWidth
@@ -425,7 +514,7 @@ const BookingDetails: React.FC = () => {
                     icon={<Download className="w-4 h-4" />}
                     disabled
                   >
-                    Download Invoice
+                    Скачать счёт
                   </Button>
                   <Button
                     fullWidth
@@ -433,17 +522,17 @@ const BookingDetails: React.FC = () => {
                     icon={<Mail className="w-4 h-4" />}
                     disabled
                   >
-                    Email Confirmation
+                    Отправить подтверждение
                   </Button>
                   {booking.status === 'CONFIRMED' && (
                     <Button
                       fullWidth
                       variant="outline"
-                      onClick={handleCancelBooking}
+                      onClick={handleOpenCancelModal}
                       loading={cancelling}
                       className="text-red-600 border-red-600 hover:bg-red-50"
                     >
-                      {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+                      {cancelling ? 'Отмена...' : 'Отменить бронирование'}
                     </Button>
                   )}
                 </div>
@@ -451,45 +540,83 @@ const BookingDetails: React.FC = () => {
 
               {/* Booking Metadata */}
               <Card className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Booking Metadata</h3>
-                <div className="space-y-3 text-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Метаданные</h3>
+                <dl className="space-y-3 text-sm">
                   <div>
-                    <span className="text-gray-600">Booking ID</span>
-                    <p className="font-mono text-gray-900 mt-1">{booking.id}</p>
+                    <dt className="text-gray-600">ID бронирования</dt>
+                    <dd className="font-mono text-gray-900 mt-1">{booking.id}</dd>
                   </div>
                   <div>
-                    <span className="text-gray-600">Created</span>
-                    <p className="text-gray-900 mt-1">
-                      {new Date(booking.createdAt).toLocaleString('en-US')}
-                    </p>
+                    <dt className="text-gray-600">Создано</dt>
+                    <dd className="text-gray-900 mt-1">
+                      <time dateTime={booking.createdAt}>{formatDateTime(booking.createdAt)}</time>
+                    </dd>
                   </div>
                   <div>
-                    <span className="text-gray-600">Last Updated</span>
-                    <p className="text-gray-900 mt-1">
-                      {new Date(booking.updatedAt).toLocaleString('en-US')}
-                    </p>
+                    <dt className="text-gray-600">Обновлено</dt>
+                    <dd className="text-gray-900 mt-1">
+                      <time dateTime={booking.updatedAt}>{formatDateTime(booking.updatedAt)}</time>
+                    </dd>
                   </div>
-                </div>
+                </dl>
               </Card>
 
               {/* Help Card */}
               <Card className="p-6 bg-blue-50 border-blue-200">
-                <h3 className="text-lg font-bold text-blue-900 mb-3">Need Help?</h3>
+                <h3 className="text-lg font-bold text-blue-900 mb-3">Нужна помощь?</h3>
                 <p className="text-sm text-blue-800 mb-4">
-                  If you have any questions about your booking, our support team is here to help.
+                  Если у вас есть вопросы о бронировании, наша команда поддержки готова помочь.
                 </p>
                 <Button
                   fullWidth
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/support')}
+                  onClick={handleGoToSupport}
                   className="border-blue-600 text-blue-600 hover:bg-blue-100"
                 >
-                  Contact Support
+                  Связаться с поддержкой
                 </Button>
               </Card>
-            </div>
+            </aside>
           </div>
+
+          {/* Cancel Confirmation Modal */}
+          {showCancelModal && (
+            <div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+            >
+              <Card className="max-w-md w-full p-6">
+                <div className="text-center">
+                  <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" aria-hidden="true" />
+                  <h2 id={modalTitleId} className="text-xl font-bold text-gray-900 mb-2">
+                    Отменить бронирование?
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Вы уверены, что хотите отменить это бронирование? Это действие нельзя отменить.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      onClick={handleCloseCancelModal}
+                    >
+                      Назад
+                    </Button>
+                    <Button
+                      fullWidth
+                      onClick={handleConfirmCancel}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Да, отменить
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
         </Container>
       </main>
       <Footer />
@@ -497,4 +624,4 @@ const BookingDetails: React.FC = () => {
   );
 };
 
-export default BookingDetails;
+export default memo(BookingDetails);

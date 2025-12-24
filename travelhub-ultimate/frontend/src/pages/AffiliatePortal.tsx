@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useId } from 'react';
 import { Users, TrendingUp, DollarSign, Award, ArrowRight, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
@@ -17,63 +17,73 @@ interface PortalStats {
   topStatus: string;
 }
 
+interface AffiliateResponse {
+  affiliate?: unknown;
+}
+
+/**
+ * Affiliate portal page - information and registration for affiliate program.
+ */
 const AffiliatePortal: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [isAffiliate, setIsAffiliate] = useState<boolean>(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [stats] = useState<PortalStats>({
+
+  // Unique IDs for accessibility
+  const heroId = useId();
+  const howItWorksId = useId();
+  const benefitsId = useId();
+  const commissionId = useId();
+  const faqId = useId();
+
+  const stats = useMemo<PortalStats>(() => ({
     totalAffiliates: 1245,
     monthlyGrowth: '+15.3%',
     totalEarnings: 12450,
     topStatus: 'Gold',
-  });
+  }), []);
 
-  useEffect(() => {
-    checkAffiliateStatus();
-  }, [isAuthenticated]);
-
-  const checkAffiliateStatus = async () => {
+  const checkAffiliateStatus = useCallback(async () => {
     if (!isAuthenticated) {
       setCheckingStatus(false);
       return;
     }
 
     try {
-      // Try to fetch affiliate dashboard to check if user is registered
       const response = await api.get<{
         success: boolean;
-        data: any;
+        data: AffiliateResponse;
       }>('/affiliate/dashboard');
 
       if (response.success && response.data?.affiliate) {
         setIsAffiliate(true);
       }
-    } catch (err: any) {
-      // If 404, user is not an affiliate
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { status?: number } };
+      if (apiError.response?.status === 404) {
         setIsAffiliate(false);
       }
+      logger.debug('Affiliate status check', err);
     } finally {
       setCheckingStatus(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const handleCTA = () => {
+  useEffect(() => {
+    checkAffiliateStatus();
+  }, [checkAffiliateStatus]);
+
+  const handleCTA = useCallback(() => {
     if (!isAuthenticated) {
-      // Not logged in - redirect to register
       navigate('/register', { state: { from: '/affiliate/portal' } });
-    } else if (isAffiliate) {
-      // Already an affiliate - go to dashboard
-      navigate('/affiliate');
     } else {
-      // Logged in but not an affiliate - go to dashboard (which has registration flow)
       navigate('/affiliate');
     }
-  };
+  }, [isAuthenticated, navigate]);
 
-  const getCTAText = (): string => {
+  const getCTAText = useCallback((): string => {
     if (!isAuthenticated) {
       return 'Зарегистрироваться';
     } else if (isAffiliate) {
@@ -81,74 +91,84 @@ const AffiliatePortal: React.FC = () => {
     } else {
       return 'Стать партнером';
     }
-  };
+  }, [isAuthenticated, isAffiliate]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main
+        className="flex-grow bg-gray-50 py-12"
+        role="main"
+        aria-label="Партнерская программа"
+      >
         <Container>
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <header className="text-center mb-12" aria-labelledby={heroId}>
+            <h1 id={heroId} className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Партнерская программа TravelHub
             </h1>
             <p className="text-xl text-gray-600 mb-6">
               Зарабатывайте, делясь лучшими предложениями путешествий
             </p>
             {isAffiliate && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full font-medium">
-                <CheckCircle className="w-5 h-5" />
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full font-medium"
+                role="status"
+              >
+                <CheckCircle className="w-5 h-5" aria-hidden="true" />
                 <span>Вы уже являетесь партнером!</span>
               </div>
             )}
-          </div>
+          </header>
 
           {/* Stats Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <section className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12" aria-label="Статистика программы">
             <Card className="p-6 text-center hover:shadow-lg transition-shadow">
-              <Users className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                {stats.totalAffiliates.toLocaleString()}
-              </h3>
+              <Users className="w-12 h-12 text-primary-600 mx-auto mb-4" aria-hidden="true" />
+              <p className="text-2xl font-bold text-gray-900 mb-2">
+                {stats.totalAffiliates.toLocaleString('ru-RU')}
+              </p>
               <p className="text-gray-600">Активных партнеров</p>
             </Card>
 
             <Card className="p-6 text-center hover:shadow-lg transition-shadow">
-              <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
+              <p className="text-2xl font-bold text-gray-900 mb-2">
                 {stats.monthlyGrowth}
-              </h3>
+              </p>
               <p className="text-gray-600">Рост за месяц</p>
             </Card>
 
             <Card className="p-6 text-center hover:shadow-lg transition-shadow">
-              <DollarSign className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                ${stats.totalEarnings.toLocaleString()}
-              </h3>
+              <DollarSign className="w-12 h-12 text-blue-600 mx-auto mb-4" aria-hidden="true" />
+              <p className="text-2xl font-bold text-gray-900 mb-2">
+                ${stats.totalEarnings.toLocaleString('ru-RU')}
+              </p>
               <p className="text-gray-600">Средний доход партнера</p>
             </Card>
 
             <Card className="p-6 text-center hover:shadow-lg transition-shadow">
-              <Award className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <Award className="w-12 h-12 text-yellow-600 mx-auto mb-4" aria-hidden="true" />
+              <p className="text-2xl font-bold text-gray-900 mb-2">
                 {stats.topStatus}
-              </h3>
+              </p>
               <p className="text-gray-600">Высший статус</p>
             </Card>
-          </div>
+          </section>
 
           {/* Main Content Grid */}
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             {/* How It Works */}
-            <Card className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <Card className="p-8" aria-labelledby={howItWorksId}>
+              <h2 id={howItWorksId} className="text-2xl font-bold text-gray-900 mb-6">
                 Как это работает
               </h2>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+              <ol className="space-y-6">
+                <li className="flex gap-4">
+                  <div
+                    className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg"
+                    aria-hidden="true"
+                  >
                     1
                   </div>
                   <div>
@@ -160,10 +180,13 @@ const AffiliatePortal: React.FC = () => {
                       для отслеживания ваших рефералов
                     </p>
                   </div>
-                </div>
+                </li>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                <li className="flex gap-4">
+                  <div
+                    className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg"
+                    aria-hidden="true"
+                  >
                     2
                   </div>
                   <div>
@@ -175,10 +198,13 @@ const AffiliatePortal: React.FC = () => {
                       в YouTube или просто делитесь с друзьями
                     </p>
                   </div>
-                </div>
+                </li>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                <li className="flex gap-4">
+                  <div
+                    className="flex-shrink-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg"
+                    aria-hidden="true"
+                  >
                     3
                   </div>
                   <div>
@@ -190,18 +216,18 @@ const AffiliatePortal: React.FC = () => {
                       совершенного вашими рефералами
                     </p>
                   </div>
-                </div>
-              </div>
+                </li>
+              </ol>
             </Card>
 
             {/* Benefits */}
-            <Card className="p-8 bg-gradient-to-br from-primary-50 to-white border-primary-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <Card className="p-8 bg-gradient-to-br from-primary-50 to-white border-primary-100" aria-labelledby={benefitsId}>
+              <h2 id={benefitsId} className="text-2xl font-bold text-gray-900 mb-6">
                 Преимущества программы
               </h2>
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-4 mb-8" role="list">
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -210,7 +236,7 @@ const AffiliatePortal: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -219,7 +245,7 @@ const AffiliatePortal: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -227,7 +253,7 @@ const AffiliatePortal: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -236,7 +262,7 @@ const AffiliatePortal: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -245,7 +271,7 @@ const AffiliatePortal: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     ✓
                   </div>
                   <span className="text-gray-700">
@@ -267,10 +293,11 @@ const AffiliatePortal: React.FC = () => {
           </div>
 
           {/* Commission Structure */}
-          <Card className="p-8 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Структура вознаграждений
-            </h2>
+          <section aria-labelledby={commissionId}>
+            <Card className="p-8 mb-12">
+              <h2 id={commissionId} className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                Структура вознаграждений
+              </h2>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center p-6 bg-blue-50 rounded-lg">
                 <div className="text-4xl font-bold text-blue-600 mb-2">10%</div>
@@ -296,13 +323,15 @@ const AffiliatePortal: React.FC = () => {
                 </p>
               </div>
             </div>
-          </Card>
+            </Card>
+          </section>
 
           {/* FAQ Section */}
-          <Card className="p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Частые вопросы
-            </h2>
+          <section aria-labelledby={faqId}>
+            <Card className="p-8">
+              <h2 id={faqId} className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                Частые вопросы
+              </h2>
             <div className="space-y-6 max-w-3xl mx-auto">
               <div>
                 <h3 className="font-bold text-gray-900 mb-2">
@@ -344,10 +373,14 @@ const AffiliatePortal: React.FC = () => {
                 </p>
               </div>
             </div>
-          </Card>
+            </Card>
+          </section>
 
           {/* Final CTA */}
-          <div className="text-center mt-12 py-12 px-6 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl text-white">
+          <section
+            className="text-center mt-12 py-12 px-6 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl text-white"
+            aria-label="Призыв к действию"
+          >
             <h2 className="text-3xl font-bold mb-4">
               Готовы начать зарабатывать?
             </h2>
@@ -364,7 +397,7 @@ const AffiliatePortal: React.FC = () => {
             >
               {getCTAText()}
             </Button>
-          </div>
+          </section>
         </Container>
       </main>
       <Footer />
@@ -372,4 +405,4 @@ const AffiliatePortal: React.FC = () => {
   );
 };
 
-export default AffiliatePortal;
+export default memo(AffiliatePortal);
