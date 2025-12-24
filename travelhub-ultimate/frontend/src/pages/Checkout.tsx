@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CreditCard, CheckCircle, AlertCircle, Calendar, Users, MapPin } from 'lucide-react';
+import React, { useState, useCallback, memo, useId } from 'react';
+import { CreditCard, CheckCircle, AlertCircle, Calendar, Users, MapPin, Lock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -25,10 +25,26 @@ interface BookingDetails {
   totalAmount?: number;
 }
 
+interface BookingData {
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+}
+
+interface PaymentData {
+  cardNumber: string;
+  cardName: string;
+  expiry: string;
+  cvv: string;
+}
+
+/**
+ * Checkout page for completing hotel bookings.
+ */
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   // Get booking details from navigation state
   const bookingDetails: BookingDetails = location.state || {};
@@ -36,34 +52,38 @@ const Checkout: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [bookingData, setBookingData] = useState({
+  // Unique IDs for accessibility
+  const errorId = useId();
+  const bookingFormId = useId();
+  const paymentFormId = useId();
+  const summaryId = useId();
+
+  const [bookingData, setBookingData] = useState<BookingData>({
     checkIn: bookingDetails.checkIn || '',
     checkOut: bookingDetails.checkOut || '',
     guests: bookingDetails.guests || 2,
   });
 
-  const [formData, setFormData] = useState({
+  const [paymentData, setPaymentData] = useState<PaymentData>({
     cardNumber: '',
     cardName: '',
     expiry: '',
     cvv: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleBookingInputChange = useCallback((field: keyof BookingData, value: string | number) => {
+    setBookingData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
-  const handleBookingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBookingData({
-      ...bookingData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handlePaymentInputChange = useCallback((field: keyof PaymentData, value: string) => {
+    setPaymentData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
-  const calculateTotal = (): number => {
+  const handleGuestsChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setBookingData(prev => ({ ...prev, guests: parseInt(e.target.value) }));
+  }, []);
+
+  const calculateTotal = useCallback((): number => {
     if (bookingDetails.totalAmount) {
       return bookingDetails.totalAmount;
     }
@@ -77,9 +97,18 @@ const Checkout: React.FC = () => {
     }
 
     return bookingDetails.hotel?.price || 0;
-  };
+  }, [bookingDetails, bookingData.checkIn, bookingData.checkOut]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const calculateNights = useCallback((): number => {
+    if (bookingData.checkIn && bookingData.checkOut) {
+      const checkIn = new Date(bookingData.checkIn);
+      const checkOut = new Date(bookingData.checkOut);
+      return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    }
+    return 1;
+  }, [bookingData.checkIn, bookingData.checkOut]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
@@ -88,7 +117,7 @@ const Checkout: React.FC = () => {
     }
 
     if (!bookingDetails.hotel) {
-      setError('No hotel selected for booking');
+      setError('Не выбран отель для бронирования');
       return;
     }
 
@@ -129,32 +158,47 @@ const Checkout: React.FC = () => {
           },
         });
       } else {
-        setError('Failed to create booking. Please try again.');
+        setError('Не удалось создать бронирование. Попробуйте снова.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
       logger.error('Failed to create booking', err);
-      setError(err.response?.data?.message || 'Failed to create booking. Please try again.');
+      setError(apiError.response?.data?.message || 'Не удалось создать бронирование. Попробуйте снова.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, bookingDetails, bookingData, calculateTotal, navigate]);
+
+  const handleNavigateToLogin = useCallback(() => {
+    navigate('/login');
+  }, [navigate]);
+
+  const handleNavigateToHome = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
 
   // Redirect if no hotel selected
   if (!bookingDetails.hotel) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main
+          className="flex-grow bg-gray-50 py-12"
+          role="main"
+          aria-label="Оформление бронирования"
+        >
           <Container>
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                No Booking Selected
-              </h2>
+            <Card className="p-12 text-center" role="alert">
+              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                Отель не выбран
+              </h1>
               <p className="text-gray-600 mb-6">
-                Please select a hotel to book.
+                Пожалуйста, выберите отель для бронирования.
               </p>
-              <Button href="/">Back to Home</Button>
+              <Button onClick={handleNavigateToHome}>
+                Вернуться на главную
+              </Button>
             </Card>
           </Container>
         </main>
@@ -168,17 +212,23 @@ const Checkout: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main
+          className="flex-grow bg-gray-50 py-12"
+          role="main"
+          aria-label="Требуется авторизация"
+        >
           <Container>
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Please Log In
-              </h2>
+            <Card className="p-12 text-center" role="alert">
+              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                Требуется вход
+              </h1>
               <p className="text-gray-600 mb-6">
-                You need to be logged in to complete your booking.
+                Для завершения бронирования необходимо войти в аккаунт.
               </p>
-              <Button href="/login">Go to Login</Button>
+              <Button onClick={handleNavigateToLogin}>
+                Перейти к входу
+              </Button>
             </Card>
           </Container>
         </main>
@@ -190,17 +240,28 @@ const Checkout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main
+        className="flex-grow bg-gray-50 py-12"
+        role="main"
+        aria-label="Оформление бронирования"
+      >
         <Container>
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Оформление бронирования
-          </h1>
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Оформление бронирования
+            </h1>
+          </header>
 
+          {/* Error Message */}
           {error && (
-            <Card className="p-4 mb-6 bg-red-50 border-red-200">
+            <Card
+              className="p-4 mb-6 bg-red-50 border-red-200"
+              role="alert"
+              aria-live="assertive"
+            >
               <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
+                <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                <span id={errorId}>{error}</span>
               </div>
             </Card>
           )}
@@ -209,18 +270,21 @@ const Checkout: React.FC = () => {
             <div className="md:col-span-2 space-y-6">
               {/* Booking Details Card */}
               <Card className="p-8">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <Calendar className="w-6 h-6 text-primary-600" />
+                <h2
+                  id={bookingFormId}
+                  className="text-xl font-bold mb-6 flex items-center gap-2"
+                >
+                  <Calendar className="w-6 h-6 text-primary-600" aria-hidden="true" />
                   Детали бронирования
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-4" role="group" aria-labelledby={bookingFormId}>
                   <Input
                     label="Дата заезда"
                     type="date"
                     name="checkIn"
                     value={bookingData.checkIn}
-                    onChange={handleBookingChange}
+                    onChange={(value) => handleBookingInputChange('checkIn', value)}
                     required
                     min={new Date().toISOString().split('T')[0]}
                   />
@@ -230,20 +294,25 @@ const Checkout: React.FC = () => {
                     type="date"
                     name="checkOut"
                     value={bookingData.checkOut}
-                    onChange={handleBookingChange}
+                    onChange={(value) => handleBookingInputChange('checkOut', value)}
                     required
                     min={bookingData.checkIn || new Date().toISOString().split('T')[0]}
                   />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="guests-select"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Количество гостей
                     </label>
                     <select
+                      id="guests-select"
                       name="guests"
                       value={bookingData.guests}
-                      onChange={(e) => setBookingData({ ...bookingData, guests: parseInt(e.target.value) })}
+                      onChange={handleGuestsChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      aria-describedby="guests-help"
                     >
                       <option value="1">1 гость</option>
                       <option value="2">2 гостя</option>
@@ -257,29 +326,39 @@ const Checkout: React.FC = () => {
 
               {/* Payment Details Card */}
               <Card className="p-8">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <CreditCard className="w-6 h-6 text-primary-600" />
+                <h2
+                  id={paymentFormId}
+                  className="text-xl font-bold mb-6 flex items-center gap-2"
+                >
+                  <CreditCard className="w-6 h-6 text-primary-600" aria-hidden="true" />
                   Способ оплаты
                 </h2>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-6"
+                  aria-labelledby={paymentFormId}
+                >
                   <Input
                     label="Номер карты"
                     name="cardNumber"
                     placeholder="1234 5678 9012 3456"
-                    value={formData.cardNumber}
-                    onChange={handleChange}
+                    value={paymentData.cardNumber}
+                    onChange={(value) => handlePaymentInputChange('cardNumber', value)}
                     maxLength={19}
                     required
+                    icon={<CreditCard className="w-5 h-5" />}
+                    autoComplete="cc-number"
                   />
 
                   <Input
                     label="Имя владельца карты"
                     name="cardName"
                     placeholder="IVAN IVANOV"
-                    value={formData.cardName}
-                    onChange={handleChange}
+                    value={paymentData.cardName}
+                    onChange={(value) => handlePaymentInputChange('cardName', value)}
                     required
+                    autoComplete="cc-name"
                   />
 
                   <div className="grid grid-cols-2 gap-4">
@@ -287,10 +366,11 @@ const Checkout: React.FC = () => {
                       label="Срок действия"
                       name="expiry"
                       placeholder="MM/YY"
-                      value={formData.expiry}
-                      onChange={handleChange}
+                      value={paymentData.expiry}
+                      onChange={(value) => handlePaymentInputChange('expiry', value)}
                       maxLength={5}
                       required
+                      autoComplete="cc-exp"
                     />
 
                     <Input
@@ -298,15 +378,16 @@ const Checkout: React.FC = () => {
                       name="cvv"
                       placeholder="123"
                       type="password"
-                      value={formData.cvv}
-                      onChange={handleChange}
+                      value={paymentData.cvv}
+                      onChange={(value) => handlePaymentInputChange('cvv', value)}
                       maxLength={3}
                       required
+                      autoComplete="cc-csc"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div className="flex items-center gap-2 text-sm text-gray-600" role="status">
+                    <Lock className="w-5 h-5 text-green-600" aria-hidden="true" />
                     <span>Защищённое соединение. Ваши данные в безопасности.</span>
                   </div>
 
@@ -318,13 +399,15 @@ const Checkout: React.FC = () => {
             </div>
 
             {/* Summary Card */}
-            <div>
+            <aside aria-labelledby={summaryId}>
               <Card className="p-6 sticky top-24">
-                <h3 className="text-lg font-bold mb-4">Сводка заказа</h3>
+                <h3 id={summaryId} className="text-lg font-bold mb-4">
+                  Сводка заказа
+                </h3>
 
                 <div className="space-y-4 mb-6">
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-gray-500 mt-1" />
+                    <MapPin className="w-5 h-5 text-gray-500 mt-1" aria-hidden="true" />
                     <div>
                       <div className="font-semibold">{bookingDetails.hotel.name}</div>
                       <div className="text-sm text-gray-600">{bookingDetails.hotel.location}</div>
@@ -333,27 +416,35 @@ const Checkout: React.FC = () => {
 
                   {bookingData.checkIn && bookingData.checkOut && (
                     <div className="flex items-start gap-3">
-                      <Calendar className="w-5 h-5 text-gray-500 mt-1" />
+                      <Calendar className="w-5 h-5 text-gray-500 mt-1" aria-hidden="true" />
                       <div>
-                        <div className="text-sm text-gray-600">Check-in</div>
-                        <div className="font-medium">
+                        <div className="text-sm text-gray-600">Заезд</div>
+                        <time
+                          dateTime={bookingData.checkIn}
+                          className="font-medium"
+                        >
                           {new Date(bookingData.checkIn).toLocaleDateString('ru-RU')}
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">Check-out</div>
-                        <div className="font-medium">
+                        </time>
+                        <div className="text-sm text-gray-600 mt-1">Выезд</div>
+                        <time
+                          dateTime={bookingData.checkOut}
+                          className="font-medium"
+                        >
                           {new Date(bookingData.checkOut).toLocaleDateString('ru-RU')}
-                        </div>
+                        </time>
                         <div className="text-xs text-gray-500 mt-1">
-                          {Math.ceil((new Date(bookingData.checkOut).getTime() - new Date(bookingData.checkIn).getTime()) / (1000 * 60 * 60 * 24))} ночей
+                          {calculateNights()} {getNightsText(calculateNights())}
                         </div>
                       </div>
                     </div>
                   )}
 
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-gray-500" />
+                    <Users className="w-5 h-5 text-gray-500" aria-hidden="true" />
                     <div>
-                      <div className="font-medium">{bookingData.guests} {bookingData.guests === 1 ? 'гость' : 'гостя'}</div>
+                      <div className="font-medium">
+                        {bookingData.guests} {getGuestsText(bookingData.guests)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -361,27 +452,33 @@ const Checkout: React.FC = () => {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Цена за ночь</span>
-                    <span className="font-medium">{bookingDetails.hotel.price.toLocaleString('ru-RU')} ₽</span>
+                    <span className="font-medium">
+                      {bookingDetails.hotel.price.toLocaleString('ru-RU')} ₽
+                    </span>
                   </div>
                   {bookingData.checkIn && bookingData.checkOut && (
                     <div className="flex justify-between text-sm mb-3">
                       <span className="text-gray-600">
-                        {Math.ceil((new Date(bookingData.checkOut).getTime() - new Date(bookingData.checkIn).getTime()) / (1000 * 60 * 60 * 24))} ночей
+                        {calculateNights()} {getNightsText(calculateNights())}
                       </span>
-                      <span className="font-medium">{calculateTotal().toLocaleString('ru-RU')} ₽</span>
+                      <span className="font-medium">
+                        {calculateTotal().toLocaleString('ru-RU')} ₽
+                      </span>
                     </div>
                   )}
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Итого</span>
-                      <span className="text-primary-600">{calculateTotal().toLocaleString('ru-RU')} ₽</span>
+                      <span className="text-primary-600">
+                        {calculateTotal().toLocaleString('ru-RU')} ₽
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6 p-4 bg-green-50 rounded-lg">
                   <div className="flex items-center gap-2 text-sm text-green-800 mb-2">
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" />
                     <span className="font-medium">Бесплатная отмена</span>
                   </div>
                   <p className="text-xs text-green-700">
@@ -389,7 +486,7 @@ const Checkout: React.FC = () => {
                   </p>
                 </div>
               </Card>
-            </div>
+            </aside>
           </div>
         </Container>
       </main>
@@ -398,4 +495,30 @@ const Checkout: React.FC = () => {
   );
 };
 
-export default Checkout;
+/**
+ * Get proper Russian plural form for nights.
+ */
+function getNightsText(count: number): string {
+  const lastTwo = count % 100;
+  const lastOne = count % 10;
+
+  if (lastTwo >= 11 && lastTwo <= 19) return 'ночей';
+  if (lastOne === 1) return 'ночь';
+  if (lastOne >= 2 && lastOne <= 4) return 'ночи';
+  return 'ночей';
+}
+
+/**
+ * Get proper Russian plural form for guests.
+ */
+function getGuestsText(count: number): string {
+  const lastTwo = count % 100;
+  const lastOne = count % 10;
+
+  if (lastTwo >= 11 && lastTwo <= 19) return 'гостей';
+  if (lastOne === 1) return 'гость';
+  if (lastOne >= 2 && lastOne <= 4) return 'гостя';
+  return 'гостей';
+}
+
+export default memo(Checkout);
