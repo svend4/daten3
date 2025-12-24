@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import logger from '../utils/logger.js';
 import {
   basicHealthCheck,
   detailedHealthCheck,
@@ -85,7 +86,6 @@ const router = Router();
  * @access  Public
  */
 router.get('/cors-test', (req, res) => {
-  const logger = require('../utils/logger.js').default;
   logger.info('🧪 CORS TEST ENDPOINT CALLED!', {
     origin: req.headers.origin || 'NO ORIGIN',
     referer: req.headers.referer || 'NO REFERER',
@@ -116,7 +116,6 @@ router.get('/cors-test', (req, res) => {
  * @access  Public
  */
 router.options('/cors-test', (req, res) => {
-  const logger = require('../utils/logger.js').default;
   logger.info('🚀 CORS PREFLIGHT for /cors-test', {
     origin: req.headers.origin || 'NO ORIGIN',
     'access-control-request-method': req.headers['access-control-request-method'],
