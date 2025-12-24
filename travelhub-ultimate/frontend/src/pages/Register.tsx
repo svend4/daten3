@@ -1,39 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo, useId } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import { useAuth } from '../store/AuthContext';
+import { registerSchema, type RegisterFormData, validateForm } from '../utils/validators';
+
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
+  const formId = useId();
+
+  // Form state
+  const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [serverError, setServerError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  // Handle input changes
+  const handleChange = useCallback((field: keyof RegisterFormData) => (value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear field error on change
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (serverError) {
+      setServerError('');
+    }
+  }, [errors, serverError]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Validate form on blur
+  const handleBlur = useCallback((field: keyof RegisterFormData) => () => {
+    const result = validateForm(registerSchema, formData);
+    if (!result.success && result.errors?.[field]) {
+      setErrors((prev) => ({ ...prev, [field]: result.errors?.[field] }));
+    }
+  }, [formData]);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setServerError('');
+    setTermsError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Пароли не совпадают!');
+    // Validate terms agreement
+    if (!agreedToTerms) {
+      setTermsError('Необходимо принять условия использования');
+      return;
+    }
+
+    // Validate all fields
+    const result = validateForm(registerSchema, formData);
+    if (!result.success) {
+      setErrors(result.errors as FormErrors);
       return;
     }
 
@@ -41,36 +79,45 @@ const Register: React.FC = () => {
 
     try {
       // Use AuthContext register which handles httpOnly cookies
-      const result = await register({
+      const registerResult = await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
       });
 
-      if (result.success) {
+      if (registerResult.success) {
         // Navigate to dashboard
         // Tokens are automatically stored in httpOnly cookies by server
         navigate('/dashboard');
       } else {
-        setError(result.error || 'Registration failed. Please try again.');
+        setServerError(registerResult.error || 'Ошибка регистрации. Попробуйте позже.');
       }
-    } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch {
+      setServerError('Произошла неожиданная ошибка. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, agreedToTerms, register, navigate]);
+
+  // Handle Google OAuth
+  const handleGoogleAuth = useCallback(() => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:3000';
+    window.location.href = `${baseUrl}/api/auth/google`;
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main id="main-content" className="flex-grow bg-gray-50 py-12" role="main">
         <div className="container mx-auto px-4 max-w-md">
           <Card className="p-8">
+            {/* Header */}
             <div className="text-center mb-8">
-              <UserPlus className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserPlus className="w-8 h-8 text-primary-600" aria-hidden="true" />
+              </div>
+              <h1 id={`${formId}-title`} className="text-3xl font-bold text-gray-900 mb-2">
                 Создать аккаунт
               </h1>
               <p className="text-gray-600">
@@ -78,81 +125,143 @@ const Register: React.FC = () => {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                  {error}
+            {/* Form */}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              noValidate
+              aria-labelledby={`${formId}-title`}
+            >
+              {/* Server Error Alert */}
+              {serverError && (
+                <div
+                  className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{serverError}</span>
                 </div>
               )}
 
+              {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Имя"
                   name="firstName"
+                  label="Имя"
+                  type="text"
                   value={formData.firstName}
-                  onChange={handleChange}
+                  onChange={handleChange('firstName')}
+                  onBlur={handleBlur('firstName')}
                   placeholder="Иван"
+                  error={errors.firstName}
                   required
+                  autoComplete="given-name"
+                  icon={<User className="w-5 h-5" />}
                 />
                 <Input
-                  label="Фамилия"
                   name="lastName"
+                  label="Фамилия"
+                  type="text"
                   value={formData.lastName}
-                  onChange={handleChange}
+                  onChange={handleChange('lastName')}
+                  onBlur={handleBlur('lastName')}
                   placeholder="Иванов"
+                  error={errors.lastName}
                   required
+                  autoComplete="family-name"
+                  icon={<User className="w-5 h-5" />}
                 />
               </div>
 
+              {/* Email Field */}
               <Input
+                name="email"
                 label="Email"
                 type="email"
-                name="email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={handleChange('email')}
+                onBlur={handleBlur('email')}
                 placeholder="your@email.com"
+                error={errors.email}
                 required
+                autoComplete="email"
+                icon={<Mail className="w-5 h-5" />}
               />
 
+              {/* Password Field */}
               <Input
+                name="password"
                 label="Пароль"
                 type="password"
-                name="password"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={handleChange('password')}
+                onBlur={handleBlur('password')}
                 placeholder="••••••••"
+                error={errors.password}
                 required
-                helperText="Минимум 8 символов"
+                autoComplete="new-password"
+                helperText="Минимум 8 символов, заглавная и строчная буква, цифра"
+                icon={<Lock className="w-5 h-5" />}
               />
 
+              {/* Confirm Password Field */}
               <Input
+                name="confirmPassword"
                 label="Подтвердите пароль"
                 type="password"
-                name="confirmPassword"
                 value={formData.confirmPassword}
-                onChange={handleChange}
+                onChange={handleChange('confirmPassword')}
+                onBlur={handleBlur('confirmPassword')}
                 placeholder="••••••••"
+                error={errors.confirmPassword}
                 required
+                autoComplete="new-password"
+                icon={<Lock className="w-5 h-5" />}
               />
 
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  required
-                  className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="ml-2 text-sm text-gray-600">
-                  Я согласен с{' '}
-                  <Link to="/terms" className="text-primary-600 hover:text-primary-700">
-                    Условиями использования
-                  </Link>{' '}
-                  и{' '}
-                  <Link to="/privacy" className="text-primary-600 hover:text-primary-700">
-                    Политикой конфиденциальности
-                  </Link>
-                </span>
+              {/* Terms Agreement */}
+              <div className="space-y-1">
+                <label className="flex items-start cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      if (termsError) setTermsError('');
+                    }}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                    aria-describedby={`${formId}-terms-desc`}
+                    aria-invalid={!!termsError}
+                  />
+                  <span
+                    id={`${formId}-terms-desc`}
+                    className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors"
+                  >
+                    Я согласен с{' '}
+                    <Link
+                      to="/terms"
+                      className="text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus-visible:underline"
+                    >
+                      Условиями использования
+                    </Link>{' '}
+                    и{' '}
+                    <Link
+                      to="/privacy"
+                      className="text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus-visible:underline"
+                    >
+                      Политикой конфиденциальности
+                    </Link>
+                  </span>
+                </label>
+                {termsError && (
+                  <p className="text-sm text-red-600 ml-6" role="alert">
+                    {termsError}
+                  </p>
+                )}
               </div>
 
+              {/* Submit Button */}
               <Button
                 type="submit"
                 fullWidth
@@ -163,21 +272,23 @@ const Register: React.FC = () => {
               </Button>
             </form>
 
+            {/* Sign In Link */}
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Уже есть аккаунт?{' '}
                 <Link
                   to="/login"
-                  className="text-primary-600 hover:text-primary-700 font-semibold"
+                  className="text-primary-600 hover:text-primary-700 font-semibold focus:outline-none focus-visible:underline"
                 >
                   Войти
                 </Link>
               </p>
             </div>
 
-            <div className="mt-8 relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+            {/* Divider */}
+            <div className="mt-8 relative" role="separator">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-white text-gray-500">
@@ -186,17 +297,15 @@ const Register: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            {/* Social Login */}
+            <div className="mt-6">
               <button
                 type="button"
-                onClick={() => {
-                  // Redirect to Google OAuth endpoint
-                  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:3000';
-                  window.location.href = `${baseUrl}/api/auth/google`;
-                }}
-                className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={handleGoogleAuth}
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                aria-label="Зарегистрироваться через Google"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -214,23 +323,8 @@ const Register: React.FC = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="ml-2 text-sm font-medium text-gray-700">
-                  Google
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  // Facebook OAuth not implemented yet
-                  alert('Авторизация через Facebook пока не поддерживается. Пожалуйста, используйте Google или email.');
-                }}
-                className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                <span className="ml-2 text-sm font-medium text-gray-700">
-                  Facebook
+                <span className="ml-3 text-sm font-medium text-gray-700">
+                  Продолжить с Google
                 </span>
               </button>
             </div>
@@ -242,4 +336,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register;
+export default memo(Register);
