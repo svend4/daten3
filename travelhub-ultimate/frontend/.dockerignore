@@ -1,8 +1,33 @@
+# Dependencies
 node_modules
+npm-debug.log*
+
+# Build outputs
 dist
+build
+
+# Test files
+coverage
+playwright-report
+test-results
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment
 .env
 .env.local
-*.log
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Misc
+*.md
+LICENSE
 .DS_Store
-coverage
 .vite

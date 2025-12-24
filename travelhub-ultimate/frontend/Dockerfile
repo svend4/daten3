@@ -19,29 +19,31 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
+# Production stage with nginx
+FROM nginx:alpine AS production
 
-WORKDIR /app
-
-# Install serve globally
-RUN npm install -g serve
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Create non-root user for nginx
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
 
-USER nodejs
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
 
 # Expose port
-EXPOSE 3000
+EXPOSE 80
 
 # Set environment
 ENV NODE_ENV=production
 
-# Start the application using serve
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
