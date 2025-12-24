@@ -85,11 +85,13 @@ const router = Router();
  * @access  Public
  */
 router.get('/cors-test', (req, res) => {
-  console.log('🧪 CORS TEST ENDPOINT CALLED!');
-  console.log('Origin:', req.headers.origin || 'NO ORIGIN');
-  console.log('Referer:', req.headers.referer || 'NO REFERER');
-  console.log('Method:', req.method);
-  console.log('All headers:', req.headers);
+  const logger = require('../utils/logger.js').default;
+  logger.info('🧪 CORS TEST ENDPOINT CALLED!', {
+    origin: req.headers.origin || 'NO ORIGIN',
+    referer: req.headers.referer || 'NO REFERER',
+    method: req.method,
+    userAgent: req.headers['user-agent'],
+  });
 
   // Explicitly set CORS headers
   res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://daten3.onrender.com');

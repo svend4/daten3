@@ -46,7 +46,11 @@ interface ServiceStatus {
  * Returns server status and uptime
  */
 export const basicHealthCheck = (req: Request, res: Response) => {
-  console.log('✅ basicHealthCheck called from:', req.headers.origin || 'NO ORIGIN');
+  logger.info('✅ basicHealthCheck called', {
+    origin: req.headers.origin || 'NO ORIGIN',
+    referer: req.headers.referer,
+    method: req.method,
+  });
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
