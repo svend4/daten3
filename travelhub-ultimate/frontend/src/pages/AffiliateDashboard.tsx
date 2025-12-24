@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo, useId } from 'react';
 import {
   DollarSign,
   Users,
@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Settings,
   Wallet,
+  X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
@@ -54,6 +55,18 @@ interface ReferralLink {
   description: string;
 }
 
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+/**
+ * Affiliate dashboard - shows affiliate stats and referral links.
+ */
 const AffiliateDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -65,6 +78,9 @@ const AffiliateDashboard: React.FC = () => {
   const [error, setError] = useState('');
   const [registering, setRegistering] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
+  // Unique IDs for accessibility
+  const headingId = useId();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -97,13 +113,14 @@ const AffiliateDashboard: React.FC = () => {
 
         logger.info('Affiliate dashboard loaded successfully');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       // If 404, user is not registered as affiliate
-      if (err.response?.status === 404) {
+      if (apiError.response?.status === 404) {
         setAffiliate(null);
       } else {
         logger.error('Failed to fetch affiliate dashboard', err);
-        setError(err.response?.data?.message || 'Failed to load affiliate data');
+        setError(apiError.response?.data?.message || 'Не удалось загрузить данные партнёра');
       }
     } finally {
       setLoading(false);
@@ -123,7 +140,7 @@ const AffiliateDashboard: React.FC = () => {
       if (response.success && response.data) {
         setReferralLinks(response.data.links);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to fetch referral links', err);
     }
   };
@@ -152,39 +169,44 @@ const AffiliateDashboard: React.FC = () => {
       } else {
         setError(response.message || 'Failed to register');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to register as affiliate', err);
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(apiError.response?.data?.message || 'Не удалось зарегистрироваться. Попробуйте снова.');
     } finally {
       setRegistering(false);
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = useCallback((text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopiedLink(label);
     setTimeout(() => setCopiedLink(null), 2000);
-  };
+  }, []);
 
-  const formatCurrency = (amount: number, currency: string = 'RUB'): string => {
+  const formatCurrency = useCallback((amount: number, currency: string = 'RUB'): string => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(amount);
-  };
+  }, []);
+
+  const handleCloseError = useCallback(() => {
+    setError('');
+  }, []);
 
   // Loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Загрузка панели партнёра">
           <Container>
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading affiliate dashboard...</p>
+            <div className="text-center py-12" role="status" aria-live="polite">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto" aria-hidden="true" />
+              <p className="mt-4 text-gray-600">Загрузка панели партнёра...</p>
             </div>
           </Container>
         </main>
@@ -198,15 +220,15 @@ const AffiliateDashboard: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Требуется авторизация">
           <Container>
             <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
+              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Войдите в систему</h2>
               <p className="text-gray-600 mb-6">
-                You need to be logged in to access the affiliate program.
+                Для доступа к партнёрской программе необходимо войти в систему.
               </p>
-              <Button href="/login">Go to Login</Button>
+              <Button href="/login">Войти</Button>
             </Card>
           </Container>
         </main>
@@ -220,57 +242,62 @@ const AffiliateDashboard: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Регистрация партнёра">
           <Container>
             <div className="max-w-4xl mx-auto">
               <Card className="p-12">
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-100 rounded-full mb-6">
-                    <UserPlus className="w-10 h-10 text-primary-600" />
+                    <UserPlus className="w-10 h-10 text-primary-600" aria-hidden="true" />
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                    Become an Affiliate Partner
+                    Станьте партнёром
                   </h1>
                   <p className="text-xl text-gray-600 mb-8">
-                    Join our affiliate program and earn commission on every booking made through your referral links!
+                    Присоединяйтесь к нашей партнёрской программе и получайте комиссию с каждого бронирования по вашим реферальным ссылкам!
                   </p>
                 </div>
 
                 {error && (
-                  <Card className="p-4 mb-6 bg-red-50 border-red-200">
-                    <div className="flex items-center gap-2 text-red-800">
-                      <AlertCircle className="w-5 h-5" />
-                      <span>{error}</span>
+                  <Card className="p-4 mb-6 bg-red-50 border-red-200" role="alert" aria-live="polite">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-red-800">
+                        <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                        <span>{error}</span>
+                      </div>
+                      <button onClick={handleCloseError} className="text-red-600 hover:text-red-800 p-1" aria-label="Закрыть">
+                        <X className="w-4 h-4" aria-hidden="true" />
+                      </button>
                     </div>
                   </Card>
                 )}
 
                 {/* Benefits */}
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <section className="grid md:grid-cols-3 gap-6 mb-8" aria-label="Преимущества программы">
                   <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                    <DollarSign className="w-8 h-8 text-blue-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Earn Commission</h3>
+                    <DollarSign className="w-8 h-8 text-blue-600 mb-3" aria-hidden="true" />
+                    <h3 className="font-bold text-gray-900 mb-2">Зарабатывайте</h3>
                     <p className="text-sm text-gray-700">
-                      Get 5-10% commission on every booking made by your referrals
+                      Получайте 5-10% комиссии с каждого бронирования от ваших рефералов
                     </p>
                   </Card>
 
                   <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                    <Users className="w-8 h-8 text-green-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Build Your Network</h3>
+                    <Users className="w-8 h-8 text-green-600 mb-3" aria-hidden="true" />
+                    <h3 className="font-bold text-gray-900 mb-2">Создайте сеть</h3>
                     <p className="text-sm text-gray-700">
-                      Create a multi-level referral network and earn from sub-affiliates
+                      Создайте многоуровневую реферальную сеть и получайте доход от субпартнёров
                     </p>
                   </Card>
 
                   <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                    <TrendingUp className="w-8 h-8 text-purple-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Track Performance</h3>
+                    <TrendingUp className="w-8 h-8 text-purple-600 mb-3" aria-hidden="true" />
+                    <h3 className="font-bold text-gray-900 mb-2">Отслеживайте</h3>
                     <p className="text-sm text-gray-700">
-                      Real-time analytics and detailed reporting dashboard
+                      Аналитика в реальном времени и подробные отчёты
                     </p>
                   </Card>
-                </div>
+                </section>
 
                 {/* CTA */}
                 <div className="text-center">
@@ -280,10 +307,10 @@ const AffiliateDashboard: React.FC = () => {
                     loading={registering}
                     icon={<UserPlus className="w-5 h-5" />}
                   >
-                    {registering ? 'Registering...' : 'Register as Affiliate'}
+                    {registering ? 'Регистрация...' : 'Стать партнёром'}
                   </Button>
                   <p className="text-sm text-gray-600 mt-4">
-                    Registration is free and takes less than a minute
+                    Регистрация бесплатна и занимает меньше минуты
                   </p>
                 </div>
               </Card>
@@ -299,14 +326,14 @@ const AffiliateDashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main className="flex-grow bg-gray-50 py-12" role="main" aria-labelledby={headingId}>
         <Container>
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Affiliate Dashboard</h1>
-            <div className="flex items-center gap-4">
+          <header className="mb-8">
+            <h1 id={headingId} className="text-4xl font-bold text-gray-900 mb-2">Панель партнёра</h1>
+            <div className="flex items-center gap-4 flex-wrap">
               <span className="text-gray-600">
-                Referral Code:{' '}
+                Реферальный код:{' '}
                 <span className="font-mono font-bold text-primary-600">{affiliate.referralCode}</span>
               </span>
               <span
@@ -318,82 +345,87 @@ const AffiliateDashboard: React.FC = () => {
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                {affiliate.status.toUpperCase()}
+                {affiliate.status === 'active' ? 'АКТИВЕН' : affiliate.status === 'pending' ? 'ОЖИДАЕТ' : affiliate.status.toUpperCase()}
               </span>
               {affiliate.verified && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                  <CheckCircle className="w-4 h-4" />
-                  Verified
+                  <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                  Верифицирован
                 </span>
               )}
             </div>
-          </div>
+          </header>
 
           {error && (
-            <Card className="p-4 mb-6 bg-red-50 border-red-200">
-              <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
+            <Card className="p-4 mb-6 bg-red-50 border-red-200" role="alert" aria-live="polite">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-800">
+                  <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
+                <button onClick={handleCloseError} className="text-red-600 hover:text-red-800 p-1" aria-label="Закрыть">
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </button>
               </div>
             </Card>
           )}
 
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" aria-label="Статистика">
               <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
+                    <p className="text-sm text-gray-600 mb-1">Общий доход</p>
                     <p className="text-3xl font-bold text-gray-900">
                       {formatCurrency(stats.earnings.total)}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-green-600" />
+                    <DollarSign className="w-6 h-6 text-green-600" aria-hidden="true" />
                   </div>
                 </div>
-                <div className="space-y-1 text-sm">
+                <dl className="space-y-1 text-sm">
                   <div className="flex justify-between text-gray-600">
-                    <span>Pending:</span>
-                    <span className="font-medium">{formatCurrency(stats.earnings.pending)}</span>
+                    <dt>Ожидает:</dt>
+                    <dd className="font-medium">{formatCurrency(stats.earnings.pending)}</dd>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Approved:</span>
-                    <span className="font-medium text-green-600">
+                    <dt>Одобрено:</dt>
+                    <dd className="font-medium text-green-600">
                       {formatCurrency(stats.earnings.approved)}
-                    </span>
+                    </dd>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Paid:</span>
-                    <span className="font-medium">{formatCurrency(stats.earnings.paid)}</span>
+                    <dt>Выплачено:</dt>
+                    <dd className="font-medium">{formatCurrency(stats.earnings.paid)}</dd>
                   </div>
-                </div>
+                </dl>
               </Card>
 
               <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Referrals</p>
+                    <p className="text-sm text-gray-600 mb-1">Всего рефералов</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.totalReferrals}</p>
                   </div>
                   <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-primary-600" />
+                    <Users className="w-6 h-6 text-primary-600" aria-hidden="true" />
                   </div>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Direct referrals: <span className="font-medium">{stats.directReferrals}</span>
+                  Прямые рефералы: <span className="font-medium">{stats.directReferrals}</span>
                 </p>
               </Card>
 
               <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Clicks</p>
+                    <p className="text-sm text-gray-600 mb-1">Всего кликов</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.clicks}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <MousePointer className="w-6 h-6 text-blue-600" />
+                    <MousePointer className="w-6 h-6 text-blue-600" aria-hidden="true" />
                   </div>
                 </div>
               </Card>
@@ -401,126 +433,143 @@ const AffiliateDashboard: React.FC = () => {
               <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Conversion Rate</p>
+                    <p className="text-sm text-gray-600 mb-1">Конверсия</p>
                     <p className="text-3xl font-bold text-gray-900">{stats.conversionRate}%</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-yellow-600" />
+                    <TrendingUp className="w-6 h-6 text-yellow-600" aria-hidden="true" />
                   </div>
                 </div>
                 <p className="text-sm text-gray-600">
-                  {stats.conversions} conversions
+                  {stats.conversions} конверсий
                 </p>
               </Card>
-            </div>
+            </section>
           )}
 
           {/* Referral Links */}
           {referralLinks.length > 0 && (
-            <Card className="p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Referral Links</h2>
-              <div className="space-y-3">
-                {referralLinks.map((link) => (
-                  <div key={link.type} className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <label className="text-sm font-medium text-gray-700 mb-1 block">
-                        {link.description}
-                      </label>
-                      <input
-                        type="text"
-                        value={link.url}
-                        readOnly
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm"
-                      />
+            <section className="mb-8" aria-label="Реферальные ссылки">
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Ваши реферальные ссылки</h2>
+                <div className="space-y-3">
+                  {referralLinks.map((link) => (
+                    <div key={link.type} className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                      <div className="flex-1 min-w-0">
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">
+                          {link.description}
+                        </label>
+                        <input
+                          type="text"
+                          value={link.url}
+                          readOnly
+                          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm"
+                          aria-label={`Ссылка ${link.description}`}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-6">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(link.url, link.type)}
+                          icon={
+                            copiedLink === link.type ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )
+                          }
+                          aria-label={copiedLink === link.type ? 'Скопировано' : 'Копировать ссылку'}
+                        >
+                          {copiedLink === link.type ? 'Скопировано!' : 'Копировать'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(link.url, '_blank')}
+                          icon={<ExternalLink className="w-4 h-4" />}
+                          aria-label="Открыть в новой вкладке"
+                        >
+                          Открыть
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2 pt-6">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(link.url, link.type)}
-                        icon={
-                          copiedLink === link.type ? (
-                            <CheckCircle className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )
-                        }
-                      >
-                        {copiedLink === link.type ? 'Copied!' : 'Copy'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(link.url, '_blank')}
-                        icon={<ExternalLink className="w-4 h-4" />}
-                      >
-                        Open
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            </section>
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" aria-label="Быстрые действия">
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => navigate('/affiliate/referrals')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/affiliate/referrals')}
             >
               <div className="flex items-center justify-between mb-3">
-                <Users className="w-8 h-8 text-primary-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors" />
+                <Users className="w-8 h-8 text-primary-600" aria-hidden="true" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Referral Network</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Реферальная сеть</h3>
               <p className="text-gray-600 text-sm">
-                View your complete referral tree and sub-affiliates
+                Просмотр дерева рефералов и субпартнёров
               </p>
             </Card>
 
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => navigate('/affiliate/payouts')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/affiliate/payouts')}
             >
               <div className="flex items-center justify-between mb-3">
-                <Wallet className="w-8 h-8 text-green-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                <Wallet className="w-8 h-8 text-green-600" aria-hidden="true" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Payouts</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Выплаты</h3>
               <p className="text-gray-600 text-sm">
-                View payout history and request withdrawals
+                История выплат и запрос на вывод средств
               </p>
             </Card>
 
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => navigate('/affiliate/portal')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/affiliate/portal')}
             >
               <div className="flex items-center justify-between mb-3">
-                <TrendingUp className="w-8 h-8 text-blue-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                <TrendingUp className="w-8 h-8 text-blue-600" aria-hidden="true" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Performance Stats</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Статистика</h3>
               <p className="text-gray-600 text-sm">
-                Detailed analytics and monthly earnings reports
+                Подробная аналитика и ежемесячные отчёты о доходах
               </p>
             </Card>
 
             <Card
               className="p-6 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => navigate('/affiliate/settings')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/affiliate/settings')}
             >
               <div className="flex items-center justify-between mb-3">
-                <Settings className="w-8 h-8 text-purple-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+                <Settings className="w-8 h-8 text-purple-600" aria-hidden="true" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Settings</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Настройки</h3>
               <p className="text-gray-600 text-sm">
-                Configure payment details and notifications
+                Настройка платёжных реквизитов и уведомлений
               </p>
             </Card>
-          </div>
+          </section>
         </Container>
       </main>
       <Footer />
@@ -528,4 +577,4 @@ const AffiliateDashboard: React.FC = () => {
   );
 };
 
-export default AffiliateDashboard;
+export default memo(AffiliateDashboard);

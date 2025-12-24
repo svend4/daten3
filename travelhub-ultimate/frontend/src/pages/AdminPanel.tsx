@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useId, memo } from 'react';
 import {
   Users,
   DollarSign,
@@ -8,8 +8,6 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Filter,
-  Search,
   ChevronLeft,
   ChevronRight,
   Shield,
@@ -168,6 +166,33 @@ interface TopPerformer {
 
 type TabType = 'dashboard' | 'affiliates' | 'commissions' | 'payouts' | 'analytics' | 'settings';
 
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface ConfirmModalState {
+  show: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+}
+
+interface PromptModalState {
+  show: boolean;
+  title: string;
+  label: string;
+  required: boolean;
+  onSubmit: (value: string) => void;
+}
+
+/**
+ * Admin panel for managing affiliates, commissions, and payouts.
+ */
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -205,6 +230,28 @@ const AdminPanel: React.FC = () => {
   // Top performers data
   const [topPerformers, setTopPerformers] = useState<TopPerformer[]>([]);
 
+  // Modal states for confirm/prompt dialogs
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+  const [promptModal, setPromptModal] = useState<PromptModalState>({
+    show: false,
+    title: '',
+    label: '',
+    required: false,
+    onSubmit: () => {},
+  });
+  const [promptValue, setPromptValue] = useState('');
+
+  // Unique IDs for accessibility
+  const headingId = useId();
+  const confirmModalTitleId = useId();
+  const promptModalTitleId = useId();
+  const detailsModalTitleId = useId();
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       fetchTabData();
@@ -241,12 +288,13 @@ const AdminPanel: React.FC = () => {
       } else if (activeTab === 'settings') {
         await fetchSettings();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to fetch admin data', err);
-      if (err.response?.status === 403) {
-        setError('You do not have admin permissions.');
+      if (apiError.response?.status === 403) {
+        setError('У вас нет прав администратора.');
       } else {
-        setError(err.response?.data?.message || 'Failed to load admin data');
+        setError(apiError.response?.data?.message || 'Не удалось загрузить данные');
       }
     } finally {
       setLoading(false);
@@ -330,7 +378,7 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleApproveCommission = async (commissionId: string) => {
+  const handleApproveCommission = useCallback(async (commissionId: string) => {
     try {
       const response = await api.patch<{ success: boolean; message: string }>(
         `/admin/commissions/${commissionId}/approve`,
@@ -341,33 +389,42 @@ const AdminPanel: React.FC = () => {
         logger.info('Commission approved');
         await fetchCommissions();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to approve commission', err);
-      alert(err.response?.data?.message || 'Failed to approve commission');
+      setError(apiError.response?.data?.message || 'Не удалось одобрить комиссию');
     }
-  };
+  }, []);
 
-  const handleRejectCommission = async (commissionId: string) => {
-    const reason = prompt('Enter rejection reason:');
-    if (!reason) return;
+  const handleRejectCommission = useCallback((commissionId: string) => {
+    setPromptValue('');
+    setPromptModal({
+      show: true,
+      title: 'Отклонить комиссию',
+      label: 'Причина отклонения',
+      required: true,
+      onSubmit: async (reason: string) => {
+        try {
+          const response = await api.patch<{ success: boolean; message: string }>(
+            `/admin/commissions/${commissionId}/reject`,
+            { reason }
+          );
 
-    try {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        `/admin/commissions/${commissionId}/reject`,
-        { reason }
-      );
+          if (response.success) {
+            logger.info('Commission rejected');
+            await fetchCommissions();
+          }
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          logger.error('Failed to reject commission', err);
+          setError(apiError.response?.data?.message || 'Не удалось отклонить комиссию');
+        }
+        setPromptModal(prev => ({ ...prev, show: false }));
+      },
+    });
+  }, []);
 
-      if (response.success) {
-        logger.info('Commission rejected');
-        await fetchCommissions();
-      }
-    } catch (err: any) {
-      logger.error('Failed to reject commission', err);
-      alert(err.response?.data?.message || 'Failed to reject commission');
-    }
-  };
-
-  const handleProcessPayout = async (payoutId: string) => {
+  const handleProcessPayout = useCallback(async (payoutId: string) => {
     try {
       const response = await api.post<{ success: boolean; message: string }>(
         `/admin/payouts/${payoutId}/process`,
@@ -378,90 +435,132 @@ const AdminPanel: React.FC = () => {
         logger.info('Payout processing started');
         await fetchPayouts();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to process payout', err);
-      alert(err.response?.data?.message || 'Failed to process payout');
+      setError(apiError.response?.data?.message || 'Не удалось обработать выплату');
     }
-  };
+  }, []);
 
-  const handleCompletePayout = async (payoutId: string) => {
-    const transactionId = prompt('Enter transaction ID (optional):');
+  const handleCompletePayout = useCallback((payoutId: string) => {
+    setPromptValue('');
+    setPromptModal({
+      show: true,
+      title: 'Завершить выплату',
+      label: 'ID транзакции (опционально)',
+      required: false,
+      onSubmit: async (transactionId: string) => {
+        try {
+          const response = await api.patch<{ success: boolean; message: string }>(
+            `/admin/payouts/${payoutId}/complete`,
+            { transactionId: transactionId || undefined }
+          );
 
-    try {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        `/admin/payouts/${payoutId}/complete`,
-        { transactionId }
-      );
+          if (response.success) {
+            logger.info('Payout completed');
+            await fetchPayouts();
+          }
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          logger.error('Failed to complete payout', err);
+          setError(apiError.response?.data?.message || 'Не удалось завершить выплату');
+        }
+        setPromptModal(prev => ({ ...prev, show: false }));
+      },
+    });
+  }, []);
 
-      if (response.success) {
-        logger.info('Payout completed');
-        await fetchPayouts();
-      }
-    } catch (err: any) {
-      logger.error('Failed to complete payout', err);
-      alert(err.response?.data?.message || 'Failed to complete payout');
-    }
-  };
+  const handleRejectPayout = useCallback((payoutId: string) => {
+    setPromptValue('');
+    setPromptModal({
+      show: true,
+      title: 'Отклонить выплату',
+      label: 'Причина отклонения',
+      required: true,
+      onSubmit: async (reason: string) => {
+        try {
+          const response = await api.patch<{ success: boolean; message: string }>(
+            `/admin/payouts/${payoutId}/reject`,
+            { reason }
+          );
 
-  const handleRejectPayout = async (payoutId: string) => {
-    const reason = prompt('Enter rejection reason:');
-    if (!reason) return;
+          if (response.success) {
+            logger.info('Payout rejected');
+            await fetchPayouts();
+          }
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          logger.error('Failed to reject payout', err);
+          setError(apiError.response?.data?.message || 'Не удалось отклонить выплату');
+        }
+        setPromptModal(prev => ({ ...prev, show: false }));
+      },
+    });
+  }, []);
 
-    try {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        `/admin/payouts/${payoutId}/reject`,
-        { reason }
-      );
+  const handleVerifyAffiliate = useCallback((affiliateId: string) => {
+    setConfirmModal({
+      show: true,
+      title: 'Подтверждение',
+      message: 'Верифицировать этого партнёра?',
+      onConfirm: async () => {
+        try {
+          const response = await api.patch<{ success: boolean; message: string }>(
+            `/admin/affiliates/${affiliateId}/verify`,
+            {}
+          );
 
-      if (response.success) {
-        logger.info('Payout rejected');
-        await fetchPayouts();
-      }
-    } catch (err: any) {
-      logger.error('Failed to reject payout', err);
-      alert(err.response?.data?.message || 'Failed to reject payout');
-    }
-  };
+          if (response.success) {
+            logger.info('Affiliate verified');
+            await fetchAffiliates();
+          }
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          logger.error('Failed to verify affiliate', err);
+          setError(apiError.response?.data?.message || 'Не удалось верифицировать партнёра');
+        }
+        setConfirmModal(prev => ({ ...prev, show: false }));
+      },
+    });
+  }, []);
 
-  const handleVerifyAffiliate = async (affiliateId: string) => {
-    if (!confirm('Verify this affiliate?')) return;
+  const getStatusLabel = useCallback((status: string): string => {
+    const labels: Record<string, string> = {
+      active: 'активен',
+      suspended: 'приостановлен',
+      banned: 'заблокирован',
+      pending: 'ожидает',
+    };
+    return labels[status] || status;
+  }, []);
 
-    try {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        `/admin/affiliates/${affiliateId}/verify`,
-        {}
-      );
+  const handleChangeAffiliateStatus = useCallback((affiliateId: string, newStatus: string) => {
+    setConfirmModal({
+      show: true,
+      title: 'Подтверждение',
+      message: `Изменить статус партнёра на "${getStatusLabel(newStatus)}"?`,
+      onConfirm: async () => {
+        try {
+          const response = await api.patch<{ success: boolean; message: string }>(
+            `/admin/affiliates/${affiliateId}/status`,
+            { status: newStatus }
+          );
 
-      if (response.success) {
-        logger.info('Affiliate verified');
-        await fetchAffiliates();
-      }
-    } catch (err: any) {
-      logger.error('Failed to verify affiliate', err);
-      alert(err.response?.data?.message || 'Failed to verify affiliate');
-    }
-  };
+          if (response.success) {
+            logger.info('Affiliate status updated');
+            await fetchAffiliates();
+          }
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          logger.error('Failed to update affiliate status', err);
+          setError(apiError.response?.data?.message || 'Не удалось обновить статус партнёра');
+        }
+        setConfirmModal(prev => ({ ...prev, show: false }));
+      },
+    });
+  }, [getStatusLabel]);
 
-  const handleChangeAffiliateStatus = async (affiliateId: string, newStatus: string) => {
-    if (!confirm(`Change affiliate status to ${newStatus}?`)) return;
-
-    try {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        `/admin/affiliates/${affiliateId}/status`,
-        { status: newStatus }
-      );
-
-      if (response.success) {
-        logger.info('Affiliate status updated');
-        await fetchAffiliates();
-      }
-    } catch (err: any) {
-      logger.error('Failed to update affiliate status', err);
-      alert(err.response?.data?.message || 'Failed to update affiliate status');
-    }
-  };
-
-  const handleViewAffiliateDetails = async (affiliateId: string) => {
+  const handleViewAffiliateDetails = useCallback(async (affiliateId: string) => {
     setLoadingDetails(true);
     setShowDetailsModal(true);
     setAffiliateDetails(null);
@@ -476,32 +575,51 @@ const AdminPanel: React.FC = () => {
         setAffiliateDetails(response.data);
         logger.info('Affiliate details loaded');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to load affiliate details', err);
-      alert(err.response?.data?.message || 'Failed to load affiliate details');
+      setError(apiError.response?.data?.message || 'Не удалось загрузить данные партнёра');
       setShowDetailsModal(false);
     } finally {
       setLoadingDetails(false);
     }
-  };
+  }, []);
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = useCallback((amount: number): string => {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
-  };
+  }, []);
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = useCallback((dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { bg: string; text: string; icon: any }> = {
+  const handleCloseConfirmModal = useCallback(() => {
+    setConfirmModal(prev => ({ ...prev, show: false }));
+  }, []);
+
+  const handleClosePromptModal = useCallback(() => {
+    setPromptModal(prev => ({ ...prev, show: false }));
+    setPromptValue('');
+  }, []);
+
+  const handlePromptSubmit = useCallback(() => {
+    if (promptModal.required && !promptValue.trim()) return;
+    promptModal.onSubmit(promptValue);
+  }, [promptModal, promptValue]);
+
+  const handleCloseDetailsModal = useCallback(() => {
+    setShowDetailsModal(false);
+  }, []);
+
+  const getStatusBadge = useCallback((status: string) => {
+    const statusConfig: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
       pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: Clock },
       active: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
       approved: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
@@ -516,24 +634,36 @@ const AdminPanel: React.FC = () => {
     const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
 
+    const statusLabels: Record<string, string> = {
+      pending: 'Ожидает',
+      active: 'Активен',
+      approved: 'Одобрено',
+      processing: 'В обработке',
+      completed: 'Завершено',
+      rejected: 'Отклонено',
+      suspended: 'Приостановлен',
+      banned: 'Заблокирован',
+      paid: 'Выплачено',
+    };
+
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        <Icon className="w-3 h-3" />
-        {status}
+        <Icon className="w-3 h-3" aria-hidden="true" />
+        {statusLabels[status] || status}
       </span>
     );
-  };
+  }, []);
 
   // Loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Загрузка панели администратора">
           <Container>
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading admin panel...</p>
+            <div className="text-center py-12" role="status" aria-live="polite">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto" aria-hidden="true" />
+              <p className="mt-4 text-gray-600">Загрузка панели администратора...</p>
             </div>
           </Container>
         </main>
@@ -547,15 +677,15 @@ const AdminPanel: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main className="flex-grow bg-gray-50 py-12" role="main" aria-label="Требуется авторизация">
           <Container>
             <Card className="p-12 text-center">
-              <Shield className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Admin Access Required</h2>
+              <Shield className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Требуется доступ администратора</h2>
               <p className="text-gray-600 mb-6">
-                You need admin permissions to access this panel.
+                Для доступа к этой панели необходимы права администратора.
               </p>
-              <Button href="/login">Go to Login</Button>
+              <Button href="/login">Войти</Button>
             </Card>
           </Container>
         </main>
@@ -567,31 +697,45 @@ const AdminPanel: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-grow py-8">
+      <main className="flex-grow py-8" role="main" aria-labelledby={headingId}>
         <Container>
           {/* Header */}
-          <div className="mb-8">
+          <header className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <Shield className="w-8 h-8 text-primary-600" />
-              <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+              <Shield className="w-8 h-8 text-primary-600" aria-hidden="true" />
+              <h1 id={headingId} className="text-3xl font-bold text-gray-900">
+                Панель администратора
+              </h1>
             </div>
-            <p className="text-gray-600">Manage affiliate program and platform operations</p>
-          </div>
+            <p className="text-gray-600">Управление партнёрской программой и операциями платформы</p>
+          </header>
 
           {/* Error Message */}
           {error && (
-            <Card className="p-4 mb-6 bg-red-50 border-red-200">
-              <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
+            <Card className="p-4 mb-6 bg-red-50 border-red-200" role="alert" aria-live="polite">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-800">
+                  <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  onClick={() => setError('')}
+                  className="text-red-600 hover:text-red-800 p-1"
+                  aria-label="Закрыть сообщение об ошибке"
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </button>
               </div>
             </Card>
           )}
 
           {/* Tabs */}
-          <div className="mb-6 border-b border-gray-200">
-            <div className="flex gap-2 overflow-x-auto">
+          <nav className="mb-6 border-b border-gray-200" aria-label="Навигация по разделам">
+            <div className="flex gap-2 overflow-x-auto" role="tablist">
               <button
+                role="tab"
+                aria-selected={activeTab === 'dashboard'}
+                aria-controls="dashboard-panel"
                 onClick={() => setActiveTab('dashboard')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'dashboard'
@@ -599,12 +743,15 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Dashboard
-                </div>
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                  Обзор
+                </span>
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'affiliates'}
+                aria-controls="affiliates-panel"
                 onClick={() => setActiveTab('affiliates')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'affiliates'
@@ -612,12 +759,15 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Affiliates
-                </div>
+                <span className="flex items-center gap-2">
+                  <Users className="w-4 h-4" aria-hidden="true" />
+                  Партнёры
+                </span>
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'commissions'}
+                aria-controls="commissions-panel"
                 onClick={() => setActiveTab('commissions')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'commissions'
@@ -625,12 +775,15 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Commissions
-                </div>
+                <span className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" aria-hidden="true" />
+                  Комиссии
+                </span>
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'payouts'}
+                aria-controls="payouts-panel"
                 onClick={() => setActiveTab('payouts')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'payouts'
@@ -638,12 +791,15 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4" />
-                  Payouts
-                </div>
+                <span className="flex items-center gap-2">
+                  <Award className="w-4 h-4" aria-hidden="true" />
+                  Выплаты
+                </span>
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'analytics'}
+                aria-controls="analytics-panel"
                 onClick={() => setActiveTab('analytics')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'analytics'
@@ -651,12 +807,15 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Analytics
-                </div>
+                <span className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" aria-hidden="true" />
+                  Аналитика
+                </span>
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'settings'}
+                aria-controls="settings-panel"
                 onClick={() => setActiveTab('settings')}
                 className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'settings'
@@ -664,13 +823,13 @@ const AdminPanel: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <SettingsIcon className="w-4 h-4" />
-                  Settings
-                </div>
+                <span className="flex items-center gap-2">
+                  <SettingsIcon className="w-4 h-4" aria-hidden="true" />
+                  Настройки
+                </span>
               </button>
             </div>
-          </div>
+          </nav>
 
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && stats && (
@@ -1375,15 +1534,23 @@ const AdminPanel: React.FC = () => {
 
         {/* Affiliate Details Modal */}
         {showDetailsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={detailsModalTitleId}
+          >
             <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Affiliate Details</h2>
+                <h2 id={detailsModalTitleId} className="text-2xl font-bold text-gray-900">
+                  Детали партнёра
+                </h2>
                 <button
-                  onClick={() => setShowDetailsModal(false)}
+                  onClick={handleCloseDetailsModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Закрыть"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-6 h-6" aria-hidden="true" />
                 </button>
               </div>
 
@@ -1603,19 +1770,85 @@ const AdminPanel: React.FC = () => {
                     )}
                     <Button
                       variant="outline"
-                      onClick={() => setShowDetailsModal(false)}
+                      onClick={handleCloseDetailsModal}
                       className="ml-auto"
                     >
-                      Close
+                      Закрыть
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="p-12 text-center">
-                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No details available</p>
+                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" aria-hidden="true" />
+                  <p className="text-gray-600">Нет доступных данных</p>
                 </div>
               )}
+            </Card>
+          </div>
+        )}
+
+        {/* Confirm Modal */}
+        {confirmModal.show && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={confirmModalTitleId}
+          >
+            <Card className="max-w-md w-full p-6">
+              <h2 id={confirmModalTitleId} className="text-xl font-bold text-gray-900 mb-4">
+                {confirmModal.title}
+              </h2>
+              <p className="text-gray-600 mb-6">{confirmModal.message}</p>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={handleCloseConfirmModal}>
+                  Отмена
+                </Button>
+                <Button onClick={confirmModal.onConfirm}>
+                  Подтвердить
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Prompt Modal */}
+        {promptModal.show && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={promptModalTitleId}
+          >
+            <Card className="max-w-md w-full p-6">
+              <h2 id={promptModalTitleId} className="text-xl font-bold text-gray-900 mb-4">
+                {promptModal.title}
+              </h2>
+              <div className="mb-6">
+                <label htmlFor="prompt-input" className="block text-sm font-medium text-gray-700 mb-2">
+                  {promptModal.label}
+                  {promptModal.required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <input
+                  id="prompt-input"
+                  type="text"
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={handleClosePromptModal}>
+                  Отмена
+                </Button>
+                <Button
+                  onClick={handlePromptSubmit}
+                  disabled={promptModal.required && !promptValue.trim()}
+                >
+                  Подтвердить
+                </Button>
+              </div>
             </Card>
           </div>
         )}
@@ -1625,4 +1858,4 @@ const AdminPanel: React.FC = () => {
   );
 };
 
-export default AdminPanel;
+export default memo(AdminPanel);

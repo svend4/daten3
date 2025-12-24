@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
 import {
   DollarSign,
   Clock,
@@ -75,12 +84,13 @@ const AffiliatePayouts: React.FC = () => {
         setPayouts(response.data);
         logger.info('Payouts loaded');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to fetch payouts', err);
-      if (err.response?.status === 404) {
-        setError('You need to register as an affiliate first.');
+      if (apiError.response?.status === 404) {
+        setError('Сначала зарегистрируйтесь как партнёр.');
       } else {
-        setError(err.response?.data?.message || 'Failed to load payouts');
+        setError(apiError.response?.data?.message || 'Не удалось загрузить выплаты');
       }
     } finally {
       setLoading(false);
@@ -103,7 +113,7 @@ const AffiliatePayouts: React.FC = () => {
       if (response.success && response.data) {
         setAvailableBalance(response.data.stats.earnings.approved);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to fetch balance', err);
     }
   };
@@ -143,30 +153,31 @@ const AffiliatePayouts: React.FC = () => {
 
         setTimeout(() => setSuccess(''), 5000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to request payout', err);
-      setError(err.response?.data?.message || 'Failed to request payout');
+      setError(apiError.response?.data?.message || 'Не удалось запросить выплату');
     } finally {
       setRequesting(false);
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = useCallback((amount: number, currency: string = 'USD'): string => {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: currency,
     }).format(amount);
-  };
+  }, []);
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = useCallback((dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
+  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -414,8 +425,8 @@ const AffiliatePayouts: React.FC = () => {
                       min="0"
                       max={availableBalance}
                       value={requestAmount}
-                      onChange={(e) => setRequestAmount(e.target.value)}
-                      placeholder="Enter amount"
+                      onChange={(value) => setRequestAmount(value)}
+                      placeholder="Введите сумму"
                       autoFocus
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -469,4 +480,4 @@ const AffiliatePayouts: React.FC = () => {
   );
 };
 
-export default AffiliatePayouts;
+export default memo(AffiliatePayouts);

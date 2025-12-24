@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
 import {
   Users,
   DollarSign,
@@ -85,16 +94,17 @@ const AffiliateReferrals: React.FC = () => {
       } else {
         setError('Failed to load referral data');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to fetch referral tree', err);
 
       // Handle specific error cases
-      if (err.response?.status === 404) {
-        setError('You are not registered as an affiliate. Please register first.');
-      } else if (err.response?.status === 403) {
-        setError('You do not have permission to view referrals.');
+      if (apiError.response?.status === 404) {
+        setError('Вы не зарегистрированы как партнёр. Сначала зарегистрируйтесь.');
+      } else if (apiError.response?.status === 403) {
+        setError('У вас нет прав для просмотра рефералов.');
       } else {
-        setError(err.response?.data?.message || 'Failed to load referral data');
+        setError(apiError.response?.data?.message || 'Не удалось загрузить данные рефералов');
       }
     } finally {
       setLoading(false);
@@ -453,4 +463,4 @@ const AffiliateReferrals: React.FC = () => {
   );
 };
 
-export default AffiliateReferrals;
+export default memo(AffiliateReferrals);
