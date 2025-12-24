@@ -116,10 +116,12 @@ router.get('/cors-test', (req, res) => {
  * @access  Public
  */
 router.options('/cors-test', (req, res) => {
-  console.log('🚀 CORS PREFLIGHT for /cors-test!');
-  console.log('Origin:', req.headers.origin || 'NO ORIGIN');
-  console.log('Access-Control-Request-Method:', req.headers['access-control-request-method']);
-  console.log('Access-Control-Request-Headers:', req.headers['access-control-request-headers']);
+  const logger = require('../utils/logger.js').default;
+  logger.info('🚀 CORS PREFLIGHT for /cors-test', {
+    origin: req.headers.origin || 'NO ORIGIN',
+    'access-control-request-method': req.headers['access-control-request-method'],
+    'access-control-request-headers': req.headers['access-control-request-headers'],
+  });
 
   res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://daten3.onrender.com');
   res.header('Access-Control-Allow-Credentials', 'true');

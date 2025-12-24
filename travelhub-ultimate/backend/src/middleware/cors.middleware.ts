@@ -94,7 +94,7 @@ const matchOriginPattern = (origin: string, pattern: string): boolean => {
 // CORS options with enhanced validation
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    console.log('🔍 CORS REQUEST RECEIVED:', {
+    logger.info('🔍 CORS REQUEST RECEIVED', {
       origin: origin || 'NO ORIGIN',
       timestamp: new Date().toISOString(),
       allowedOrigins: allowedOrigins,
@@ -105,7 +105,6 @@ const corsOptions: cors.CorsOptions = {
     if (!origin) {
       // Use first allowed origin (NOT the raw env var which is comma-separated!)
       const frontendUrl = allowedOrigins[0];
-      console.log('❌ No origin in request, using frontendUrl:', frontendUrl);
       logger.info('CORS: Request with no origin, using frontend URL', {
         frontendUrl,
         category: 'no-origin'
@@ -115,8 +114,7 @@ const corsOptions: cors.CorsOptions = {
 
     // Check if origin is in allowed list (with pattern matching)
     if (isOriginAllowed(origin)) {
-      console.log('✅ Origin ALLOWED:', origin);
-      logger.debug('CORS allowed', { origin, category: 'allowed' });
+      logger.info('✅ Origin ALLOWED', { origin, category: 'allowed' });
       return callback(null, true);
     }
 
@@ -130,15 +128,13 @@ const corsOptions: cors.CorsOptions = {
         /10\.\d+\.\d+\.\d+/.test(origin);    // Private network
 
       if (isLocalhost) {
-        console.log('✅ Origin ALLOWED (dev localhost):', origin);
-        logger.debug('CORS allowed (dev localhost/local)', { origin, category: 'dev-local' });
+        logger.info('✅ Origin ALLOWED (dev localhost)', { origin, category: 'dev-local' });
         return callback(null, true);
       }
     }
 
     // Block the request with detailed logging
-    console.log('🚫 Origin BLOCKED:', origin, 'Allowed:', allowedOrigins);
-    logger.warn('CORS request blocked', {
+    logger.warn('🚫 Origin BLOCKED', {
       origin,
       allowedOrigins,
       category: 'blocked',
@@ -176,12 +172,12 @@ const corsOptions: cors.CorsOptions = {
 };
 
 // Log CORS configuration on startup
-console.log('=== CORS DEBUG START ===');
-console.log('FRONTEND_URL env:', process.env.FRONTEND_URL);
-console.log('ALLOWED_ORIGINS env:', process.env.ALLOWED_ORIGINS);
-console.log('config.cors.origin:', config.cors.origin);
-console.log('allowedOrigins array:', allowedOrigins);
-console.log('=== CORS DEBUG END ===');
+logger.info('=== CORS CONFIGURATION DEBUG ===', {
+  FRONTEND_URL: process.env.FRONTEND_URL,
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+  'config.cors.origin': config.cors.origin,
+  allowedOrigins: allowedOrigins,
+});
 
 logger.info('CORS Configuration initialized', {
   allowedOrigins,
@@ -217,9 +213,9 @@ export const getCacheStats = () => {
 export const corsDebugMiddleware = (req: any, res: any, next: any) => {
   // Special logging for OPTIONS (CORS preflight) requests
   if (req.method === 'OPTIONS') {
-    console.log('🚀 CORS PREFLIGHT (OPTIONS) REQUEST:', {
+    logger.info('🚀 CORS PREFLIGHT (OPTIONS) REQUEST', {
       url: req.url,
-      origin: req.headers.origin || 'NO ORIGIN HEADER ❌',
+      origin: req.headers.origin || 'NO ORIGIN HEADER',
       'access-control-request-method': req.headers['access-control-request-method'],
       'access-control-request-headers': req.headers['access-control-request-headers'],
       referer: req.headers.referer || 'NO REFERER',
@@ -227,7 +223,7 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
     });
   }
 
-  console.log('📨 INCOMING REQUEST:', {
+  logger.info('📨 INCOMING REQUEST', {
     method: req.method,
     url: req.url,
     origin: req.headers.origin || 'NO ORIGIN HEADER',
@@ -244,17 +240,17 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
   const logResponseHeaders = () => {
     const corsHeaders = {
       statusCode: res.statusCode,
-      'access-control-allow-origin': res.getHeader('access-control-allow-origin') || 'NOT SET ❌',
-      'access-control-allow-credentials': res.getHeader('access-control-allow-credentials') || 'NOT SET ❌',
+      'access-control-allow-origin': res.getHeader('access-control-allow-origin') || 'NOT SET',
+      'access-control-allow-credentials': res.getHeader('access-control-allow-credentials') || 'NOT SET',
       'access-control-allow-methods': res.getHeader('access-control-allow-methods') || 'NOT SET',
       'access-control-allow-headers': res.getHeader('access-control-allow-headers') || 'NOT SET',
       'access-control-expose-headers': res.getHeader('access-control-expose-headers') || 'NOT SET',
     };
 
     if (req.method === 'OPTIONS') {
-      console.log('🎯 PREFLIGHT RESPONSE for', req.url, ':', corsHeaders);
+      logger.info('🎯 PREFLIGHT RESPONSE for ' + req.url, corsHeaders);
     } else {
-      console.log('📤 RESPONSE HEADERS for', req.url, ':', corsHeaders);
+      logger.info('📤 RESPONSE HEADERS for ' + req.url, corsHeaders);
     }
   };
 
