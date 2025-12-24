@@ -1,6 +1,6 @@
-import React, { memo, ReactNode } from 'react';
+import React, { memo, ReactNode, HTMLAttributes } from 'react';
 
-interface ContainerProps {
+interface ContainerProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
@@ -23,11 +23,15 @@ const Container: React.FC<ContainerProps> = ({
   children,
   className = '',
   maxWidth = 'xl',
+  ...rest
 }) => {
   const maxWidthClass = maxWidthClasses[maxWidth] || maxWidthClasses.xl;
 
   return (
-    <div className={`w-full mx-auto px-4 sm:px-6 lg:px-8 ${maxWidthClass} ${className}`}>
+    <div
+      className={`w-full mx-auto px-4 sm:px-6 lg:px-8 ${maxWidthClass} ${className}`}
+      {...rest}
+    >
       {children}
     </div>
   );
