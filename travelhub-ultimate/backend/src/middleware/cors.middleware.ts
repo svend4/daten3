@@ -215,6 +215,18 @@ export const getCacheStats = () => {
 
 // Debug middleware to log ALL request headers and CORS response headers
 export const corsDebugMiddleware = (req: any, res: any, next: any) => {
+  // Special logging for OPTIONS (CORS preflight) requests
+  if (req.method === 'OPTIONS') {
+    console.log('🚀 CORS PREFLIGHT (OPTIONS) REQUEST:', {
+      url: req.url,
+      origin: req.headers.origin || 'NO ORIGIN HEADER ❌',
+      'access-control-request-method': req.headers['access-control-request-method'],
+      'access-control-request-headers': req.headers['access-control-request-headers'],
+      referer: req.headers.referer || 'NO REFERER',
+      host: req.headers.host,
+    });
+  }
+
   console.log('📨 INCOMING REQUEST:', {
     method: req.method,
     url: req.url,
@@ -230,13 +242,20 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
   const originalJson = res.json;
 
   const logResponseHeaders = () => {
-    console.log('📤 RESPONSE HEADERS for', req.url, ':', {
+    const corsHeaders = {
       statusCode: res.statusCode,
       'access-control-allow-origin': res.getHeader('access-control-allow-origin') || 'NOT SET ❌',
       'access-control-allow-credentials': res.getHeader('access-control-allow-credentials') || 'NOT SET ❌',
       'access-control-allow-methods': res.getHeader('access-control-allow-methods') || 'NOT SET',
+      'access-control-allow-headers': res.getHeader('access-control-allow-headers') || 'NOT SET',
       'access-control-expose-headers': res.getHeader('access-control-expose-headers') || 'NOT SET',
-    });
+    };
+
+    if (req.method === 'OPTIONS') {
+      console.log('🎯 PREFLIGHT RESPONSE for', req.url, ':', corsHeaders);
+    } else {
+      console.log('📤 RESPONSE HEADERS for', req.url, ':', corsHeaders);
+    }
   };
 
   res.end = function(...args: any[]) {
