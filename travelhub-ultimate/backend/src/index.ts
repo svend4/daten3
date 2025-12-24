@@ -46,7 +46,7 @@ import serviceMeshRoutes from './routes/serviceMesh.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
 
 // Middleware
-import corsMiddleware from './middleware/cors.middleware.js';
+import corsMiddleware, { corsDebugMiddleware } from './middleware/cors.middleware.js';
 import helmetMiddleware, { permissionsPolicy, expectCT } from './middleware/helmet.middleware.js';
 import morganMiddleware, { requestLogger } from './middleware/logger.middleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.middleware.js';
@@ -115,6 +115,11 @@ app.use(apiVersionMiddleware);  // Extract and validate API version
 app.use(helmetMiddleware);
 app.use(permissionsPolicy);  // Advanced Permissions-Policy header
 app.use(expectCT);           // Certificate Transparency enforcement
+
+// CORS Debug middleware (BEFORE CORS to log request headers)
+app.use(corsDebugMiddleware);
+
+// CORS middleware
 app.use(corsMiddleware);
 app.use(cspMiddleware);      // Content Security Policy
 app.use(cspStatsMiddleware); // CSP statistics tracking

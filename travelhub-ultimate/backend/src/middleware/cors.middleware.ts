@@ -213,4 +213,48 @@ export const getCacheStats = () => {
   };
 };
 
+// Debug middleware to log ALL request headers and CORS response headers
+export const corsDebugMiddleware = (req: any, res: any, next: any) => {
+  console.log('📨 INCOMING REQUEST:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin || 'NO ORIGIN HEADER',
+    referer: req.headers.referer || 'NO REFERER',
+    host: req.headers.host,
+    userAgent: req.headers['user-agent']?.substring(0, 50),
+  });
+
+  // Intercept response to log headers AFTER CORS middleware sets them
+  const originalEnd = res.end;
+  const originalSend = res.send;
+  const originalJson = res.json;
+
+  const logResponseHeaders = () => {
+    console.log('📤 RESPONSE HEADERS for', req.url, ':', {
+      statusCode: res.statusCode,
+      'access-control-allow-origin': res.getHeader('access-control-allow-origin') || 'NOT SET ❌',
+      'access-control-allow-credentials': res.getHeader('access-control-allow-credentials') || 'NOT SET ❌',
+      'access-control-allow-methods': res.getHeader('access-control-allow-methods') || 'NOT SET',
+      'access-control-expose-headers': res.getHeader('access-control-expose-headers') || 'NOT SET',
+    });
+  };
+
+  res.end = function(...args: any[]) {
+    logResponseHeaders();
+    return originalEnd.apply(res, args);
+  };
+
+  res.send = function(...args: any[]) {
+    logResponseHeaders();
+    return originalSend.apply(res, args);
+  };
+
+  res.json = function(...args: any[]) {
+    logResponseHeaders();
+    return originalJson.apply(res, args);
+  };
+
+  next();
+};
+
 export default cors(corsOptions);
