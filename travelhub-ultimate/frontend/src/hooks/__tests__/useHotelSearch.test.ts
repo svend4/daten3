@@ -31,7 +31,7 @@ const mockedApi = vi.mocked(api);
 
 describe('useHotelSearch', () => {
   const mockSearchParams: HotelSearchParams = {
-    location: 'Москва',
+    destination: 'Москва',
     checkIn: '2024-06-15',
     checkOut: '2024-06-18',
     guests: 2,
@@ -238,12 +238,12 @@ describe('useHotelSearch', () => {
     const { result } = renderHook(() => useHotelSearch());
 
     const luxuryParams: HotelSearchParams = {
-      location: 'Санкт-Петербург',
+      destination: 'Санкт-Петербург',
       checkIn: '2024-07-01',
       checkOut: '2024-07-05',
       guests: 4,
       rooms: 2,
-      minStars: 5,
+      rating: 5,
       maxPrice: 50000,
     };
 
