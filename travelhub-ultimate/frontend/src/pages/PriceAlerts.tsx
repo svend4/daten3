@@ -10,6 +10,7 @@ import Input from '../components/common/Input';
 import { api } from '../utils/api';
 import { logger } from '../utils/logger';
 import { useAuth } from '../store/AuthContext';
+import { priceAlertSchema, validateForm } from '../utils/validators';
 
 type AlertType = 'HOTEL' | 'FLIGHT';
 type AlertStatus = 'ACTIVE' | 'TRIGGERED' | 'EXPIRED' | 'CANCELLED';
@@ -91,6 +92,7 @@ const PriceAlerts: React.FC = () => {
   });
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Unique IDs for accessibility
   const headingId = useId();
@@ -132,12 +134,24 @@ const PriceAlerts: React.FC = () => {
   const handleFormChange = useCallback((field: keyof CreateAlertData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (formError) setFormError('');
-  }, [formError]);
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  }, [formError, formErrors]);
 
   const handleCreateAlert = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreating(true);
     setFormError('');
+    setFormErrors({});
+
+    // Validate form data
+    const result = validateForm(priceAlertSchema, formData);
+    if (!result.success) {
+      setFormErrors(result.errors || {});
+      return;
+    }
+
+    setCreating(true);
 
     try {
       const response = await api.post<{
