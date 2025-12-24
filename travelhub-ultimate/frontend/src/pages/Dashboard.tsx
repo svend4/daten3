@@ -60,9 +60,9 @@ const Dashboard: React.FC = () => {
 
       // Fetch all data in parallel
       const [bookingsRes, favoritesRes, alertsRes] = await Promise.all([
-        api.get<{ success: boolean; data: any[] }>('/bookings'),
-        api.get<{ success: boolean; data: any[] }>('/favorites'),
-        api.get<{ success: boolean; data: any[] }>('/price-alerts'),
+        api.get<{ success: boolean; data: RecentBooking[] }>('/bookings'),
+        api.get<{ success: boolean; data: { id: string }[] }>('/favorites'),
+        api.get<{ success: boolean; data: { id: string }[] }>('/price-alerts'),
       ]);
 
       // Update stats

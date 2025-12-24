@@ -1,79 +1,71 @@
-import React, { useState } from 'react';
-import { Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useFavorites } from '@hooks/useFavorites';
-import { useAuth } from '@store/AuthContext';
+import React, { memo } from 'react';
 
-interface FavoriteButtonProps {
-  type: 'flight' | 'hotel';
-  itemId: string;
-  itemData: any;
+interface ProgressProps {
+  value: number;
+  max?: number;
+  label?: string;
+  showPercentage?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  color?: 'primary' | 'success' | 'warning' | 'error';
+  className?: string;
 }
 
-export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
-  type,
-  itemId,
-  itemData,
+const sizeClasses: Record<string, string> = {
+  sm: 'h-1',
+  md: 'h-2',
+  lg: 'h-3',
+};
+
+const colorClasses: Record<string, string> = {
+  primary: 'bg-primary-600',
+  success: 'bg-green-600',
+  warning: 'bg-yellow-500',
+  error: 'bg-red-600',
+};
+
+/**
+ * Accessible Progress bar component.
+ */
+const Progress: React.FC<ProgressProps> = ({
+  value,
+  max = 100,
+  label,
+  showPercentage = false,
   size = 'md',
+  color = 'primary',
+  className = '',
 }) => {
-  const { isAuthenticated } = useAuth();
-  const { isFavorited, getFavoriteId, addFavorite, removeFavorite } = useFavorites(type);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const favorited = isFavorited(itemId);
-  const favoriteId = getFavoriteId(itemId);
-
-  const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
-  };
-
-  const iconSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6',
-  };
-
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!isAuthenticated) {
-      // Open login modal
-      return;
-    }
-
-    setIsAnimating(true);
-    
-    if (favorited && favoriteId) {
-      await removeFavorite(favoriteId);
-    } else {
-      await addFavorite(type, itemId, itemData);
-    }
-
-    setTimeout(() => setIsAnimating(false), 300);
-  };
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  const sizeClass = sizeClasses[size] || sizeClasses.md;
+  const colorClass = colorClasses[color] || colorClasses.primary;
 
   return (
-    <motion.button
-      onClick={handleClick}
-      className={`
-        ${sizeClasses[size]}
-        flex items-center justify-center
-        rounded-full bg-white shadow-md
-        hover:shadow-lg transition-shadow
-        ${favorited ? 'text-error-500' : 'text-gray-400 hover:text-error-500'}
-      `}
-      whileTap={{ scale: 0.9 }}
-      animate={isAnimating ? { scale: [1, 1.2, 1] } : {}}
-    >
-      <Heart
-        className={`${iconSizes[size]} ${favorited ? 'fill-current' : ''}`}
-      />
-    </motion.button>
+    <div className={className}>
+      {(label || showPercentage) && (
+        <div className="flex justify-between items-center mb-1">
+          {label && (
+            <span className="text-sm font-medium text-gray-700">{label}</span>
+          )}
+          {showPercentage && (
+            <span className="text-sm text-gray-600">{Math.round(percentage)}%</span>
+          )}
+        </div>
+      )}
+      <div
+        className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeClass}`}
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-label={label || 'Progress'}
+      >
+        <div
+          className={`${sizeClass} ${colorClass} rounded-full transition-all duration-300 ease-out`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   );
 };
 
-export default FavoriteButton;
+export default memo(Progress);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -7,12 +7,15 @@ import {
   CreditCard,
   CheckCircle,
   Clock,
+  AlertCircle,
 } from 'lucide-react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Container from '../layout/Container';
 import Card from '../common/Card';
 import Loading from '../common/Loading';
 import { formatCurrency } from '../../utils/formatters';
+import { api } from '../../utils/api';
+import { logger } from '../../utils/logger';
 import {
   LineChart,
   Line,
@@ -24,8 +27,6 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 interface AnalyticsData {
   summary: {
@@ -43,38 +44,57 @@ interface AnalyticsData {
 }
 
 const AdminAffiliateDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [period, setPeriod] = useState('30d');
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await axios.get(
-        `${API_BASE_URL}/admin/affiliate/analytics?period=${period}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      setLoading(true);
+      setError('');
 
-      if (response.data.success) {
-        setAnalytics(response.data.data);
+      const response = await api.get<{
+        success: boolean;
+        data: AnalyticsData;
+      }>(`/admin/affiliate/analytics?period=${period}`);
+
+      if (response.success) {
+        setAnalytics(response.data);
+        logger.info('Analytics loaded successfully');
       }
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
+    } catch (err: unknown) {
+      logger.error('Failed to load analytics', err);
+      setError('Не удалось загрузить аналитику');
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-20">
-        <Loading size="lg" text="Loading analytics..." />
+        <Loading size="lg" text="Загрузка аналитики..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <Container>
+          <Card className="p-6 bg-red-50 border-red-200">
+            <div className="flex items-center gap-3 text-red-800">
+              <AlertCircle className="w-6 h-6" aria-hidden="true" />
+              <span>{error}</span>
+            </div>
+          </Card>
+        </Container>
       </div>
     );
   }
@@ -238,19 +258,20 @@ const AdminAffiliateDashboard: React.FC = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6" role="list" aria-label="Быстрые действия">
             <Card
               padding="lg"
               hover
               className="cursor-pointer"
-              onClick={() => window.location.href = '/admin/affiliates'}
+              onClick={() => navigate('/admin/affiliates')}
+              role="listitem"
             >
-              <Users className="w-8 h-8 text-primary-600 mb-3" />
+              <Users className="w-8 h-8 text-primary-600 mb-3" aria-hidden="true" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Manage Affiliates
+                Управление партнёрами
               </h3>
               <p className="text-gray-600 text-sm">
-                View and manage all affiliates
+                Просмотр и управление партнёрами
               </p>
             </Card>
 
@@ -258,14 +279,15 @@ const AdminAffiliateDashboard: React.FC = () => {
               padding="lg"
               hover
               className="cursor-pointer"
-              onClick={() => window.location.href = '/admin/commissions'}
+              onClick={() => navigate('/admin/commissions')}
+              role="listitem"
             >
-              <CheckCircle className="w-8 h-8 text-success-600 mb-3" />
+              <CheckCircle className="w-8 h-8 text-success-600 mb-3" aria-hidden="true" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Approve Commissions
+                Одобрение комиссий
               </h3>
               <p className="text-gray-600 text-sm">
-                Review pending commissions
+                Проверка ожидающих комиссий
               </p>
             </Card>
 
@@ -273,14 +295,15 @@ const AdminAffiliateDashboard: React.FC = () => {
               padding="lg"
               hover
               className="cursor-pointer"
-              onClick={() => window.location.href = '/admin/payouts'}
+              onClick={() => navigate('/admin/payouts')}
+              role="listitem"
             >
-              <CreditCard className="w-8 h-8 text-warning-600 mb-3" />
+              <CreditCard className="w-8 h-8 text-warning-600 mb-3" aria-hidden="true" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Process Payouts
+                Обработка выплат
               </h3>
               <p className="text-gray-600 text-sm">
-                Handle payout requests
+                Обработка запросов на выплату
               </p>
             </Card>
 
@@ -288,14 +311,15 @@ const AdminAffiliateDashboard: React.FC = () => {
               padding="lg"
               hover
               className="cursor-pointer"
-              onClick={() => window.location.href = '/admin/settings'}
+              onClick={() => navigate('/admin/settings')}
+              role="listitem"
             >
-              <Clock className="w-8 h-8 text-secondary-600 mb-3" />
+              <Clock className="w-8 h-8 text-secondary-600 mb-3" aria-hidden="true" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Settings
+                Настройки
               </h3>
               <p className="text-gray-600 text-sm">
-                Configure affiliate program
+                Настройка партнёрской программы
               </p>
             </Card>
           </div>
@@ -305,4 +329,4 @@ const AdminAffiliateDashboard: React.FC = () => {
   );
 };
 
-export default AdminAffiliateDashboard;
+export default memo(AdminAffiliateDashboard);

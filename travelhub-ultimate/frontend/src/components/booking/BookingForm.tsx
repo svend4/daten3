@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, DollarSign, Star } from 'lucide-react';
 import Button from '../common/Button';
 import { FlightFilters, HotelFilters } from '../../types/api.types';
 
-interface FilterPanelProps {
+type FilterValues = FlightFilters | HotelFilters;
+
+interface BookingFilterPanelProps {
   type: 'flights' | 'hotels';
-  onApply: (filters: any) => void;
+  onApply: (filters: FilterValues) => void;
   onReset: () => void;
 }
 
-export const FilterPanel: React.FC<FilterPanelProps> = ({
+export const BookingFilterPanel: React.FC<BookingFilterPanelProps> = ({
   type,
   onApply,
   onReset,
 }) => {
+  const uniqueId = useId();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Flight filters
   const [maxPrice, setMaxPrice] = useState(1000);
   const [maxStops, setMaxStops] = useState(2);
@@ -29,7 +32,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const airlines = ['Aeroflot', 'British Airways', 'Lufthansa', 'Air France'];
 
-  const handleApply = () => {
+  const handleApply = useCallback(() => {
     if (type === 'flights') {
       onApply({
         maxPrice,
@@ -44,9 +47,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       } as HotelFilters);
     }
     setIsOpen(false);
-  };
+  }, [type, maxPrice, maxStops, selectedAirlines, priceRange, selectedStars, minRating, onApply]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setMaxPrice(1000);
     setMaxStops(2);
     setSelectedAirlines([]);
@@ -54,7 +57,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setSelectedStars([]);
     setMinRating(0);
     onReset();
-  };
+  }, [onReset]);
 
   return (
     <>
@@ -82,6 +85,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
             {/* Panel */}
             <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`${uniqueId}-title`}
               className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-strong z-50 overflow-y-auto"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -91,12 +97,15 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Filters</h2>
+                  <h2 id={`${uniqueId}-title`} className="text-2xl font-bold text-gray-900">
+                    Фильтры
+                  </h2>
                   <button
                     onClick={() => setIsOpen(false)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Закрыть фильтры"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-6 h-6" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -267,14 +276,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     fullWidth
                     onClick={handleReset}
                   >
-                    Reset
+                    Сбросить
                   </Button>
                   <Button
                     variant="primary"
                     fullWidth
                     onClick={handleApply}
                   >
-                    Apply Filters
+                    Применить
                   </Button>
                 </div>
               </div>
@@ -286,4 +295,4 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 };
 
-export default FilterPanel;
+export default memo(BookingFilterPanel);

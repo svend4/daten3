@@ -102,8 +102,10 @@ const Support: React.FC = () => {
   }, [formData]);
 
   const handleStartChat = useCallback(() => {
-    // Placeholder for chat functionality
-    console.log('Starting chat...');
+    // TODO: Implement chat functionality
+    // For now, show alert that chat is not available
+    setError('Онлайн-чат временно недоступен. Пожалуйста, используйте email или телефон.');
+    setTimeout(() => setError(''), 5000);
   }, []);
 
   return (
