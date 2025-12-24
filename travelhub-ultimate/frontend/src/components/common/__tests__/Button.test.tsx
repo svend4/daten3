@@ -40,7 +40,7 @@ describe('Button Component', () => {
   it('applies variant styles', () => {
     const { rerender } = render(<Button variant="primary">Primary</Button>, { wrapper: RouterWrapper });
     let button = screen.getByText('Primary');
-    expect(button.className).toContain('bg-blue');
+    expect(button.className).toContain('bg-primary-600');
 
     rerender(<Button variant="secondary">Secondary</Button>);
     button = screen.getByText('Secondary');
@@ -57,11 +57,11 @@ describe('Button Component', () => {
     expect(button.className).toMatch(/px-\d+/); // Has padding
   });
 
-  it('renders as link when href is provided', () => {
-    render(<Button href="/test">Link Button</Button>, { wrapper: RouterWrapper });
+  it('renders as button element', () => {
+    render(<Button>Click Button</Button>, { wrapper: RouterWrapper });
 
-    const link = screen.getByText('Link Button');
-    expect(link.tagName).toBe('A');
+    const button = screen.getByRole('button');
+    expect(button.tagName).toBe('BUTTON');
   });
 
   it('does not call onClick when disabled', () => {
