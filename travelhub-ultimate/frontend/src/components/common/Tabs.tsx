@@ -1,139 +1,127 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import toast from 'react-hot-toast';
-import {
-  Flight,
-  Hotel,
-  FlightSearchParams,
-  HotelSearchParams,
-  ApiResponse,
-} from '../../types/api.types';
+import React, { memo, useState, useCallback, useId, ReactNode } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-
-class TravelHubService {
-  private api: AxiosInstance;
-
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    this.setupInterceptors();
-  }
-
-  private setupInterceptors() {
-    // Request interceptor
-    this.api.interceptors.request.use(
-      (config) => {
-        // Add auth token if available
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Add timestamp for cache busting
-        config.params = {
-          ...config.params,
-          _t: Date.now(),
-        };
-
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
-        this.handleError(error);
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  private handleError(error: AxiosError) {
-    if (error.response?.status === 429) {
-      toast.error('Too many requests. Please try again in a moment.');
-    } else if (error.response?.status === 500) {
-      toast.error('Server error. Please try again later.');
-    } else if (error.code === 'ECONNABORTED') {
-      toast.error('Request timeout. Please check your connection.');
-    } else if (!error.response) {
-      toast.error('Network error. Please check your connection.');
-    }
-  }
-
-  /**
-   * Search flights
-   */
-  async searchFlights(params: FlightSearchParams): Promise<Flight[]> {
-    try {
-      const response = await this.api.get<ApiResponse<Flight[]>>('/flights/search', {
-        params,
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Search failed');
-      }
-
-      return response.data.data;
-    } catch (error) {
-      console.error('Flight search failed:', error);
-      throw this.transformError(error);
-    }
-  }
-
-  /**
-   * Search hotels
-   */
-  async searchHotels(params: HotelSearchParams): Promise<Hotel[]> {
-    try {
-      const response = await this.api.get<ApiResponse<Hotel[]>>('/hotels/search', {
-        params,
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Search failed');
-      }
-
-      return response.data.data;
-    } catch (error) {
-      console.error('Hotel search failed:', error);
-      throw this.transformError(error);
-    }
-  }
-
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<boolean> {
-    try {
-      const response = await this.api.get('/health');
-      return response.data.status === 'OK';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * Transform error to user-friendly message
-   */
-  private transformError(error: any): Error {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.error || 
-                     error.response?.data?.message || 
-                     error.message;
-      return new Error(message);
-    }
-    return error instanceof Error ? error : new Error('Unknown error occurred');
-  }
+interface Tab {
+  id: string;
+  label: string;
+  content: ReactNode;
+  disabled?: boolean;
 }
 
-export default new TravelHubService();
+interface TabsProps {
+  tabs: Tab[];
+  defaultActiveTab?: string;
+  onChange?: (tabId: string) => void;
+  className?: string;
+}
+
+/**
+ * Accessible Tabs component with keyboard navigation.
+ * Follows WAI-ARIA tabs pattern.
+ */
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  defaultActiveTab,
+  onChange,
+  className = '',
+}) => {
+  const uniqueId = useId();
+  const [activeTab, setActiveTab] = useState<string>(defaultActiveTab || tabs[0]?.id || '');
+
+  const handleTabClick = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+    onChange?.(tabId);
+  }, [onChange]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, currentIndex: number) => {
+    const enabledTabs = tabs.filter(tab => !tab.disabled);
+    const currentEnabledIndex = enabledTabs.findIndex(tab => tab.id === tabs[currentIndex].id);
+
+    let newIndex: number | null = null;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        newIndex = currentEnabledIndex > 0 ? currentEnabledIndex - 1 : enabledTabs.length - 1;
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        newIndex = currentEnabledIndex < enabledTabs.length - 1 ? currentEnabledIndex + 1 : 0;
+        break;
+      case 'Home':
+        e.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        newIndex = enabledTabs.length - 1;
+        break;
+    }
+
+    if (newIndex !== null) {
+      const newTabId = enabledTabs[newIndex].id;
+      setActiveTab(newTabId);
+      onChange?.(newTabId);
+      // Focus the new tab
+      document.getElementById(`${uniqueId}-tab-${newTabId}`)?.focus();
+    }
+  }, [tabs, uniqueId, onChange]);
+
+  const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content;
+
+  return (
+    <div className={className}>
+      {/* Tab list */}
+      <div
+        role="tablist"
+        aria-label="Tabs"
+        className="flex border-b border-gray-200"
+      >
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.id}
+            id={`${uniqueId}-tab-${tab.id}`}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`${uniqueId}-panel-${tab.id}`}
+            aria-disabled={tab.disabled}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => !tab.disabled && handleTabClick(tab.id)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            disabled={tab.disabled}
+            className={`
+              px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
+              ${activeTab === tab.id
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }
+              ${tab.disabled
+                ? 'opacity-50 cursor-not-allowed'
+                : 'cursor-pointer'
+              }
+            `}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab panels */}
+      {tabs.map((tab) => (
+        <div
+          key={tab.id}
+          id={`${uniqueId}-panel-${tab.id}`}
+          role="tabpanel"
+          aria-labelledby={`${uniqueId}-tab-${tab.id}`}
+          hidden={activeTab !== tab.id}
+          tabIndex={0}
+          className="py-4 focus:outline-none"
+        >
+          {activeTab === tab.id && activeTabContent}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default memo(Tabs);
