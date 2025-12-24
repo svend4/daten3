@@ -60,6 +60,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -91,6 +101,7 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://travelhub_test:test_password@localhost:5432/travelhub_test
+          REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret-min-32-chars-long-for-testing
           JWT_REFRESH_SECRET: test-jwt-refresh-secret-min-32-chars-long
 
@@ -110,6 +121,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -152,6 +173,7 @@ jobs:
           NODE_ENV: production
           PORT: 3000
           DATABASE_URL: postgresql://travelhub_e2e:e2e_password@localhost:5432/travelhub_e2e
+          REDIS_URL: redis://localhost:6379
           JWT_SECRET: e2e-jwt-secret-min-32-chars-long-for-e2e-testing
           JWT_REFRESH_SECRET: e2e-jwt-refresh-secret-min-32-chars-long
 
