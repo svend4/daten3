@@ -34,6 +34,9 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           ui: ['framer-motion', 'lucide-react'],
+          charts: ['recharts'],
+          query: ['@tanstack/react-query'],
+          utils: ['date-fns', 'clsx', 'tailwind-merge', 'zod'],
         },
       },
     },
