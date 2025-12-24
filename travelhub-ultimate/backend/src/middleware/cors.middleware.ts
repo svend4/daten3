@@ -165,6 +165,13 @@ const corsOptions: cors.CorsOptions = {
 };
 
 // Log CORS configuration on startup
+console.log('=== CORS DEBUG START ===');
+console.log('FRONTEND_URL env:', process.env.FRONTEND_URL);
+console.log('ALLOWED_ORIGINS env:', process.env.ALLOWED_ORIGINS);
+console.log('config.cors.origin:', config.cors.origin);
+console.log('allowedOrigins array:', allowedOrigins);
+console.log('=== CORS DEBUG END ===');
+
 logger.info('CORS Configuration initialized', {
   allowedOrigins,
   allowedOriginsCount: allowedOrigins.length,
