@@ -95,9 +95,14 @@ const matchOriginPattern = (origin: string, pattern: string): boolean => {
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    // Return frontend URL to ensure CORS headers are set
     if (!origin) {
-      logger.debug('CORS: Request with no origin (mobile/Postman)', { category: 'no-origin' });
-      return callback(null, true);
+      const frontendUrl = process.env.FRONTEND_URL || allowedOrigins[0];
+      logger.info('CORS: Request with no origin, using frontend URL', {
+        frontendUrl,
+        category: 'no-origin'
+      });
+      return callback(null, frontendUrl || true);
     }
 
     // Check if origin is in allowed list (with pattern matching)
