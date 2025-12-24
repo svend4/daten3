@@ -62,11 +62,18 @@ class ApiClient {
 
         // Handle 401 Unauthorized
         if (error.response?.status === 401) {
-          logger.warn('Unauthorized - redirecting to login');
-          // Clear user data from localStorage
-          localStorage.removeItem('user');
-          // Cookies are cleared by server
-          window.location.href = '/login';
+          // Don't redirect on auth check endpoint - this is expected for logged out users
+          const isAuthCheck = originalRequest.url?.includes('/auth/me');
+
+          if (!isAuthCheck) {
+            logger.warn('Unauthorized - redirecting to login');
+            // Clear user data from localStorage
+            localStorage.removeItem('user');
+            // Cookies are cleared by server
+            window.location.href = '/login';
+          } else {
+            logger.info('Auth check returned 401 - user not authenticated');
+          }
         }
         // Handle 403 CSRF token issues
         else if (
