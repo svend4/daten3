@@ -158,8 +158,8 @@ const createTierRateLimiter = (
           const anyClient = redisClient as any;
 
           // node-redis v4 requires sendCommand to be called with an array
+          // See: https://github.com/redis/node-redis/blob/master/docs/v3-to-v4.md
           if (typeof anyClient.sendCommand === 'function') {
-            // node-redis v4: always use array format
             return anyClient.sendCommand(args);
           }
 
