@@ -131,7 +131,7 @@ class ApiClient {
   private async fetchCSRFToken(): Promise<void> {
     try {
       const response = await this.client.get('/auth/csrf-token');
-      this.csrfToken = response.data.data.csrfToken;
+      this.csrfToken = response.data.csrfToken || response.data.data?.csrfToken;
       logger.info('CSRF token fetched successfully');
     } catch (error) {
       logger.error('Failed to fetch CSRF token', error);

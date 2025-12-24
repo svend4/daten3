@@ -119,7 +119,7 @@ const TestPage: React.FC = () => {
     setResults([...testResults]);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/csrf-token`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/csrf-token`, {
         method: 'GET',
         credentials: 'include',
       });
