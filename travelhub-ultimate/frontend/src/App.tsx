@@ -53,6 +53,7 @@ import NotFound from './pages/NotFound';
 // Test pages
 import TestPage from './pages/TestPage';
 import AutomatedTestsPage from './pages/AutomatedTestsPage';
+import CORSTestPage from './pages/CORSTestPage';
 
 // Contexts
 import { AuthProvider } from './store/AuthContext';
@@ -130,6 +131,7 @@ function App() {
           {/* Test routes */}
           <Route path="/test" element={<TestPage />} />
           <Route path="/automated-tests" element={<AutomatedTestsPage />} />
+          <Route path="/cors-test" element={<CORSTestPage />} />
 
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />

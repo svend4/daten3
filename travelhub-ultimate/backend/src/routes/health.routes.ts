@@ -80,6 +80,55 @@ import { requireAdmin } from '../middleware/rbac.middleware.js';
 const router = Router();
 
 /**
+ * @route   GET /health/cors-test
+ * @desc    CORS test endpoint - explicitly sets CORS headers
+ * @access  Public
+ */
+router.get('/cors-test', (req, res) => {
+  console.log('🧪 CORS TEST ENDPOINT CALLED!');
+  console.log('Origin:', req.headers.origin || 'NO ORIGIN');
+  console.log('Referer:', req.headers.referer || 'NO REFERER');
+  console.log('Method:', req.method);
+  console.log('All headers:', req.headers);
+
+  // Explicitly set CORS headers
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://daten3.onrender.com');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  res.json({
+    message: 'CORS test successful!',
+    timestamp: new Date().toISOString(),
+    origin: req.headers.origin || 'NO ORIGIN',
+    corsHeaders: {
+      'access-control-allow-origin': res.getHeader('access-control-allow-origin'),
+      'access-control-allow-credentials': res.getHeader('access-control-allow-credentials'),
+    }
+  });
+});
+
+/**
+ * @route   OPTIONS /health/cors-test
+ * @desc    CORS preflight for cors-test endpoint
+ * @access  Public
+ */
+router.options('/cors-test', (req, res) => {
+  console.log('🚀 CORS PREFLIGHT for /cors-test!');
+  console.log('Origin:', req.headers.origin || 'NO ORIGIN');
+  console.log('Access-Control-Request-Method:', req.headers['access-control-request-method']);
+  console.log('Access-Control-Request-Headers:', req.headers['access-control-request-headers']);
+
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://daten3.onrender.com');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+
+  res.sendStatus(204);
+});
+
+/**
  * @route   GET /health
  * @desc    Basic health check - fast response
  * @access  Public
