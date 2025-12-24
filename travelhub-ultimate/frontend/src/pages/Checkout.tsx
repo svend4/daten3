@@ -10,6 +10,7 @@ import Input from '../components/common/Input';
 import { useAuth } from '../store/AuthContext';
 import { api } from '../utils/api';
 import { logger } from '../utils/logger';
+import { paymentCardSchema, bookingDatesSchema, validateForm } from '../utils/validators';
 
 interface BookingDetails {
   hotel?: {
@@ -51,6 +52,8 @@ const Checkout: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [bookingErrors, setBookingErrors] = useState<Record<string, string>>({});
+  const [paymentErrors, setPaymentErrors] = useState<Record<string, string>>({});
 
   // Unique IDs for accessibility
   const errorId = useId();
@@ -73,11 +76,19 @@ const Checkout: React.FC = () => {
 
   const handleBookingInputChange = useCallback((field: keyof BookingData, value: string | number) => {
     setBookingData(prev => ({ ...prev, [field]: value }));
-  }, []);
+    // Clear field error on change
+    if (bookingErrors[field]) {
+      setBookingErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  }, [bookingErrors]);
 
   const handlePaymentInputChange = useCallback((field: keyof PaymentData, value: string) => {
     setPaymentData(prev => ({ ...prev, [field]: value }));
-  }, []);
+    // Clear field error on change
+    if (paymentErrors[field]) {
+      setPaymentErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  }, [paymentErrors]);
 
   const handleGuestsChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setBookingData(prev => ({ ...prev, guests: parseInt(e.target.value) }));
@@ -121,8 +132,24 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    // Validate booking dates
+    const bookingResult = validateForm(bookingDatesSchema, bookingData);
+    if (!bookingResult.success) {
+      setBookingErrors(bookingResult.errors || {});
+      return;
+    }
+
+    // Validate payment data
+    const paymentResult = validateForm(paymentCardSchema, paymentData);
+    if (!paymentResult.success) {
+      setPaymentErrors(paymentResult.errors || {});
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setBookingErrors({});
+    setPaymentErrors({});
 
     try {
       // Create booking
@@ -167,7 +194,7 @@ const Checkout: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, bookingDetails, bookingData, calculateTotal, navigate]);
+  }, [isAuthenticated, bookingDetails, bookingData, paymentData, calculateTotal, navigate]);
 
   const handleNavigateToLogin = useCallback(() => {
     navigate('/login');
@@ -285,6 +312,7 @@ const Checkout: React.FC = () => {
                     name="checkIn"
                     value={bookingData.checkIn}
                     onChange={(value) => handleBookingInputChange('checkIn', value)}
+                    error={bookingErrors.checkIn}
                     required
                     min={new Date().toISOString().split('T')[0]}
                   />
@@ -295,6 +323,7 @@ const Checkout: React.FC = () => {
                     name="checkOut"
                     value={bookingData.checkOut}
                     onChange={(value) => handleBookingInputChange('checkOut', value)}
+                    error={bookingErrors.checkOut}
                     required
                     min={bookingData.checkIn || new Date().toISOString().split('T')[0]}
                   />
@@ -345,6 +374,7 @@ const Checkout: React.FC = () => {
                     placeholder="1234 5678 9012 3456"
                     value={paymentData.cardNumber}
                     onChange={(value) => handlePaymentInputChange('cardNumber', value)}
+                    error={paymentErrors.cardNumber}
                     maxLength={19}
                     required
                     icon={<CreditCard className="w-5 h-5" />}
@@ -357,6 +387,7 @@ const Checkout: React.FC = () => {
                     placeholder="IVAN IVANOV"
                     value={paymentData.cardName}
                     onChange={(value) => handlePaymentInputChange('cardName', value)}
+                    error={paymentErrors.cardName}
                     required
                     autoComplete="cc-name"
                   />
@@ -368,6 +399,7 @@ const Checkout: React.FC = () => {
                       placeholder="MM/YY"
                       value={paymentData.expiry}
                       onChange={(value) => handlePaymentInputChange('expiry', value)}
+                      error={paymentErrors.expiry}
                       maxLength={5}
                       required
                       autoComplete="cc-exp"
@@ -380,7 +412,8 @@ const Checkout: React.FC = () => {
                       type="password"
                       value={paymentData.cvv}
                       onChange={(value) => handlePaymentInputChange('cvv', value)}
-                      maxLength={3}
+                      error={paymentErrors.cvv}
+                      maxLength={4}
                       required
                       autoComplete="cc-csc"
                     />
