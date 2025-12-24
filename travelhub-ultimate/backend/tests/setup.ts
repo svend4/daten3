@@ -23,7 +23,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/travelhub_test';
+  process.env.DATABASE_URL = 'postgresql://travelhub_test:test_password@localhost:5432/travelhub_test';
 }
 
 if (!process.env.REDIS_URL) {
