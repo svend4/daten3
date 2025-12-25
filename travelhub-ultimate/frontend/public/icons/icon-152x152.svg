@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 152" width="152" height="152">
+  <rect width="152" height="152" rx="22.8" fill="#3b82f6"/>
+  <g transform="translate(76, 76)">
+    <circle cx="0" cy="0" r="41.040000000000006" fill="none" stroke="#ffffff" stroke-width="2.432"/>
+    <circle cx="0" cy="0" r="31.919999999999998" fill="none" stroke="#ffffff" stroke-width="1.216" opacity="0.5"/>
+    <ellipse cx="0" cy="0" rx="41.040000000000006" ry="18.24" fill="none" stroke="#ffffff" stroke-width="1.216" opacity="0.6"/>
+    <ellipse cx="0" cy="0" rx="18.24" ry="41.040000000000006" fill="none" stroke="#ffffff" stroke-width="1.216" opacity="0.6"/>
+    <g transform="translate(24.32, -24.32) rotate(45)">
+      <rect x="-2.432" y="-11.856" width="4.712" height="23.712" rx="2.432" fill="#ffffff"/>
+      <rect x="-17.784000000000002" y="-3.04" width="35.568000000000005" height="5.928" rx="3.04" fill="#ffffff"/>
+      <rect x="-7.448" y="8.968" width="14.896" height="3.496" rx="1.824" fill="#ffffff"/>
+    </g>
+    <text x="-8.968" y="4.408" font-family="Arial, sans-serif" font-size="23.712" font-weight="bold" fill="#ffffff">T</text>
+  </g>
+</svg>
