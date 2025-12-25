@@ -8,6 +8,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useHotelSearch } from '../hooks/useHotelSearch';
 import Loading from '../components/common/Loading';
+import SEOHead from '../components/SEO/SEOHead';
 import type { HotelSearchResult } from '../types/api.types';
 
 /**
@@ -44,6 +45,12 @@ function HotelSearch() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Hotel Search - Find Best Hotel Deals | TravelHub"
+        description="Search and compare hotels worldwide. Find the best hotel deals from 500+ providers with TravelHub. Save up to 40% on your bookings."
+        keywords={['hotel search', 'cheap hotels', 'hotel deals', 'accommodation', 'book hotels']}
+        type="website"
+      />
       <Header />
       <main
         className="flex-grow bg-gray-50 py-8"

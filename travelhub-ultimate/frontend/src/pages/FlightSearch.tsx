@@ -8,6 +8,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useFlightSearch } from '../hooks/useFlightSearch';
 import Loading from '../components/common/Loading';
+import SEOHead from '../components/SEO/SEOHead';
 import type { FlightSearchResult } from '../types/api.types';
 
 /**
@@ -44,6 +45,12 @@ function FlightSearch() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Flight Search - Find Cheap Flights | TravelHub"
+        description="Search and compare cheap flights from 500+ airlines. Find the best deals on domestic and international flights with TravelHub."
+        keywords={['cheap flights', 'flight search', 'airline tickets', 'flight deals', 'book flights']}
+        type="website"
+      />
       <Header />
       <main
         className="flex-grow bg-gray-50 py-8"

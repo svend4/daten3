@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { Suspense, lazy, useEffect } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Loading component for Suspense fallback
 import Loading from './components/common/Loading';
@@ -15,6 +16,9 @@ import { AuthProvider } from './store/AuthContext';
 // API
 import { api } from './utils/api';
 import { logger } from './utils/logger';
+
+// SEO
+import StructuredData from './components/SEO/StructuredData';
 
 // Lazy load all pages for better performance
 // Main pages
@@ -106,17 +110,26 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Main routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/flights" element={<FlightSearch />} />
-                <Route path="/hotels" element={<HotelSearch />} />
-                <Route path="/search" element={<SearchResults />} />
-                <Route path="/hotel/:id" element={<HotelDetails />} />
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <StructuredData
+              type="Organization"
+              data={{}}
+            />
+            <StructuredData
+              type="WebSite"
+              data={{}}
+            />
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Main routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/flights" element={<FlightSearch />} />
+                  <Route path="/hotels" element={<HotelSearch />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/hotel/:id" element={<HotelDetails />} />
 
                 {/* Auth routes */}
                 <Route path="/login" element={<Login />} />
@@ -189,6 +202,7 @@ function App() {
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }

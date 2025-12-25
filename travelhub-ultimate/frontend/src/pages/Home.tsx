@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import SearchWidgetExtended from '../components/features/SearchWidgetExtended';
+import SEOHead from '../components/SEO/SEOHead';
 
 // Memoized destination card component
 const DestinationCard = memo(function DestinationCard({
@@ -285,6 +286,12 @@ function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <SEOHead
+        title="TravelHub - Book Flights, Hotels & Car Rentals"
+        description="Find and book the best travel deals on flights, hotels, and car rentals. Compare prices from 500+ providers and save up to 40% on your bookings."
+        keywords={['travel booking', 'cheap flights', 'hotel deals', 'car rentals', 'travel aggregator', 'vacation packages']}
+        type="website"
+      />
       <Header />
 
       <main id="main-content" className="flex-grow" role="main">
