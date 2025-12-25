@@ -13,11 +13,15 @@ RUN npm ci
 COPY . .
 
 # Build argument for API URL
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+# Render.com passes envVars as Docker build args
+ARG VITE_API_BASE_URL=http://localhost:3000/api
 
-# Build the application
-RUN npm run build
+# Create .env file for Vite to read during build
+# This ensures the environment variable is properly passed to Vite
+RUN echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" > .env && \
+    echo "=== Build Configuration ===" && \
+    cat .env && \
+    npm run build
 
 # Production stage with nginx
 FROM nginx:alpine AS production
