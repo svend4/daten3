@@ -1,147 +1,110 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Star, MapPin, ExternalLink, Wifi, Coffee, Car } from 'lucide-react';
-import { Hotel } from '../../types/api.types';
-import Card from '../common/Card';
-import Badge from '../common/Badge';
-import Button from '../common/Button';
+import React, { memo, ReactNode } from 'react';
 
-interface HotelCardProps {
-  hotel: Hotel;
-  index?: number;
+interface Column<T> {
+  key: keyof T | string;
+  header: string;
+  render?: (item: T, index: number) => ReactNode;
+  className?: string;
+  headerClassName?: string;
 }
 
-export const HotelCard: React.FC<HotelCardProps> = ({ hotel, index = 0 }) => {
-  // Map amenities to icons
-  const amenityIcons: { [key: string]: any } = {
-    wifi: Wifi,
-    parking: Car,
-    breakfast: Coffee,
+interface TableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  keyExtractor: (item: T, index: number) => string;
+  emptyMessage?: string;
+  loading?: boolean;
+  onRowClick?: (item: T) => void;
+  className?: string;
+}
+
+/**
+ * Generic Table component with accessibility support.
+ */
+function Table<T extends Record<string, unknown>>({
+  data,
+  columns,
+  keyExtractor,
+  emptyMessage = 'No data available',
+  loading = false,
+  onRowClick,
+  className = '',
+}: TableProps<T>) {
+  const getCellValue = (item: T, column: Column<T>): ReactNode => {
+    if (column.render) {
+      return column.render(item, data.indexOf(item));
+    }
+    const value = item[column.key as keyof T];
+    return value !== null && value !== undefined ? String(value) : '';
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-    >
-      <Card hover padding="none" className="overflow-hidden group">
-        <div className="md:flex">
-          {/* Image */}
-          <div className="md:w-1/3 relative">
-            <img
-              src={hotel.image}
-              alt={hotel.name}
-              className="w-full h-64 md:h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            
-            {/* Featured Badge */}
-            {hotel.rating >= 9 && (
-              <div className="absolute top-4 right-4">
-                <Badge variant="warning">Featured</Badge>
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 p-6">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                  {hotel.name}
-                </h3>
-                
-                {/* Stars */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex">
-                    {[...Array(hotel.stars)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 fill-warning-500 text-warning-500"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {hotel.stars} Star Hotel
-                  </span>
-                </div>
-
-                {/* Location */}
-                <div className="flex items-center gap-2 text-gray-600 mb-3">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{hotel.address}</span>
-                </div>
-
-                {/* Rating */}
-                {hotel.rating && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="bg-primary-600 text-white px-3 py-1 rounded-lg font-bold">
-                      {hotel.rating}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {hotel.rating >= 9 ? 'Excellent' :
-                         hotel.rating >= 8 ? 'Very Good' :
-                         hotel.rating >= 7 ? 'Good' : 'Fair'}
-                      </p>
-                      {hotel.reviewCount && (
-                        <p className="text-xs text-gray-500">
-                          {hotel.reviewCount} reviews
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Amenities */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {hotel.amenities.slice(0, 4).map((amenity, i) => {
-                    const Icon = amenityIcons[amenity.toLowerCase()];
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-600"
-                      >
-                        {Icon && <Icon className="w-3 h-3" />}
-                        <span>{amenity}</span>
-                      </div>
-                    );
-                  })}
-                  {hotel.amenities.length > 4 && (
-                    <div className="px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-600">
-                      +{hotel.amenities.length - 4} more
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Price */}
-              <div className="text-right ml-4">
-                <p className="text-sm text-gray-500 mb-1">from</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${hotel.price.amount}
-                </p>
-                <p className="text-xs text-gray-500">per night</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  ${hotel.price.total} total
-                </p>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <Button
-              variant="primary"
-              fullWidth
-              icon={<ExternalLink className="w-4 h-4" />}
-              onClick={() => window.open(hotel.url, '_blank')}
-            >
-              View Details
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </motion.div>
+    <div className={`overflow-x-auto ${className}`}>
+      <table className="min-w-full divide-y divide-gray-200" role="table">
+        <thead className="bg-gray-50">
+          <tr role="row">
+            {columns.map((column) => (
+              <th
+                key={String(column.key)}
+                scope="col"
+                role="columnheader"
+                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.headerClassName || ''}`}
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200" role="rowgroup">
+          {data.length === 0 ? (
+            <tr role="row">
+              <td
+                colSpan={columns.length}
+                className="px-6 py-12 text-center text-gray-500"
+                role="cell"
+              >
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            data.map((item, index) => (
+              <tr
+                key={keyExtractor(item, index)}
+                role="row"
+                onClick={() => onRowClick?.(item)}
+                className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onRowClick(item);
+                  }
+                }}
+              >
+                {columns.map((column) => (
+                  <td
+                    key={String(column.key)}
+                    role="cell"
+                    className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.className || ''}`}
+                  >
+                    {getCellValue(item, column)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
-};
+}
 
-export default HotelCard;
+export default memo(Table) as typeof Table;

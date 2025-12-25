@@ -2,6 +2,14 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { api } from '../utils/api';
 import { logger } from '../utils/logger';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 interface User {
   id: string;
   email: string;
@@ -122,11 +130,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           error: response.message || 'Login failed',
         };
       }
-    } catch (error: any) {
-      logger.error('Login failed', error);
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      logger.error('Login failed', err);
       return {
         success: false,
-        error: error.response?.data?.message || 'Invalid email or password',
+        error: apiError.response?.data?.message || 'Invalid email or password',
       };
     } finally {
       setIsLoading(false);
@@ -166,11 +175,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           error: response.message || 'Registration failed',
         };
       }
-    } catch (error: any) {
-      logger.error('Registration failed', error);
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      logger.error('Registration failed', err);
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed',
+        error: apiError.response?.data?.message || 'Registration failed',
       };
     } finally {
       setIsLoading(false);

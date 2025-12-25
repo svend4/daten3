@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Home as HomeIcon,
   Calendar,
   Heart,
   Bell,
   Settings as SettingsIcon,
   User,
-  TrendingUp,
   AlertCircle,
   ChevronRight,
   Plane,
@@ -49,24 +47,22 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      fetchDashboardData();
-    } else if (!authLoading && !isAuthenticated) {
-      setLoading(false);
-    }
-  }, [authLoading, isAuthenticated]);
+  // Unique IDs for accessibility
+  const statsHeadingId = useId();
+  const recentBookingsHeadingId = useId();
+  const quickActionsHeadingId = useId();
+  const errorId = useId();
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
 
       // Fetch all data in parallel
       const [bookingsRes, favoritesRes, alertsRes] = await Promise.all([
-        api.get<{ success: boolean; data: any[] }>('/bookings'),
-        api.get<{ success: boolean; data: any[] }>('/favorites'),
-        api.get<{ success: boolean; data: any[] }>('/price-alerts'),
+        api.get<{ success: boolean; data: RecentBooking[] }>('/bookings'),
+        api.get<{ success: boolean; data: { id: string }[] }>('/favorites'),
+        api.get<{ success: boolean; data: { id: string }[] }>('/price-alerts'),
       ]);
 
       // Update stats
@@ -82,24 +78,41 @@ const Dashboard: React.FC = () => {
       }
 
       logger.info('Dashboard data loaded successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to fetch dashboard data', err);
-      setError('Failed to load dashboard data');
+      setError('Не удалось загрузить данные панели управления');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      fetchDashboardData();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, fetchDashboardData]);
 
   // Loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main
+          className="flex-grow bg-gray-50 py-12"
+          role="main"
+          aria-label="Панель управления"
+          aria-busy="true"
+        >
           <Container>
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading dashboard...</p>
+            <div className="text-center py-12" role="status" aria-live="polite">
+              <div
+                className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"
+                aria-hidden="true"
+              />
+              <p className="mt-4 text-gray-600">Загрузка панели управления...</p>
+              <span className="sr-only">Пожалуйста, подождите</span>
             </div>
           </Container>
         </main>
@@ -107,23 +120,34 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+
+  // Navigation handlers
+  const handleNavigate = useCallback((href: string) => {
+    navigate(href);
+  }, [navigate]);
 
   // Authentication guard
   if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow bg-gray-50 py-12">
+        <main
+          className="flex-grow bg-gray-50 py-12"
+          role="main"
+          aria-label="Требуется авторизация"
+        >
           <Container>
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Please Log In
-              </h2>
+            <Card className="p-12 text-center" role="alert">
+              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" aria-hidden="true" />
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                Требуется вход
+              </h1>
               <p className="text-gray-600 mb-6">
-                You need to be logged in to view your dashboard.
+                Для просмотра панели управления необходимо войти в аккаунт.
               </p>
-              <Button href="/login">Go to Login</Button>
+              <Button onClick={() => handleNavigate('/login')}>
+                Перейти к входу
+              </Button>
             </Card>
           </Container>
         </main>
@@ -132,191 +156,241 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const quickLinks = [
+  const quickLinks = useMemo(() => [
     {
-      title: 'Search Hotels',
-      description: 'Find your perfect stay',
+      title: 'Поиск отелей',
+      description: 'Найдите идеальное жильё',
       icon: HotelIcon,
       href: '/hotels',
       color: 'bg-blue-100 text-blue-600',
     },
     {
-      title: 'Search Flights',
-      description: 'Book your next trip',
+      title: 'Поиск авиабилетов',
+      description: 'Забронируйте поездку',
       icon: Plane,
       href: '/flights',
       color: 'bg-purple-100 text-purple-600',
     },
     {
-      title: 'My Profile',
-      description: 'Manage your information',
+      title: 'Мой профиль',
+      description: 'Управление данными',
       icon: User,
       href: '/profile',
       color: 'bg-green-100 text-green-600',
     },
     {
-      title: 'Settings',
-      description: 'Account preferences',
+      title: 'Настройки',
+      description: 'Параметры аккаунта',
       icon: SettingsIcon,
       href: '/settings',
       color: 'bg-orange-100 text-orange-600',
     },
-  ];
+  ], []);
 
-  const statsCards = [
+  const statsCards = useMemo(() => [
     {
-      title: 'My Bookings',
+      title: 'Мои бронирования',
       count: stats.bookingsCount,
       icon: Calendar,
       href: '/bookings',
       color: 'bg-blue-600',
-      description: 'Active reservations',
+      description: 'Активные резервации',
     },
     {
-      title: 'Favorites',
+      title: 'Избранное',
       count: stats.favoritesCount,
       icon: Heart,
       href: '/favorites',
       color: 'bg-red-600',
-      description: 'Saved items',
+      description: 'Сохранённые объекты',
     },
     {
-      title: 'Price Alerts',
+      title: 'Уведомления о ценах',
       count: stats.priceAlertsCount,
       icon: Bell,
       href: '/price-alerts',
       color: 'bg-yellow-600',
-      description: 'Active alerts',
+      description: 'Активные уведомления',
     },
-  ];
+  ], [stats.bookingsCount, stats.favoritesCount, stats.priceAlertsCount]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main
+        className="flex-grow bg-gray-50 py-12"
+        role="main"
+        aria-label="Панель управления"
+      >
         <Container>
           {/* Welcome Section */}
-          <div className="mb-8">
+          <header className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, {user.firstName}!
+              С возвращением, {user.firstName}!
             </h1>
             <p className="text-gray-600 text-lg">
-              Here's what's happening with your travel plans
+              Обзор ваших путешествий и бронирований
             </p>
-          </div>
+          </header>
 
           {error && (
-            <Card className="p-4 mb-6 bg-red-50 border-red-200">
+            <Card
+              className="p-4 mb-6 bg-red-50 border-red-200"
+              role="alert"
+              aria-live="assertive"
+            >
               <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
+                <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                <span id={errorId}>{error}</span>
               </div>
             </Card>
           )}
 
           {/* Stats Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {statsCards.map((stat) => (
-              <Card
-                key={stat.title}
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(stat.href)}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg ${stat.color}`}>
-                    <stat.icon className="w-6 h-6 text-white" />
+          <section aria-labelledby={statsHeadingId} className="mb-8">
+            <h2 id={statsHeadingId} className="sr-only">
+              Статистика аккаунта
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6" role="list">
+              {statsCards.map((stat) => (
+                <Card
+                  key={stat.title}
+                  className="p-6 hover:shadow-lg transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-primary-500"
+                  onClick={() => handleNavigate(stat.href)}
+                  role="listitem"
+                  tabIndex={0}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleNavigate(stat.href);
+                    }
+                  }}
+                  aria-label={`${stat.title}: ${stat.count} ${stat.description}. Нажмите для перехода`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-lg ${stat.color}`}>
+                      <stat.icon className="w-6 h-6 text-white" aria-hidden="true" />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" aria-hidden="true" />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </div>
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">{stat.description}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.count}</p>
-                  <p className="text-sm font-medium text-primary-600 mt-2">
-                    View {stat.title}
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  <div>
+                    <p className="text-gray-600 text-sm mb-1">{stat.description}</p>
+                    <p className="text-3xl font-bold text-gray-900" aria-live="polite">
+                      {stat.count}
+                    </p>
+                    <p className="text-sm font-medium text-primary-600 mt-2">
+                      Перейти к {stat.title.toLowerCase()}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
 
           {/* Recent Activity */}
           {recentBookings.length > 0 && (
-            <Card className="p-6 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Recent Bookings</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/bookings')}
-                >
-                  View All
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {recentBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            <section aria-labelledby={recentBookingsHeadingId} className="mb-8">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 id={recentBookingsHeadingId} className="text-2xl font-bold text-gray-900">
+                    Последние бронирования
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleNavigate('/bookings')}
+                    aria-label="Показать все бронирования"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-primary-100 rounded-lg">
-                        {booking.type === 'HOTEL' ? (
-                          <HotelIcon className="w-5 h-5 text-primary-600" />
-                        ) : (
-                          <Plane className="w-5 h-5 text-primary-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {booking.type} Booking
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(booking.createdAt).toLocaleDateString('ru-RU')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {booking.totalPrice.toLocaleString('ru-RU')} {booking.currency}
-                      </p>
-                      <span
-                        className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          booking.status === 'CONFIRMED'
-                            ? 'bg-green-100 text-green-800'
-                            : booking.status === 'PENDING'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                    Все бронирования
+                  </Button>
+                </div>
+
+                <ul className="space-y-4" role="list" aria-label="Список последних бронирований">
+                  {recentBookings.map((booking) => {
+                    const bookingType = booking.type === 'HOTEL' ? 'Отель' : 'Авиабилет';
+                    const statusText = booking.status === 'CONFIRMED'
+                      ? 'Подтверждено'
+                      : booking.status === 'PENDING'
+                      ? 'Ожидает подтверждения'
+                      : booking.status;
+
+                    return (
+                      <li
+                        key={booking.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        aria-label={`${bookingType}: ${booking.totalPrice.toLocaleString('ru-RU')} ${booking.currency}, статус: ${statusText}`}
                       >
-                        {booking.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-primary-100 rounded-lg" aria-hidden="true">
+                            {booking.type === 'HOTEL' ? (
+                              <HotelIcon className="w-5 h-5 text-primary-600" />
+                            ) : (
+                              <Plane className="w-5 h-5 text-primary-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {bookingType}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <time dateTime={booking.createdAt}>
+                                {new Date(booking.createdAt).toLocaleDateString('ru-RU')}
+                              </time>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">
+                            {booking.totalPrice.toLocaleString('ru-RU')} {booking.currency}
+                          </p>
+                          <span
+                            className={`inline-block px-2 py-1 text-xs rounded-full ${
+                              booking.status === 'CONFIRMED'
+                                ? 'bg-green-100 text-green-800'
+                                : booking.status === 'PENDING'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                            role="status"
+                          >
+                            {statusText}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Card>
+            </section>
           )}
 
           {/* Quick Actions */}
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickLinks.map((link) => (
-                <button
-                  key={link.title}
-                  onClick={() => navigate(link.href)}
-                  className="p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all text-left"
-                >
-                  <div className={`inline-flex p-2 rounded-lg ${link.color} mb-3`}>
-                    <link.icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{link.title}</h3>
-                  <p className="text-sm text-gray-600">{link.description}</p>
-                </button>
-              ))}
-            </div>
-          </Card>
+          <section aria-labelledby={quickActionsHeadingId}>
+            <Card className="p-6">
+              <h2 id={quickActionsHeadingId} className="text-2xl font-bold text-gray-900 mb-6">
+                Быстрые действия
+              </h2>
+              <nav aria-label="Быстрые действия">
+                <ul className="grid md:grid-cols-2 lg:grid-cols-4 gap-4" role="list">
+                  {quickLinks.map((link) => (
+                    <li key={link.title}>
+                      <button
+                        onClick={() => handleNavigate(link.href)}
+                        className="w-full p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all text-left"
+                        aria-label={`${link.title}: ${link.description}`}
+                      >
+                        <div className={`inline-flex p-2 rounded-lg ${link.color} mb-3`} aria-hidden="true">
+                          <link.icon className="w-6 h-6" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900 mb-1">{link.title}</h3>
+                        <p className="text-sm text-gray-600">{link.description}</p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </Card>
+          </section>
         </Container>
       </main>
       <Footer />
@@ -324,4 +398,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default memo(Dashboard);

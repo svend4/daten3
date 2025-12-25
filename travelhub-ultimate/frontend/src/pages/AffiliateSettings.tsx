@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
 import {
   Settings as SettingsIcon,
   CreditCard,
@@ -83,12 +92,13 @@ const AffiliateSettings: React.FC = () => {
         setNotifications(response.data.notifications);
         logger.info('Settings loaded');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to fetch settings', err);
-      if (err.response?.status === 404) {
-        setError('You need to register as an affiliate first.');
+      if (apiError.response?.status === 404) {
+        setError('Сначала зарегистрируйтесь как партнёр.');
       } else {
-        setError(err.response?.data?.message || 'Failed to load settings');
+        setError(apiError.response?.data?.message || 'Не удалось загрузить настройки');
       }
     } finally {
       setLoading(false);
@@ -116,20 +126,21 @@ const AffiliateSettings: React.FC = () => {
 
         setTimeout(() => setSuccess(''), 5000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
       logger.error('Failed to save settings', err);
-      setError(err.response?.data?.message || 'Failed to save settings');
+      setError(apiError.response?.data?.message || 'Не удалось сохранить настройки');
     } finally {
       setSaving(false);
     }
   };
 
-  const updatePaymentDetail = (field: string, value: string) => {
+  const updatePaymentDetail = useCallback((field: string, value: string) => {
     setPaymentDetails((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
   const renderPaymentMethodFields = () => {
     switch (paymentMethod) {
@@ -143,7 +154,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="email"
                 value={paymentDetails.paypalEmail || ''}
-                onChange={(e) => updatePaymentDetail('paypalEmail', e.target.value)}
+                onChange={(value) => updatePaymentDetail('paypalEmail', value)}
                 placeholder="your.email@example.com"
               />
             </div>
@@ -160,7 +171,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="text"
                 value={paymentDetails.bankName || ''}
-                onChange={(e) => updatePaymentDetail('bankName', e.target.value)}
+                onChange={(value) => updatePaymentDetail('bankName', value)}
                 placeholder="Bank of America"
               />
             </div>
@@ -171,7 +182,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="text"
                 value={paymentDetails.accountHolderName || ''}
-                onChange={(e) => updatePaymentDetail('accountHolderName', e.target.value)}
+                onChange={(value) => updatePaymentDetail('accountHolderName', value)}
                 placeholder="John Doe"
               />
             </div>
@@ -182,7 +193,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="text"
                 value={paymentDetails.accountNumber || ''}
-                onChange={(e) => updatePaymentDetail('accountNumber', e.target.value)}
+                onChange={(value) => updatePaymentDetail('accountNumber', value)}
                 placeholder="1234567890"
               />
             </div>
@@ -194,7 +205,7 @@ const AffiliateSettings: React.FC = () => {
                 <Input
                   type="text"
                   value={paymentDetails.routingNumber || ''}
-                  onChange={(e) => updatePaymentDetail('routingNumber', e.target.value)}
+                  onChange={(value) => updatePaymentDetail('routingNumber', value)}
                   placeholder="123456789"
                 />
               </div>
@@ -205,7 +216,7 @@ const AffiliateSettings: React.FC = () => {
                 <Input
                   type="text"
                   value={paymentDetails.swiftCode || ''}
-                  onChange={(e) => updatePaymentDetail('swiftCode', e.target.value)}
+                  onChange={(value) => updatePaymentDetail('swiftCode', value)}
                   placeholder="BOFAUS3N"
                 />
               </div>
@@ -223,7 +234,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="text"
                 value={paymentDetails.cardHolderName || ''}
-                onChange={(e) => updatePaymentDetail('cardHolderName', e.target.value)}
+                onChange={(value) => updatePaymentDetail('cardHolderName', value)}
                 placeholder="John Doe"
               />
             </div>
@@ -234,7 +245,7 @@ const AffiliateSettings: React.FC = () => {
               <Input
                 type="text"
                 value={paymentDetails.cardNumber || ''}
-                onChange={(e) => updatePaymentDetail('cardNumber', e.target.value)}
+                onChange={(value) => updatePaymentDetail('cardNumber', value)}
                 placeholder="****1234"
                 maxLength={4}
               />
@@ -492,4 +503,4 @@ const AffiliateSettings: React.FC = () => {
   );
 };
 
-export default AffiliateSettings;
+export default memo(AffiliateSettings);

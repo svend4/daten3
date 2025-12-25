@@ -1,13 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Plane } from 'lucide-react';
+import { Search, MapPin, Plane, AlertCircle } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
+interface FlightSearchParams {
+  type: 'flights';
+  origin: string;
+  destination: string;
+  departDate: string;
+  returnDate?: string;
+  adults: number;
+}
+
+interface HotelSearchParams {
+  type: 'hotels';
+  destination: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  rooms: number;
+}
+
+type SearchParams = FlightSearchParams | HotelSearchParams;
+
 interface SearchWidgetProps {
-  onSearch: (params: any) => void;
+  onSearch: (params: SearchParams) => void;
   type?: 'flights' | 'hotels' | 'cars';
   loading?: boolean;
 }
@@ -18,7 +38,8 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
   loading = false,
 }) => {
   const [searchType, setSearchType] = useState(type);
-  
+  const [error, setError] = useState<string>('');
+
   // Flight search state
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
@@ -33,9 +54,10 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
   const [guests, setGuests] = useState(2);
   const [rooms, setRooms] = useState(1);
 
-  const handleFlightSearch = () => {
+  const handleFlightSearch = useCallback(() => {
+    setError('');
     if (!origin || !destination || !departDate) {
-      alert('Please fill in all required fields');
+      setError('Пожалуйста, заполните все обязательные поля');
       return;
     }
 
@@ -47,11 +69,12 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
       returnDate: returnDate?.toISOString().split('T')[0],
       adults: passengers,
     });
-  };
+  }, [origin, destination, departDate, returnDate, passengers, onSearch]);
 
-  const handleHotelSearch = () => {
+  const handleHotelSearch = useCallback(() => {
+    setError('');
     if (!hotelDestination || !checkIn || !checkOut) {
-      alert('Please fill in all required fields');
+      setError('Пожалуйста, заполните все обязательные поля');
       return;
     }
 
@@ -63,7 +86,7 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
       adults: guests,
       rooms: rooms,
     });
-  };
+  }, [hotelDestination, checkIn, checkOut, guests, rooms, onSearch]);
 
   return (
     <motion.div
@@ -72,12 +95,26 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      {/* Error message */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-800" role="alert">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6" role="tablist" aria-label="Тип поиска">
         {(['flights', 'hotels', 'cars'] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setSearchType(tab)}
+            role="tab"
+            aria-selected={searchType === tab}
+            aria-controls={`search-panel-${tab}`}
+            onClick={() => {
+              setSearchType(tab);
+              setError('');
+            }}
             className={`
               px-6 py-3 rounded-xl font-semibold transition-all
               ${searchType === tab
@@ -86,9 +123,9 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
               }
             `}
           >
-            {tab === 'flights' && <Plane className="inline w-5 h-5 mr-2" />}
-            {tab === 'hotels' && <MapPin className="inline w-5 h-5 mr-2" />}
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'flights' && <Plane className="inline w-5 h-5 mr-2" aria-hidden="true" />}
+            {tab === 'hotels' && <MapPin className="inline w-5 h-5 mr-2" aria-hidden="true" />}
+            {tab === 'flights' ? 'Авиабилеты' : tab === 'hotels' ? 'Отели' : 'Авто'}
           </button>
         ))}
       </div>
@@ -294,4 +331,4 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
   );
 };
 
-export default SearchWidget;
+export default memo(SearchWidget);

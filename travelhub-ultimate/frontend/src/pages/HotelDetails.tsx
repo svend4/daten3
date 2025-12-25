@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo, useId } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Star, Wifi, Coffee, Car, Users, Check, X, Heart } from 'lucide-react';
+import { MapPin, Star, Wifi, Coffee, Car, Users, Check, Heart, AlertCircle, Calendar } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import Container from '../components/layout/Container';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import { useAuth } from '../store/AuthContext';
 import { api } from '../utils/api';
 import { logger } from '../utils/logger';
 
+/**
+ * Hotel details page - displays hotel info, rooms, and booking options.
+ */
 const HotelDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -17,6 +21,15 @@ const HotelDetails: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState<string | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Unique IDs for accessibility
+  const headingId = useId();
+  const descriptionId = useId();
+  const amenitiesId = useId();
+  const roomsId = useId();
+  const bookingId = useId();
+  const errorId = useId();
 
   // Demo hotel data
   const hotel = {
@@ -45,14 +58,7 @@ const HotelDetails: React.FC = () => {
     ],
   };
 
-  // Check if hotel is in favorites on mount
-  useEffect(() => {
-    if (isAuthenticated && hotel.id) {
-      checkFavoriteStatus();
-    }
-  }, [isAuthenticated, hotel.id]);
-
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     try {
       const response = await api.get<{
         success: boolean;
@@ -65,18 +71,26 @@ const HotelDetails: React.FC = () => {
           setFavoriteId(response.data.favoriteId);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to check favorite status', err);
     }
-  };
+  }, [hotel.id]);
 
-  const handleToggleFavorite = async () => {
+  // Check if hotel is in favorites on mount
+  useEffect(() => {
+    if (isAuthenticated && hotel.id) {
+      checkFavoriteStatus();
+    }
+  }, [isAuthenticated, hotel.id, checkFavoriteStatus]);
+
+  const handleToggleFavorite = useCallback(async () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
     setFavoriteLoading(true);
+    setError(null);
 
     try {
       if (isFavorite && favoriteId) {
@@ -114,111 +128,156 @@ const HotelDetails: React.FC = () => {
           logger.info('Added to favorites');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
       logger.error('Failed to toggle favorite', err);
-      alert(err.response?.data?.message || 'Failed to update favorites');
+      setError(apiError.response?.data?.message || 'Не удалось обновить избранное');
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
     } finally {
       setFavoriteLoading(false);
     }
-  };
+  }, [isAuthenticated, isFavorite, favoriteId, hotel, navigate]);
 
-  const handleBooking = () => {
+  const handleRoomSelect = useCallback((roomId: string) => {
+    setSelectedRoom(roomId);
+  }, []);
+
+  const handleBooking = useCallback(() => {
     if (selectedRoom) {
       navigate('/checkout', { state: { hotel, roomId: selectedRoom } });
     }
-  };
+  }, [selectedRoom, hotel, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-8">
-        <div className="container mx-auto px-4 max-w-6xl">
+      <main
+        className="flex-grow bg-gray-50 py-8"
+        role="main"
+        aria-label="Информация об отеле"
+      >
+        <Container className="max-w-6xl">
+          {/* Error Message */}
+          {error && (
+            <div
+              id={errorId}
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+              role="alert"
+              aria-live="assertive"
+            >
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
           {/* Hotel Images */}
-          <div className="grid md:grid-cols-2 gap-4 mb-8">
+          <section className="grid md:grid-cols-2 gap-4 mb-8" aria-label="Фотографии отеля">
             {hotel.images.map((img, idx) => (
               <div key={idx} className="rounded-lg overflow-hidden">
-                <img src={img} alt={`${hotel.name} ${idx + 1}`} className="w-full h-64 object-cover" />
+                <img
+                  src={img}
+                  alt={`${hotel.name} - фото ${idx + 1}`}
+                  className="w-full h-64 object-cover"
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                />
               </div>
             ))}
-          </div>
+          </section>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
-              <div>
+              <header>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                  <div
+                    className="flex items-center gap-2"
+                    role="img"
+                    aria-label={`${hotel.stars} звёзд`}
+                  >
                     {[...Array(hotel.stars)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
                     ))}
                   </div>
                   {/* Favorite Button */}
                   <button
                     onClick={handleToggleFavorite}
                     disabled={favoriteLoading}
-                    className={`p-3 rounded-full transition-all ${
+                    className={`p-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isFavorite
                         ? 'bg-red-100 text-red-600 hover:bg-red-200'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}
+                    aria-pressed={isFavorite}
                   >
                     <Heart
                       className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`}
+                      aria-hidden="true"
                     />
                   </button>
                 </div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">{hotel.name}</h1>
+                <h1 id={headingId} className="text-4xl font-bold text-gray-900 mb-2">
+                  {hotel.name}
+                </h1>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-5 h-5" />
+                  <MapPin className="w-5 h-5" aria-hidden="true" />
                   <span>{hotel.location}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <div className="flex items-center gap-1" aria-label={`Рейтинг ${hotel.rating}`}>
+                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
                     <span className="font-bold">{hotel.rating}</span>
                   </div>
                   <span className="text-gray-600">({hotel.reviews} отзывов)</span>
                 </div>
-              </div>
+              </header>
 
               {/* Description */}
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">О отеле</h2>
+              <Card className="p-6" aria-labelledby={descriptionId}>
+                <h2 id={descriptionId} className="text-2xl font-bold mb-4">Об отеле</h2>
                 <p className="text-gray-700">{hotel.description}</p>
               </Card>
 
               {/* Amenities */}
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Удобства</h2>
-                <div className="grid md:grid-cols-2 gap-4">
+              <Card className="p-6" aria-labelledby={amenitiesId}>
+                <h2 id={amenitiesId} className="text-2xl font-bold mb-4">Удобства</h2>
+                <ul className="grid md:grid-cols-2 gap-4" role="list">
                   {hotel.amenities.map((amenity, idx) => {
                     const Icon = amenity.icon;
                     return (
-                      <div key={idx} className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                      <li key={idx} className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center"
+                          aria-hidden="true"
+                        >
                           <Icon className="w-5 h-5 text-primary-600" />
                         </div>
                         <span className="text-gray-700">{amenity.name}</span>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               </Card>
 
               {/* Available Rooms */}
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Доступные номера</h2>
-                <div className="space-y-4">
+              <Card className="p-6" aria-labelledby={roomsId}>
+                <h2 id={roomsId} className="text-2xl font-bold mb-4">Доступные номера</h2>
+                <div className="space-y-4" role="radiogroup" aria-label="Выбор номера">
                   {hotel.rooms.map((room) => (
-                    <div
+                    <button
                       key={room.id}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      type="button"
+                      role="radio"
+                      aria-checked={selectedRoom === room.id}
+                      className={`w-full text-left border-2 rounded-lg p-4 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                         selectedRoom === room.id
                           ? 'border-primary-600 bg-primary-50'
                           : 'border-gray-200 hover:border-primary-300'
                       }`}
-                      onClick={() => setSelectedRoom(room.id)}
+                      onClick={() => handleRoomSelect(room.id)}
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -232,15 +291,16 @@ const HotelDetails: React.FC = () => {
                           <div className="text-sm text-gray-600">за ночь</div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </Card>
             </div>
 
             {/* Booking Card */}
-            <div className="lg:col-span-1">
+            <aside className="lg:col-span-1" aria-labelledby={bookingId}>
               <Card className="p-6 sticky top-8">
+                <h2 id={bookingId} className="sr-only">Бронирование</h2>
                 <div className="mb-6">
                   <div className="text-3xl font-bold text-gray-900">
                     от {hotel.price.toLocaleString('ru-RU')} ₽
@@ -248,39 +308,47 @@ const HotelDetails: React.FC = () => {
                   <div className="text-gray-600">за ночь</div>
                 </div>
 
-                <div className="space-y-4 mb-6">
+                <form className="space-y-4 mb-6" onSubmit={(e) => e.preventDefault()}>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="checkin-date" className="block text-sm font-medium text-gray-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
                       Дата заезда
                     </label>
                     <input
                       type="date"
+                      id="checkin-date"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="checkout-date" className="block text-sm font-medium text-gray-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
                       Дата выезда
                     </label>
                     <input
                       type="date"
+                      id="checkout-date"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="guests-count" className="block text-sm font-medium text-gray-700 mb-2">
+                      <Users className="w-4 h-4 inline mr-1" aria-hidden="true" />
                       Гости
                     </label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                      <option>1 гость</option>
-                      <option>2 гостя</option>
-                      <option>3 гостя</option>
-                      <option>4+ гостей</option>
+                    <select
+                      id="guests-count"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="1">1 гость</option>
+                      <option value="2">2 гостя</option>
+                      <option value="3">3 гостя</option>
+                      <option value="4">4+ гостей</option>
                     </select>
                   </div>
-                </div>
+                </form>
 
                 <Button
                   fullWidth
@@ -291,24 +359,24 @@ const HotelDetails: React.FC = () => {
                   {selectedRoom ? 'Забронировать' : 'Выберите номер'}
                 </Button>
 
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <Check className="w-4 h-4 text-green-600" />
+                <ul className="mt-6 pt-6 border-t border-gray-200 space-y-2" role="list">
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600" aria-hidden="true" />
                     <span>Бесплатная отмена</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-green-600" />
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600" aria-hidden="true" />
                     <span>Подтверждение мгновенно</span>
-                  </div>
-                </div>
+                  </li>
+                </ul>
               </Card>
-            </div>
+            </aside>
           </div>
-        </div>
+        </Container>
       </main>
       <Footer />
     </div>
   );
 };
 
-export default HotelDetails;
+export default memo(HotelDetails);

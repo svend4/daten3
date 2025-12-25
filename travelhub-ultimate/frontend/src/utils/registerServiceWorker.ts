@@ -3,6 +3,21 @@
  * Handles PWA functionality including offline support and caching
  */
 
+// BeforeInstallPromptEvent interface for PWA install prompt
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
+// Safari standalone navigator extension
+interface NavigatorStandalone extends Navigator {
+  standalone?: boolean;
+}
+
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
     window.location.hostname === '[::1]' ||
@@ -168,7 +183,7 @@ export function showNotification(title: string, options?: NotificationOptions) {
 export function isPWA(): boolean {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true ||
+    (window.navigator as NavigatorStandalone).standalone === true ||
     document.referrer.includes('android-app://')
   );
 }
@@ -176,13 +191,13 @@ export function isPWA(): boolean {
 /**
  * Prompt user to install PWA
  */
-export function setupInstallPrompt(onInstallPrompt?: (event: any) => void) {
-  let deferredPrompt: any;
+export function setupInstallPrompt(onInstallPrompt?: (event: BeforeInstallPromptEvent) => void) {
+  let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    deferredPrompt = e;
-    onInstallPrompt?.(e);
+    deferredPrompt = e as BeforeInstallPromptEvent;
+    onInstallPrompt?.(deferredPrompt);
   });
 
   return {
@@ -191,7 +206,7 @@ export function setupInstallPrompt(onInstallPrompt?: (event: any) => void) {
         return false;
       }
 
-      deferredPrompt.prompt();
+      await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`[PWA] User response to install prompt: ${outcome}`);
 

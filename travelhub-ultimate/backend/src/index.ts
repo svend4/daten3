@@ -539,3 +539,6 @@ process.on('unhandledRejection', (reason, promise) => {
     gracefulShutdown('unhandledRejection');
   }
 });
+
+// Export app for testing
+export default app;
