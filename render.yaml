@@ -19,6 +19,8 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
       - key: FRONTEND_URL
         value: https://daten3.onrender.com
     healthCheckPath: /health
