@@ -33,7 +33,6 @@ services:
     region: oregon
     plan: free
     branch: main
-    dockerCommand: serve -s dist -l 3000
     envVars:
       - key: NODE_ENV
         value: production
@@ -42,6 +41,7 @@ services:
     buildFilter:
       paths:
         - travelhub-ultimate/frontend/**
+    healthCheckPath: /health
     autoDeploy: true
 
 databases:
