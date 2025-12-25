@@ -4,6 +4,22 @@ import App from './App';
 import './styles/globals.css';
 import * as serviceWorkerRegistration from './utils/registerServiceWorker';
 
+// Global error handler for debugging - shows errors before React can catch them
+window.onerror = function(message, source, lineno, colno, error) {
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+  errorDiv.textContent = `GLOBAL ERROR:\n${message}\nSource: ${source}\nLine: ${lineno}:${colno}\n${error?.stack || ''}`;
+  document.body.prepend(errorDiv);
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function(event) {
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:orange;color:black;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+  errorDiv.textContent = `UNHANDLED PROMISE REJECTION:\n${event.reason}`;
+  document.body.prepend(errorDiv);
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
