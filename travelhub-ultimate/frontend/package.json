@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-icons.js",
     "build": "vite build",
     "build:check": "tsc && vite build",
     "start": "serve -s dist -l $PORT",
