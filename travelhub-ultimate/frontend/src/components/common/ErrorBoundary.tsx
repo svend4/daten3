@@ -85,11 +85,11 @@ class ErrorBoundary extends Component<Props, State> {
               или вернуться на главную.
             </p>
 
-            {/* Error Details (Development Only) */}
-            {import.meta.env.DEV && this.state.error && (
-              <details className="mb-6 text-left">
+            {/* Error Details - temporarily show in all environments for debugging */}
+            {this.state.error && (
+              <details className="mb-6 text-left" open>
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 mb-2">
-                  Подробности ошибки (только для разработки)
+                  Подробности ошибки
                 </summary>
                 <div className="bg-gray-100 rounded-lg p-4 overflow-auto max-h-48">
                   <p className="text-sm font-mono text-red-600 mb-2">
