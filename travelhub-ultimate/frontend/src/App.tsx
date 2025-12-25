@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 import { useEffect } from 'react';
 
 // Main pages
@@ -62,6 +63,9 @@ import { AuthProvider } from './store/AuthContext';
 import { api } from './utils/api';
 import { logger } from './utils/logger';
 
+// SEO
+import StructuredData from './components/SEO/StructuredData';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -80,10 +84,19 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <StructuredData
+            type="Organization"
+            data={{}}
+          />
+          <StructuredData
+            type="WebSite"
+            data={{}}
+          />
+          <BrowserRouter>
+            <Routes>
           {/* Main routes */}
           <Route path="/" element={<Home />} />
           <Route path="/flights" element={<FlightSearch />} />
@@ -140,6 +153,7 @@ function App() {
       </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

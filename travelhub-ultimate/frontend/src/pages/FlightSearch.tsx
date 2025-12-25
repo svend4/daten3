@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useFlightSearch } from '../hooks/useFlightSearch';
 import Loading from '../components/common/Loading';
+import SEOHead from '../components/SEO/SEOHead';
 
 export default function FlightSearch() {
   const location = useLocation();
@@ -20,6 +21,12 @@ export default function FlightSearch() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Flight Search - Find Cheap Flights | TravelHub"
+        description="Search and compare cheap flights from 500+ airlines. Find the best deals on domestic and international flights with TravelHub."
+        keywords={['cheap flights', 'flight search', 'airline tickets', 'flight deals', 'book flights']}
+        type="website"
+      />
       <Header />
       <main className="flex-grow container-custom py-8">
         <h1 className="text-3xl font-heading font-bold mb-6">

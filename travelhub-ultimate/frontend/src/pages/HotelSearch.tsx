@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useHotelSearch } from '../hooks/useHotelSearch';
 import Loading from '../components/common/Loading';
+import SEOHead from '../components/SEO/SEOHead';
 
 export default function HotelSearch() {
   const location = useLocation();
@@ -20,6 +21,12 @@ export default function HotelSearch() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Hotel Search - Find Best Hotel Deals | TravelHub"
+        description="Search and compare hotels worldwide. Find the best hotel deals from 500+ providers with TravelHub. Save up to 40% on your bookings."
+        keywords={['hotel search', 'cheap hotels', 'hotel deals', 'accommodation', 'book hotels']}
+        type="website"
+      />
       <Header />
       <main className="flex-grow container-custom py-8">
         <h1 className="text-3xl font-heading font-bold mb-6">

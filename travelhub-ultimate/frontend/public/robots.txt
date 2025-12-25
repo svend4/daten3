@@ -1,0 +1,18 @@
+# robots.txt for TravelHub
+# https://daten3.onrender.com/robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow admin and user-specific pages
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /settings
+Disallow: /affiliate/dashboard
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://daten3.onrender.com/sitemap.xml
