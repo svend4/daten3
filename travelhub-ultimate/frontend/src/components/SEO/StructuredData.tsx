@@ -83,18 +83,18 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         name: data.airline,
         iataCode: data.airlineCode,
       },
-      departureAirport: {
+      departureAirport: data.departure ? {
         '@type': 'Airport',
         name: data.departure.airport,
         iataCode: data.departure.code,
-      },
-      arrivalAirport: {
+      } : undefined,
+      arrivalAirport: data.arrival ? {
         '@type': 'Airport',
         name: data.arrival.airport,
         iataCode: data.arrival.code,
-      },
-      departureTime: data.departure.time,
-      arrivalTime: data.arrival.time,
+      } : undefined,
+      departureTime: data.departure?.time,
+      arrivalTime: data.arrival?.time,
       ...data.additionalData,
     },
 
@@ -123,12 +123,12 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
     BreadcrumbList: {
       '@context': baseContext,
       '@type': 'BreadcrumbList',
-      itemListElement: data.items.map((item: any, index: number) => ({
+      itemListElement: data.items?.map((item: any, index: number) => ({
         '@type': 'ListItem',
         position: index + 1,
         name: item.name,
         item: item.url,
-      })),
+      })) || [],
     },
   };
 
