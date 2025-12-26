@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { User, Menu, X, Heart, Bell, Globe, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useAuth } from '../../store/AuthContext';
+import ThemeToggle from '../ui/ThemeToggle';
 
 /**
  * Header component with improved accessibility (ARIA attributes, keyboard navigation).
@@ -89,8 +90,10 @@ function Header() {
 
   return (
     <header
-      className={`bg-white sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'shadow-lg' : 'shadow-sm'
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/80 dark:bg-dark-900/80 backdrop-blur-xl shadow-lg'
+          : 'bg-white dark:bg-dark-900 shadow-sm'
       }`}
       role="banner"
     >
@@ -133,9 +136,12 @@ function Header() {
 
           {/* Right Side Actions */}
           <div className="hidden lg:flex items-center gap-3">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Language Selector */}
             <button
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               aria-label="Выбор языка: Русский"
               aria-haspopup="listbox"
             >
@@ -146,7 +152,7 @@ function Header() {
 
             {/* Currency Selector */}
             <button
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               aria-label="Выбор валюты: USD"
               aria-haspopup="listbox"
             >

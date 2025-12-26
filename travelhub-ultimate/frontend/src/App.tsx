@@ -12,6 +12,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Contexts
 import { AuthProvider } from './store/AuthContext';
+import { ThemeProvider } from './store/ThemeContext';
 
 // API
 import { api } from './utils/api';
@@ -110,10 +111,11 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <StructuredData
+      <ThemeProvider>
+        <HelmetProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <StructuredData
               type="Organization"
               data={{}}
             />
@@ -199,10 +201,11 @@ function App() {
                 },
               }}
             />
-          </BrowserRouter>
-        </AuthProvider>
-      </QueryClientProvider>
+            </BrowserRouter>
+          </AuthProvider>
+        </QueryClientProvider>
       </HelmetProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
