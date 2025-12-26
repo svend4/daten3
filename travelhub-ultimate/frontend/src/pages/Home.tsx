@@ -134,14 +134,14 @@ const FeatureCard = memo(function FeatureCard({
 }) {
   return (
     <article
-      className="group glass rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl animate-fade-in-up"
+      className="group card-pastel p-8 transition-all duration-500 hover:-translate-y-1 animate-fade-in-up"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <div className={`w-14 h-14 rounded-2xl ${feature.gradient} flex items-center justify-center mb-6
-                       group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                       group-hover:scale-105 transition-transform duration-500 shadow-md`}>
         {feature.icon}
       </div>
-      <h3 className="text-xl font-bold mb-3 text-theme-primary">{feature.title}</h3>
+      <h3 className="text-xl font-semibold mb-3 text-theme-primary">{feature.title}</h3>
       <p className="text-theme-secondary leading-relaxed">{feature.description}</p>
     </article>
   );
@@ -160,15 +160,15 @@ const TestimonialCard = memo(function TestimonialCard({
   };
 }) {
   return (
-    <article className="glass rounded-3xl p-8 transition-all duration-300 hover:shadow-xl">
+    <article className="card-pastel p-8 transition-all duration-300 hover:-translate-y-1">
       {/* Stars */}
       <div className="flex gap-1 mb-4" aria-label={`Рейтинг: ${testimonial.rating} из 5`}>
         {[...Array(testimonial.rating)].map((_, i) => (
-          <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true" />
+          <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" aria-hidden="true" />
         ))}
       </div>
 
-      <blockquote className="text-theme-secondary mb-6 leading-relaxed text-lg">
+      <blockquote className="text-theme-secondary mb-6 leading-relaxed text-lg italic">
         "{testimonial.text}"
       </blockquote>
 
@@ -176,12 +176,12 @@ const TestimonialCard = memo(function TestimonialCard({
         <img
           src={testimonial.avatar}
           alt=""
-          className="w-14 h-14 rounded-full border-4 border-white dark:border-dark-700 shadow-lg object-cover"
+          className="w-12 h-12 rounded-full border-2 border-indigo-100 dark:border-indigo-900/50 shadow-md object-cover"
           loading="lazy"
           decoding="async"
         />
         <div>
-          <cite className="font-bold text-theme-primary not-italic block">{testimonial.name}</cite>
+          <cite className="font-semibold text-theme-primary not-italic block">{testimonial.name}</cite>
           <div className="text-sm text-theme-muted">{testimonial.location}</div>
         </div>
       </footer>
@@ -461,7 +461,7 @@ function Home() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 bg-theme-primary">
+        <section className="py-16 bg-pastel-primary">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
               {stats.map((stat, index) => (
@@ -472,13 +472,13 @@ function Home() {
         </section>
 
         {/* Bento Grid Destinations */}
-        <section className="py-20 bg-theme-secondary">
+        <section className="py-20 bg-pastel-secondary">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mb-4">
+              <span className="badge-soft mb-4">
                 Популярные направления
               </span>
-              <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-theme-primary">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-theme-primary">
                 Куда отправимся?
               </h2>
               <p className="text-xl text-theme-secondary max-w-2xl mx-auto">
@@ -509,13 +509,13 @@ function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-theme-primary">
+        <section className="py-20 bg-pastel-primary">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-secondary-100 dark:bg-secondary-900/30 text-secondary-600 dark:text-secondary-400 mb-4">
+              <span className="badge-soft mb-4">
                 Почему мы?
               </span>
-              <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-theme-primary">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-theme-primary">
                 Путешествуйте умнее
               </h2>
               <p className="text-xl text-theme-secondary max-w-2xl mx-auto">
@@ -523,7 +523,7 @@ function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
               {features.map((feature, index) => (
                 <FeatureCard key={index} feature={feature} index={index} />
               ))}
@@ -532,13 +532,13 @@ function Home() {
         </section>
 
         {/* Testimonials Section */}
-        <section className="py-20 bg-theme-secondary">
+        <section className="py-20 bg-pastel-secondary">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-4">
+              <span className="badge-soft mb-4">
                 Отзывы
               </span>
-              <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-theme-primary">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-theme-primary">
                 Нам доверяют
               </h2>
               <p className="text-xl text-theme-secondary">
@@ -546,7 +546,7 @@ function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-5 max-w-6xl mx-auto">
               {testimonials.map((testimonial, index) => (
                 <TestimonialCard key={index} testimonial={testimonial} />
               ))}
