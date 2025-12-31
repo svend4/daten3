@@ -4,15 +4,17 @@
 # ============================================
 # Stage 1: Build the React application
 # ============================================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci --only=production --silent
+# Install ALL dependencies (including devDependencies for build tools like Vite)
+# Explicitly set NODE_ENV to development to ensure devDependencies are installed
+ENV NODE_ENV=development
+RUN npm ci --silent
 
 # Copy source code
 COPY . .

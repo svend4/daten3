@@ -10,13 +10,16 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies for build tools like TypeScript)
+# Explicitly set NODE_ENV to development to ensure devDependencies are installed
+ENV NODE_ENV=development
 RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client and build TypeScript
+# Keep NODE_ENV=development for build to ensure all dependencies are available
 RUN npx prisma generate
 
 # Build TypeScript
