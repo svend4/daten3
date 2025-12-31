@@ -6,7 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies for build tools like Vite)
+# Explicitly set NODE_ENV to development to ensure devDependencies are installed
+ENV NODE_ENV=development
 RUN npm ci
 
 # Copy source code
@@ -18,6 +20,7 @@ ARG VITE_API_BASE_URL=http://localhost:3000/api
 
 # Create .env file for Vite to read during build
 # This ensures the environment variable is properly passed to Vite
+# Keep NODE_ENV=development for build to ensure all dependencies are available
 RUN echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" > .env && \
     echo "=== Build Configuration ===" && \
     cat .env && \
