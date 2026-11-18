@@ -1,7 +1,7 @@
 version: '3.8'
 
 # Development configuration with hot-reload
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Usage: docker-compose -f docker-compose.yaml -f docker-compose.dev.yml up
 
 services:
   frontend:
@@ -33,4 +33,5 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=dev-secret-key
       - JWT_REFRESH_SECRET=dev-refresh-secret-key
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173,http://localhost:3001}
     command: npm run dev
